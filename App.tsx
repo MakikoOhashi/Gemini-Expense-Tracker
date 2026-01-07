@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Transaction, ChatMessage, AIAction, TransactionRule } from './types';
 import { storageService } from './services/storageService';
+import { sheetsService } from './services/sheetsService';
 import { GeminiService } from './services/geminiService';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
@@ -227,6 +228,14 @@ const App: React.FC = () => {
     textareaRef.current?.focus();
   };
 
+  const handleInitializeSystem = async () => {
+    try {
+      await sheetsService.initialize();
+    } catch (error: any) {
+      throw new Error(error.message || 'システムの初期化に失敗しました');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto bg-white shadow-xl overflow-hidden relative">
       <header className="bg-indigo-600 text-white p-4 shadow-md flex items-center justify-between z-30">
@@ -425,12 +434,13 @@ const App: React.FC = () => {
         </button>
       </nav>
 
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-        rules={rules} 
-        onDeleteRule={(id) => setRules(p => p.filter(r => r.id !== id))} 
-        onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: '履歴をクリアしました。', timestamp: Date.now() }])} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        rules={rules}
+        onDeleteRule={(id) => setRules(p => p.filter(r => r.id !== id))}
+        onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: '履歴をクリアしました。', timestamp: Date.now() }])}
+        onInitializeSystem={handleInitializeSystem}
       />
     </div>
   );

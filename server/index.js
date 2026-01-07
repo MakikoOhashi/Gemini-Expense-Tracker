@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import multer from 'multer';
 import { google } from 'googleapis';
+import { configManager } from './configManager.js';
 
 dotenv.config();
 
@@ -12,7 +14,15 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Google Sheets setup
+// Multer setup for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
+
+// Google APIs setup
 const auth = new google.auth.GoogleAuth({
   credentials: {
     type: "service_account",
@@ -21,7 +31,8 @@ const auth = new google.auth.GoogleAuth({
   },
   scopes: [
     'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive.readonly'
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.file'
   ],
 });
 
@@ -30,6 +41,150 @@ const drive = google.drive({ version: 'v3', auth });
 
 // Global cache for spreadsheet IDs by year
 const spreadsheetCache = new Map();
+
+// Helper function to create or get ExpenseGPT root folder
+async function getOrCreateExpenseGPTRootFolder() {
+  let rootFolderId = configManager.getRootFolderId();
+
+  if (rootFolderId) {
+    try {
+      // Verify the folder still exists
+      await drive.files.get({ fileId: rootFolderId, fields: 'id,name' });
+      console.log('📁 ExpenseGPT ルートフォルダを確認:', rootFolderId);
+      return rootFolderId;
+    } catch (error) {
+      console.warn('既存のルートフォルダが見つからないため新規作成します');
+    }
+  }
+
+  // Create ExpenseGPT root folder
+  const folderMetadata = {
+    name: 'ExpenseGPT',
+    mimeType: 'application/vnd.google-apps.folder',
+  };
+
+  try {
+    const response = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id',
+    });
+
+    rootFolderId = response.data.id;
+    configManager.setRootFolderId(rootFolderId);
+
+    console.log('✅ ExpenseGPT ルートフォルダを作成しました:', rootFolderId);
+    return rootFolderId;
+  } catch (error) {
+    console.error('ルートフォルダ作成エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to create or get receipts folder for a year
+async function getOrCreateReceiptsFolder(year, rootFolderId) {
+  let receiptsFolderId = configManager.getReceiptsFolder(year);
+
+  if (receiptsFolderId) {
+    try {
+      await drive.files.get({ fileId: receiptsFolderId, fields: 'id,name' });
+      console.log(`📁 ${year}年度レシートフォルダを確認:`, receiptsFolderId);
+      return receiptsFolderId;
+    } catch (error) {
+      console.warn(`${year}年度レシートフォルダが見つからないため新規作成します`);
+    }
+  }
+
+  // Create receipts folder for the year
+  const folderMetadata = {
+    name: `${year}_Receipts`,
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [rootFolderId],
+  };
+
+  try {
+    const response = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id',
+    });
+
+    receiptsFolderId = response.data.id;
+    configManager.setReceiptsFolder(year, receiptsFolderId);
+
+    console.log(`✅ ${year}年度レシートフォルダを作成しました:`, receiptsFolderId);
+    return receiptsFolderId;
+  } catch (error) {
+    console.error(`${year}年度レシートフォルダ作成エラー:`, error);
+    throw error;
+  }
+}
+
+// Helper function to create or get monthly folder
+async function getOrCreateMonthlyFolder(year, month, receiptsFolderId) {
+  const folderName = `${year}-${month.toString().padStart(2, '0')}`;
+  let monthlyFolderId = configManager.getMonthlyFolder(year, month);
+
+  if (monthlyFolderId) {
+    try {
+      await drive.files.get({ fileId: monthlyFolderId, fields: 'id,name' });
+      console.log(`📁 月別フォルダを確認: ${folderName}`);
+      return monthlyFolderId;
+    } catch (error) {
+      console.warn(`月別フォルダが見つからないため新規作成します: ${folderName}`);
+    }
+  }
+
+  // Create monthly folder
+  const folderMetadata = {
+    name: folderName,
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [receiptsFolderId],
+  };
+
+  try {
+    const response = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id',
+    });
+
+    monthlyFolderId = response.data.id;
+    configManager.setMonthlyFolder(year, month, monthlyFolderId);
+
+    console.log(`✅ 月別フォルダを作成しました: ${folderName}`);
+    return monthlyFolderId;
+  } catch (error) {
+    console.error(`月別フォルダ作成エラー: ${folderName}`, error);
+    throw error;
+  }
+}
+
+// Helper function to upload file to Google Drive
+async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId) {
+  const fileMetadata = {
+    name: fileName,
+    parents: [parentFolderId],
+  };
+
+  const media = {
+    mimeType: mimeType,
+    body: fileBuffer,
+  };
+
+  try {
+    const response = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id,webViewLink',
+    });
+
+    return {
+      fileId: response.data.id,
+      webViewLink: response.data.webViewLink,
+    };
+  } catch (error) {
+    console.error('ファイルアップロードエラー:', error);
+    throw error;
+  }
+}
 
 // Helper function to get or create spreadsheet for a specific year
 async function getOrCreateSpreadsheetForYear(year) {
@@ -226,20 +381,38 @@ app.post('/api/spreadsheet/:year', async (req, res) => {
 
 app.post('/api/initialize', async (req, res) => {
   try {
+    console.log('🔄 ExpenseGPT システム初期化を開始...');
+
+    // Create ExpenseGPT root folder
+    const rootFolderId = await getOrCreateExpenseGPTRootFolder();
+
+    // Create receipts folder for current year
     const currentYear = new Date().getFullYear();
+    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId);
+
+    // Create spreadsheet
     const result = await getOrCreateSpreadsheetForYear(currentYear);
+
+    // Save spreadsheet ID to config
+    configManager.setSpreadsheetId(currentYear, result.spreadsheetId);
+
+    console.log('✅ ExpenseGPT セットアップ完了');
+    console.log(`📁 Root Folder ID: ${rootFolderId}`);
+    console.log(`📄 スプレッドシート: ${result.spreadsheetName}`);
 
     res.json({
       success: true,
-      message: `${currentYear}年度のスプレッドシートを${result.isNew ? '作成' : '取得'}しました`,
+      message: 'ExpenseGPT システムの初期化が完了しました',
       spreadsheetId: result.spreadsheetId,
-      spreadsheetName: result.spreadsheetName
+      spreadsheetName: result.spreadsheetName,
+      rootFolderId,
+      receiptsFolderId
     });
 
   } catch (error) {
-    console.error('Spreadsheet Initialization Error:', error);
+    console.error('System Initialization Error:', error);
     res.status(500).json({
-      error: 'スプレッドシートの初期化に失敗しました',
+      error: 'システムの初期化に失敗しました',
       details: error.message
     });
   }
@@ -415,6 +588,81 @@ app.post('/api/expenses', async (req, res) => {
     console.error('Google Sheets API Error:', error);
     res.status(500).json({
       error: 'データの保存に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Receipt upload endpoint
+app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+    }
+
+    const { year, month } = req.body;
+    const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    const currentMonth = month ? parseInt(month) : new Date().getMonth() + 1;
+
+    if (isNaN(currentYear) || currentYear < 2000 || currentYear > 2100) {
+      return res.status(400).json({ error: '無効な年度です' });
+    }
+
+    if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
+      return res.status(400).json({ error: '無効な月です' });
+    }
+
+    // Get or create folder structure
+    const rootFolderId = await getOrCreateExpenseGPTRootFolder();
+    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId);
+    const monthlyFolderId = await getOrCreateMonthlyFolder(currentYear, currentMonth, receiptsFolderId);
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const originalName = req.file.originalname;
+    const extension = originalName.split('.').pop() || 'jpg';
+    const fileName = `receipt_${timestamp}.${extension}`;
+
+    // Upload file to Google Drive
+    const uploadResult = await uploadFileToDrive(
+      req.file.buffer,
+      fileName,
+      req.file.mimetype,
+      monthlyFolderId
+    );
+
+    console.log(`✅ レシートをアップロードしました: ${fileName}`);
+
+    res.json({
+      success: true,
+      message: 'レシートをアップロードしました',
+      fileName,
+      fileId: uploadResult.fileId,
+      webViewLink: uploadResult.webViewLink,
+      folderPath: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
+    });
+
+  } catch (error) {
+    console.error('Receipt Upload Error:', error);
+    res.status(500).json({
+      error: 'レシートのアップロードに失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Get folder configuration
+app.get('/api/config/folders', (req, res) => {
+  try {
+    const config = configManager.getAllConfig();
+    res.json({
+      success: true,
+      config
+    });
+  } catch (error) {
+    console.error('Get Folders Config Error:', error);
+    res.status(500).json({
+      error: 'フォルダ設定の取得に失敗しました',
       details: error.message
     });
   }

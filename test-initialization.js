@@ -30,9 +30,19 @@ async function testYearBasedSheets() {
     }
 
     console.log('');
-    console.log('🎉 年別Google Sheets連携の準備が整いました！');
-    console.log(`💡 作成されたファイル: "${result.spreadsheetName}"`);
-    console.log('📊 含まれるシート: Expenses, Summary, Rules');
+    console.log('🎉 年別Google Sheets・Drive連携の準備が整いました！');
+    console.log('');
+    console.log('📁 作成されたフォルダ構造:');
+    console.log('Google Drive');
+    console.log('└─ ExpenseGPT/');
+    console.log(`    ├─ ${result.spreadsheetName}`);
+    console.log(`    │   ├─ Expenses（日々の支出データ）`);
+    console.log(`    │   ├─ Summary（月別・カテゴリ別集計）`);
+    console.log(`    │   └─ Rules（ユーザー定義ルール）`);
+    console.log(`    └─ ${currentYear}_Receipts/`);
+    console.log(`        ├─ ${currentYear}-01/`);
+    console.log(`        ├─ ${currentYear}-02/`);
+    console.log(`        └─ ...（月別フォルダが自動作成）`);
 
     // テストデータを保存してみる
     console.log('');

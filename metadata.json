@@ -1,0 +1,7 @@
+{
+  "name": "Gemini Expense Tracker",
+  "description": "A natural language expense and income tracker for freelancers powered by Gemini 3.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

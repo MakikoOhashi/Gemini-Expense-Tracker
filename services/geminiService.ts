@@ -2,11 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_PROMPT } from "../constants";
 import { AIResponse, ChatMessage, TransactionRule } from "../types";
+import { sheetsService } from "./sheetsService";
 
 export class GeminiService {
   async processInput(
-    text: string, 
-    image?: string, 
+    text: string,
+    image?: string,
     history: ChatMessage[] = [],
     rules: TransactionRule[] = []
   ): Promise<AIResponse> {
@@ -17,6 +18,19 @@ export class GeminiService {
 
     const ai = new GoogleGenAI({ apiKey });
     const modelName = 'gemini-2.5-flash-lite';
+
+    // Get current year for rules
+    const currentYear = new Date().getFullYear();
+
+    // Get rules from Google Sheets
+    let spreadsheetRules = [];
+    try {
+      const rulesResponse = await sheetsService.getRules(currentYear);
+      spreadsheetRules = rulesResponse;
+    } catch (error) {
+      console.warn('Failed to fetch rules from Google Sheets:', error);
+      // Continue without rules if fetching fails
+    }
 
     // 履歴の構築
     const chatHistory = history
@@ -30,18 +44,21 @@ export class GeminiService {
     const currentParts: any[] = [];
     if (image) {
       const base64Data = image.includes(',') ? image.split(',')[1] : image;
-      currentParts.push({ 
-        inlineData: { 
-          mimeType: 'image/jpeg', 
-          data: base64Data 
-        } 
+      currentParts.push({
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: base64Data
+        }
       });
     }
     currentParts.push({ text: text || "解析してください" });
 
-    const ruleString = rules.length > 0 
-      ? rules.map(r => `${r.keyword} -> ${r.category}`).join('\n')
+    // Combine local rules and spreadsheet rules
+    const allRules = [...rules, ...spreadsheetRules];
+    const ruleString = allRules.length > 0
+      ? allRules.map(r => `"${r.keyword}" → 勘定科目: ${r.category} (信頼度: ${r.confidence || 80}%)`).join('\n')
       : "なし";
+
     const systemInstruction = SYSTEM_PROMPT.replace('{{RULES}}', ruleString) + "\n必ず純粋なJSONオブジェクト一つのみを返してください。";
 
     try {

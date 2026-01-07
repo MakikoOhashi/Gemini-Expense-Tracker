@@ -1,18 +1,20 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { 
-  TrashIcon, 
-  ReceiptRefundIcon, 
-  CheckIcon, 
-  XMarkIcon, 
+import {
+  TrashIcon,
+  ReceiptRefundIcon,
+  CheckIcon,
+  XMarkIcon,
   FunnelIcon,
   ArrowsUpDownIcon,
   PhotoIcon,
   DocumentCheckIcon,
-  DocumentMinusIcon
+  DocumentMinusIcon,
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline';
 import { Transaction } from '../types';
 import { CATEGORIES } from '../constants';
+import { sheetsService } from '../services/sheetsService';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -29,6 +31,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [proofFilter, setProofFilter] = useState<ProofFilter>('all');
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredAndSortedTransactions = useMemo(() => {
@@ -95,6 +98,31 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
         }));
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const saveToSheets = async (transaction: Transaction) => {
+    setSavingIds(prev => new Set(prev).add(transaction.id));
+
+    try {
+      const expenseData = {
+        date: transaction.date,
+        amount: transaction.amount,
+        category: transaction.category,
+        memo: transaction.description,
+        receipt_url: transaction.receiptUrl || ''
+      };
+
+      await sheetsService.saveExpense(expenseData);
+      alert('Google Sheetsに保存しました！');
+    } catch (error: any) {
+      alert(`保存に失敗しました: ${error.message}`);
+    } finally {
+      setSavingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(transaction.id);
+        return newSet;
+      });
     }
   };
 
@@ -283,12 +311,26 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
                     {t.type === 'income' ? '+' : '-'}¥{t.amount.toLocaleString()}
                   </p>
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onRemove(t.id); }}
-                  className="p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition sm:opacity-0 group-hover:opacity-100"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); saveToSheets(t); }}
+                    disabled={savingIds.has(t.id)}
+                    className="p-1.5 text-gray-300 hover:text-green-500 hover:bg-green-50 rounded-lg transition sm:opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                    title="Google Sheetsに保存"
+                  >
+                    {savingIds.has(t.id) ? (
+                      <div className="w-5 h-5 animate-spin rounded-full border-2 border-green-500 border-t-transparent" />
+                    ) : (
+                      <CloudArrowUpIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(t.id); }}
+                    className="p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition sm:opacity-0 group-hover:opacity-100"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           );

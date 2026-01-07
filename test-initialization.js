@@ -34,7 +34,7 @@ async function testYearBasedSheets() {
     console.log('');
     console.log('📁 作成されたフォルダ構造:');
     console.log('Google Drive');
-    console.log('└─ ExpenseGPT/');
+    console.log('└─ gemini-expense-tracker/');
     console.log(`    ├─ ${result.spreadsheetName}`);
     console.log(`    │   ├─ Expenses（日々の支出データ）`);
     console.log(`    │   ├─ Summary（月別・カテゴリ別集計）`);

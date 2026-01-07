@@ -16,7 +16,7 @@ export class GeminiService {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const modelName = 'gemini-3-flash-preview';
+    const modelName = 'gemini-2.5-flash-lite';
 
     // 履歴の構築
     const chatHistory = history

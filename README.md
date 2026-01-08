@@ -26,20 +26,7 @@
 
 ## 🏗️ アーキテクチャ
 
-### 現在の実装（Service Account）
-
-```
-Frontend (React) → Backend (Express) → Google Workspace APIs
-                                       ├── Google Sheets API
-                                       ├── Google Drive API
-                                       └── Google Gemini API
-```
-
-**認証方式**: Service Account (アプリ所有の認証情報)
-- 利点: 設定が簡単、API制限なし
-- 制約: アプリ所有のGoogleアカウントを使用
-
-### 将来の実装（OAuth 2.0）
+### ✅ 現在の実装（OAuth 2.0）
 
 ```
 Frontend (React) → Google OAuth 2.0 → Backend (Express) → Google Workspace APIs
@@ -51,6 +38,20 @@ Frontend (React) → Google OAuth 2.0 → Backend (Express) → Google Workspace
 **認証方式**: OAuth 2.0 (ユーザー自身の認証情報)
 - 利点: **100%ユーザーのデータ所有権**
 - 特徴: ユーザーがGoogleアカウントでログインし、自身のDrive/Sheetsに直接アクセス
+- セキュリティ: アプリ提供者は一切のユーザーデータにアクセス不可
+
+### 旧実装（Service Account） - 非推奨
+
+```
+Frontend (React) → Backend (Express) → Google Workspace APIs
+                                       ├── Google Sheets API
+                                       ├── Google Drive API
+                                       └── Google Gemini API
+```
+
+**認証方式**: Service Account (アプリ所有の認証情報)
+- 利点: 設定が簡単、API制限なし
+- 制約: アプリ所有のGoogleアカウントを使用、ユーザーデータの所有権が不明確
 
 ## 📋 現在の実装範囲
 

@@ -199,7 +199,10 @@ async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
 }
 
 // Helper function to upload file to Google Drive
-async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId) {
+async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
   const fileMetadata = {
     name: fileName,
     parents: [parentFolderId],
@@ -228,7 +231,11 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId)
 }
 
 // Helper function to get or create spreadsheet for a specific year
-async function getOrCreateSpreadsheetForYear(year) {
+async function getOrCreateSpreadsheetForYear(year, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
   const spreadsheetName = `${year}_Expenses`;
 
   // Check cache first
@@ -240,7 +247,6 @@ async function getOrCreateSpreadsheetForYear(year) {
 
   try {
     // Try to find existing spreadsheet by name
-    const drive = google.drive({ version: 'v3', auth });
     const searchResponse = await drive.files.list({
       q: `name='${spreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
       fields: 'files(id, name)',
@@ -306,7 +312,7 @@ async function getOrCreateSpreadsheetForYear(year) {
 
     // Initialize sheets if newly created
     if (isNew) {
-      await initializeSheets(spreadsheetId, year);
+      await initializeSheets(spreadsheetId, year, userId);
     }
 
     return result;
@@ -317,7 +323,10 @@ async function getOrCreateSpreadsheetForYear(year) {
 }
 
 // Helper function to initialize sheets
-async function initializeSheets(spreadsheetId, year) {
+async function initializeSheets(spreadsheetId, year, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
   try {
     // Initialize Expenses sheet with headers
     const expensesHeaders = [['日付', '金額', 'カテゴリ', 'メモ', 'レシートURL']];
@@ -397,11 +406,12 @@ async function initializeSheets(spreadsheetId, year) {
 app.post('/api/spreadsheet/:year', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
+    const userId = req.body.userId || 'test-user';
     if (isNaN(year) || year < 2000 || year > 2100) {
       return res.status(400).json({ error: '無効な年度です' });
     }
 
-    const result = await getOrCreateSpreadsheetForYear(year);
+    const result = await getOrCreateSpreadsheetForYear(year, userId);
 
     res.json({
       success: true,
@@ -422,17 +432,18 @@ app.post('/api/spreadsheet/:year', async (req, res) => {
 
 app.post('/api/initialize', async (req, res) => {
   try {
+    const userId = req.body.userId || 'test-user';
     console.log('🔄 gemini-expense-tracker システム初期化を開始...');
 
     // Create gemini-expense-tracker root folder
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder();
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
 
     // Create receipts folder for current year
     const currentYear = new Date().getFullYear();
-    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId);
+    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId, userId);
 
     // Create spreadsheet
-    const result = await getOrCreateSpreadsheetForYear(currentYear);
+    const result = await getOrCreateSpreadsheetForYear(currentYear, userId);
 
     // Save spreadsheet ID to config
     configManager.setSpreadsheetId(currentYear, result.spreadsheetId);
@@ -461,8 +472,9 @@ app.post('/api/initialize', async (req, res) => {
 
 app.get('/api/spreadsheet-id', async (req, res) => {
   try {
+    const userId = req.query.userId || 'test-user';
     const currentYear = new Date().getFullYear();
-    const result = await getOrCreateSpreadsheetForYear(currentYear);
+    const result = await getOrCreateSpreadsheetForYear(currentYear, userId);
 
     res.json({
       spreadsheetId: result.spreadsheetId,
@@ -481,11 +493,14 @@ app.get('/api/spreadsheet-id', async (req, res) => {
 app.get('/api/rules/:year', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
+    const userId = req.query.userId || 'test-user';
     if (isNaN(year) || year < 2000 || year > 2100) {
       return res.status(400).json({ error: '無効な年度です' });
     }
 
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year);
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
 
     // Get rules from Rules sheet
     const response = await sheets.spreadsheets.values.get({
@@ -516,13 +531,16 @@ app.get('/api/rules/:year', async (req, res) => {
 app.post('/api/rules/:year', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
+    const userId = req.body.userId || 'test-user';
     const { keyword, category, confidence, notes } = req.body;
 
     if (!keyword || !category) {
       return res.status(400).json({ error: 'キーワードとカテゴリは必須です' });
     }
 
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year);
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
 
     // Get current rules to find next empty row
     const response = await sheets.spreadsheets.values.get({
@@ -567,6 +585,7 @@ app.post('/api/rules/:year', async (req, res) => {
 app.delete('/api/rules/:year/:id', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
+    const userId = req.query.userId || 'test-user';
     const ruleId = req.params.id;
     const rowNumber = parseInt(ruleId.split('_')[1]);
 
@@ -574,7 +593,9 @@ app.delete('/api/rules/:year/:id', async (req, res) => {
       return res.status(400).json({ error: '無効なルールIDです' });
     }
 
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year);
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
 
     // Clear the row (we can't delete rows in Google Sheets API easily)
     await sheets.spreadsheets.values.clear({
@@ -598,6 +619,7 @@ app.delete('/api/rules/:year/:id', async (req, res) => {
 
 app.post('/api/expenses', async (req, res) => {
   try {
+    const userId = req.body.userId || 'test-user';
     const { date, amount, category, memo, receipt_url } = req.body;
 
     if (!date || !amount || !category) {
@@ -606,7 +628,9 @@ app.post('/api/expenses', async (req, res) => {
 
     // Get current year's spreadsheet
     const currentYear = new Date().getFullYear();
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear);
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
 
     // Append data to sheet
     const values = [[date, amount, category, memo || '', receipt_url || '']];
@@ -641,6 +665,7 @@ app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
       return res.status(400).json({ error: 'ファイルがアップロードされていません' });
     }
 
+    const userId = req.body.userId || 'test-user';
     const { year, month } = req.body;
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
     const currentMonth = month ? parseInt(month) : new Date().getMonth() + 1;
@@ -654,9 +679,9 @@ app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
     }
 
     // Get or create folder structure
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder();
-    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId);
-    const monthlyFolderId = await getOrCreateMonthlyFolder(currentYear, currentMonth, receiptsFolderId);
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId, userId);
+    const monthlyFolderId = await getOrCreateMonthlyFolder(currentYear, currentMonth, receiptsFolderId, userId);
 
     // Generate unique filename
     const timestamp = Date.now();
@@ -669,7 +694,8 @@ app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
       req.file.buffer,
       fileName,
       req.file.mimetype,
-      monthlyFolderId
+      monthlyFolderId,
+      userId
     );
 
     console.log(`✅ レシートをアップロードしました: ${fileName}`);

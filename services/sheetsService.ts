@@ -16,6 +16,11 @@ export interface Rule {
 
 export class SheetsService {
   private baseUrl = 'http://localhost:3001/api';
+  private userId: string = 'test-user';
+
+  setUserId(userId: string) {
+    this.userId = userId;
+  }
 
   async getOrCreateSpreadsheet(year?: number): Promise<{ spreadsheetId: string; spreadsheetName: string }> {
     try {
@@ -25,6 +30,7 @@ export class SheetsService {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ userId: this.userId }),
       });
 
       const result = await response.json();
@@ -47,7 +53,7 @@ export class SheetsService {
   async getRules(year?: number): Promise<Rule[]> {
     try {
       const currentYear = year || new Date().getFullYear();
-      const response = await fetch(`${this.baseUrl}/rules/${currentYear}`);
+      const response = await fetch(`${this.baseUrl}/rules/${currentYear}?userId=${this.userId}`);
 
       const result = await response.json();
 
@@ -70,7 +76,7 @@ export class SheetsService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(rule),
+        body: JSON.stringify({ ...rule, userId: this.userId }),
       });
 
       const result = await response.json();
@@ -88,7 +94,7 @@ export class SheetsService {
 
   async getCurrentSpreadsheetId(): Promise<{ spreadsheetId: string; spreadsheetName: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/spreadsheet-id`);
+      const response = await fetch(`${this.baseUrl}/spreadsheet-id?userId=${this.userId}`);
 
       const result = await response.json();
 
@@ -110,7 +116,7 @@ export class SheetsService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(expenseData),
+        body: JSON.stringify({ ...expenseData, userId: this.userId }),
       });
 
       const result = await response.json();

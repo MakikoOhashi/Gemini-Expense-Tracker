@@ -805,10 +805,12 @@ async function createSpreadsheetUnderParent(spreadsheetName, parentFolderId, yea
 app.post('/api/initialize', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
-    const currentYear = new Date().getFullYear();
+    // クエリパラメータで年を指定可能（テスト用）
+    const queryYear = req.query.year ? parseInt(req.query.year) : null;
+    const currentYear = queryYear && !isNaN(queryYear) ? queryYear : new Date().getFullYear();
     const spreadsheetName = `${currentYear}_Expenses`;
 
-    console.log('🔄 Gemini Expense Tracker システム初期化を開始...');
+    console.log(`🔄 Gemini Expense Tracker システム初期化を開始... (年: ${currentYear})`);
 
     // Step 1: searchOrCreateFolder('Gemini Expense Tracker', null) → rootFolderId 確保
     console.log('1️⃣ Step 1: ルートフォルダ作成');

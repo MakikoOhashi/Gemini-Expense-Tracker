@@ -1186,7 +1186,10 @@ app.post('/api/expenses', async (req, res) => {
 
     // Ensure spreadsheet exists for current year
     const currentYear = new Date().getFullYear();
+    console.log(`💾 データを保存しようとしています: 年=${currentYear}, type=${type}, category=${category}`);
     const spreadsheetId = await ensureSpreadsheet(currentYear, userId);
+    console.log(`💾 スプレッドシートID取得: ${spreadsheetId}`);
+
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
@@ -1194,12 +1197,14 @@ app.post('/api/expenses', async (req, res) => {
     const values = [[date, amount, category, memo || '', receipt_url || '']];
     const range = `${sheetType}!A:E`; // A: date, B: amount, C: category, D: memo, E: receipt_url
 
+    console.log(`💾 シート"${sheetType}"にデータを追加: ${JSON.stringify(values)}`);
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
       valueInputOption: 'USER_ENTERED',
       resource: { values },
     });
+    console.log(`💾 Google Sheets APIレスポンス:`, response.data);
 
     // Get the row number where data was added
     const updatedRange = response.data.updates?.updatedRange;

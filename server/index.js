@@ -563,35 +563,285 @@ app.post('/api/spreadsheet/:year', async (req, res) => {
   }
 });
 
+// Helper function to search or create folder
+async function searchOrCreateFolder(folderName, parentFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
+  try {
+    // Search for existing folder
+    let query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    if (parentFolderId) {
+      query += ` and '${parentFolderId}' in parents`;
+    }
+
+    const searchResponse = await drive.files.list({
+      q: query,
+      fields: 'files(id, name)',
+    });
+
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      console.log(`📁 既存フォルダ見つかりました: ${folderName} (${searchResponse.data.files[0].id})`);
+      return searchResponse.data.files[0];
+    }
+
+    // Create new folder
+    const folderMetadata = {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+    };
+
+    if (parentFolderId) {
+      folderMetadata.parents = [parentFolderId];
+    }
+
+    const createResponse = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id, name',
+    });
+
+    console.log(`📁 新規フォルダ作成しました: ${folderName} (${createResponse.data.id})`);
+    return createResponse.data;
+
+  } catch (error) {
+    console.error(`フォルダ操作エラー (${folderName}):`, error);
+    throw error;
+  }
+}
+
+// Helper function to create spreadsheet in specific folder
+async function createSpreadsheet(name, parentFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  try {
+    const currentYear = new Date().getFullYear();
+
+    // Create spreadsheet
+    const createResponse = await sheets.spreadsheets.create({
+      requestBody: {
+        properties: {
+          title: name,
+        },
+        sheets: [
+          {
+            properties: {
+              title: 'Expenses',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 10000,
+                columnCount: 5,
+              },
+            },
+          },
+          {
+            properties: {
+              title: 'Summary',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 100,
+                columnCount: 10,
+              },
+            },
+          },
+          {
+            properties: {
+              title: 'Rules',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 1000,
+                columnCount: 4,
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const spreadsheetId = createResponse.data.spreadsheetId;
+    console.log(`📊 スプレッドシート作成しました: ${name} (${spreadsheetId})`);
+
+    // Move to parent folder
+    await moveFileToParent(spreadsheetId, parentFolderId, userId);
+    console.log(`📁 スプレッドシートをフォルダに移動しました: ${parentFolderId}`);
+
+    // Initialize sheets
+    await initializeSheets(spreadsheetId, currentYear, userId);
+    console.log(`📊 スプレッドシート初期化完了: ${currentYear}年度`);
+
+    return {
+      spreadsheetId,
+      spreadsheetName: name,
+      isNew: true
+    };
+
+  } catch (error) {
+    console.error('スプレッドシート作成エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to create receipts folder and monthly subfolders
+async function createReceiptsStructure(parentFolderId, year, userId) {
+  try {
+    // Create Receipts folder
+    const receiptsFolder = await searchOrCreateFolder('Receipts', parentFolderId, userId);
+    console.log(`📁 Receiptsフォルダ作成完了: ${receiptsFolder.id}`);
+
+    // Create monthly folders
+    const monthlyFolders = [];
+    for (let month = 1; month <= 12; month++) {
+      const monthStr = month.toString().padStart(2, '0');
+      const folderName = `${year}-${monthStr}`;
+      const monthlyFolder = await searchOrCreateFolder(folderName, receiptsFolder.id, userId);
+      monthlyFolders.push({ month, folderId: monthlyFolder.id });
+    }
+
+    console.log(`📁 月別フォルダ作成完了: ${year}-01 から ${year}-12`);
+    return { receiptsFolderId: receiptsFolder.id, monthlyFolders };
+
+  } catch (error) {
+    console.error('Receipts構造作成エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to move file to parent folder
+async function moveFileToParent(fileId, parentFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
+  try {
+    // 現在の親フォルダを取得
+    const fileResponse = await drive.files.get({
+      fileId: fileId,
+      fields: 'parents'
+    });
+
+    const currentParents = fileResponse.data.parents || [];
+
+    // 新しい親フォルダを設定（現在の親を削除し、新しい親を追加）
+    await drive.files.update({
+      fileId: fileId,
+      addParents: parentFolderId,
+      removeParents: currentParents.join(','),
+      fields: 'id, parents'
+    });
+
+    console.log(`📁 ファイルをフォルダに移動しました: ${fileId} → ${parentFolderId}`);
+  } catch (error) {
+    console.error('ファイル移動エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to create spreadsheet under parent folder
+async function createSpreadsheetUnderParent(spreadsheetName, parentFolderId, year, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  try {
+    // Step 1: スプレッドシート作成（フォルダ指定なし）
+    const createResponse = await sheets.spreadsheets.create({
+      requestBody: {
+        properties: {
+          title: spreadsheetName,
+        },
+        sheets: [
+          {
+            properties: {
+              title: 'Expenses',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 10000,
+                columnCount: 5,
+              },
+            },
+          },
+          {
+            properties: {
+              title: 'Summary',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 100,
+                columnCount: 10,
+              },
+            },
+          },
+          {
+            properties: {
+              title: 'Rules',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 1000,
+                columnCount: 4,
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const spreadsheetId = createResponse.data.spreadsheetId;
+    console.log(`📊 新しい${year}年度スプレッドシートを作成しました:`, spreadsheetId);
+
+    // Step 2: Drive API で親フォルダを設定
+    await moveFileToParent(spreadsheetId, parentFolderId, userId);
+
+    // Step 3: シート初期化
+    await initializeSheets(spreadsheetId, year, userId);
+
+    return {
+      spreadsheetId,
+      spreadsheetName,
+      isNew: true
+    };
+  } catch (error) {
+    console.error('スプレッドシート作成エラー:', error);
+    throw error;
+  }
+}
+
 app.post('/api/initialize', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
+    const currentYear = new Date().getFullYear();
+    const spreadsheetName = `${currentYear}_Expenses`;
+
     console.log('🔄 Gemini Expense Tracker システム初期化を開始...');
 
-    // Create Gemini Expense Tracker root folder
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    // Step 1: searchOrCreateFolder('Gemini Expense Tracker', null) → rootFolderId 確保
+    console.log('1️⃣ Step 1: ルートフォルダ作成');
+    const rootFolder = await searchOrCreateFolder('Gemini Expense Tracker', null, userId);
+    console.log(`✅ Step 1 完了: rootFolderId = ${rootFolder.id}`);
 
-    // Create receipts folder directly under root (no year folder)
-    const currentYear = new Date().getFullYear();
-    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId, userId);
+    // Step 2: createSpreadsheet('2026_Expenses', rootFolderId) → スプレッドシート作成 & シート初期化
+    console.log('2️⃣ Step 2: スプレッドシート作成');
+    const spreadsheetResult = await createSpreadsheet(spreadsheetName, rootFolder.id, userId);
+    console.log(`✅ Step 2 完了: spreadsheetId = ${spreadsheetResult.spreadsheetId}`);
 
-    // Create spreadsheet directly under root folder
-    const result = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    // Step 3: createFolder('Receipts', rootFolderId) → Receipts フォルダ作成 & 月別フォルダ生成
+    console.log('3️⃣ Step 3: Receiptsフォルダ構造作成');
+    const receiptsStructure = await createReceiptsStructure(rootFolder.id, currentYear, userId);
+    console.log(`✅ Step 3 完了: receiptsFolderId = ${receiptsStructure.receiptsFolderId}`);
 
     // Save spreadsheet ID to config
-    configManager.setSpreadsheetId(currentYear, result.spreadsheetId);
+    configManager.setSpreadsheetId(currentYear, spreadsheetResult.spreadsheetId);
 
-    console.log('✅ Gemini Expense Tracker セットアップ完了');
-    console.log(`📁 Root Folder ID: ${rootFolderId}`);
-    console.log(`📄 スプレッドシート: ${result.spreadsheetName}`);
+    console.log('🎉 Gemini Expense Tracker システム初期化完了');
+    console.log(`📁 Root Folder: ${rootFolder.id}`);
+    console.log(`📊 Spreadsheet: ${spreadsheetResult.spreadsheetName} (${spreadsheetResult.spreadsheetId})`);
+    console.log(`📂 Receipts Folder: ${receiptsStructure.receiptsFolderId}`);
 
     res.json({
       success: true,
       message: 'Gemini Expense Tracker システムの初期化が完了しました',
-      spreadsheetId: result.spreadsheetId,
-      spreadsheetName: result.spreadsheetName,
-      rootFolderId,
-      receiptsFolderId
+      spreadsheetId: spreadsheetResult.spreadsheetId,
+      spreadsheetName: spreadsheetResult.spreadsheetName,
+      rootFolderId: rootFolder.id,
+      receiptsFolderId: receiptsStructure.receiptsFolderId,
+      monthlyFolders: receiptsStructure.monthlyFolders,
+      isNew: true
     });
 
   } catch (error) {

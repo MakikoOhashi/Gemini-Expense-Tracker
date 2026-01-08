@@ -422,11 +422,20 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: expensesHeaders },
     });
 
-    console.log(`📊 ${year}年度Expensesシート初期化完了`);
+    // Initialize Income sheet with headers
+    const incomeHeaders = [['日付', '金額', 'カテゴリ', 'メモ', 'レシートURL']];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Income!A1:E1',
+      valueInputOption: 'RAW',
+      resource: { values: incomeHeaders },
+    });
+
+    console.log(`📊 ${year}年度Expenses & Incomeシート初期化完了`);
 
     // Initialize Summary sheet in multiple steps to avoid API limits
 
-    // Step 1: 月別集計ヘッダー
+    // Step 1: 月別支出集計ヘッダー
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: 'Summary!A1',
@@ -434,8 +443,8 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: [['月別支出集計']] },
     });
 
-    // Step 2: 月別集計データ (1-6月)
-    const monthlyData1 = [
+    // Step 2: 月別支出データ (1-6月)
+    const monthlyExpenseData1 = [
       ['1月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=1, YEAR(Expenses!A:A)=${year})`],
       ['2月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=2, YEAR(Expenses!A:A)=${year})`],
       ['3月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=3, YEAR(Expenses!A:A)=${year})`],
@@ -447,11 +456,11 @@ async function initializeSheets(spreadsheetId, year, userId) {
       spreadsheetId,
       range: 'Summary!A2:B7',
       valueInputOption: 'USER_ENTERED',
-      resource: { values: monthlyData1 },
+      resource: { values: monthlyExpenseData1 },
     });
 
-    // Step 3: 月別集計データ (7-12月)
-    const monthlyData2 = [
+    // Step 3: 月別支出データ (7-12月)
+    const monthlyExpenseData2 = [
       ['7月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=7, YEAR(Expenses!A:A)=${year})`],
       ['8月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=8, YEAR(Expenses!A:A)=${year})`],
       ['9月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=9, YEAR(Expenses!A:A)=${year})`],
@@ -463,19 +472,59 @@ async function initializeSheets(spreadsheetId, year, userId) {
       spreadsheetId,
       range: 'Summary!A8:B13',
       valueInputOption: 'USER_ENTERED',
-      resource: { values: monthlyData2 },
+      resource: { values: monthlyExpenseData2 },
     });
 
-    // Step 4: カテゴリ別集計ヘッダー
+    // Step 4: 月別売上集計ヘッダー
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Summary!A15',
+      range: 'Summary!D1',
+      valueInputOption: 'RAW',
+      resource: { values: [['月別売上集計']] },
+    });
+
+    // Step 5: 月別売上データ (1-6月)
+    const monthlyIncomeData1 = [
+      ['1月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=1, YEAR(Income!A:A)=${year})`],
+      ['2月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=2, YEAR(Income!A:A)=${year})`],
+      ['3月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=3, YEAR(Income!A:A)=${year})`],
+      ['4月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=4, YEAR(Income!A:A)=${year})`],
+      ['5月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=5, YEAR(Income!A:A)=${year})`],
+      ['6月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=6, YEAR(Income!A:A)=${year})`],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!D2:E7',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: monthlyIncomeData1 },
+    });
+
+    // Step 6: 月別売上データ (7-12月)
+    const monthlyIncomeData2 = [
+      ['7月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=7, YEAR(Income!A:A)=${year})`],
+      ['8月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=8, YEAR(Income!A:A)=${year})`],
+      ['9月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=9, YEAR(Income!A:A)=${year})`],
+      ['10月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=10, YEAR(Income!A:A)=${year})`],
+      ['11月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=11, YEAR(Income!A:A)=${year})`],
+      ['12月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=12, YEAR(Income!A:A)=${year})`],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!D8:E13',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: monthlyIncomeData2 },
+    });
+
+    // Step 7: カテゴリ別集計ヘッダー
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!A17',
       valueInputOption: 'RAW',
       resource: { values: [['カテゴリ別支出集計']] },
     });
 
-    // Step 5: カテゴリ別集計データ
-    const categoryData = [
+    // Step 8: カテゴリ別支出データ
+    const categoryExpenseData = [
       ['食費', '=SUMIF(Expenses!C:C, "食費", Expenses!B:B)'],
       ['交通費', '=SUMIF(Expenses!C:C, "交通費", Expenses!B:B)'],
       ['日用品', '=SUMIF(Expenses!C:C, "日用品", Expenses!B:B)'],
@@ -484,9 +533,61 @@ async function initializeSheets(spreadsheetId, year, userId) {
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Summary!A16:B21',
+      range: 'Summary!A18:B23',
       valueInputOption: 'USER_ENTERED',
-      resource: { values: categoryData },
+      resource: { values: categoryExpenseData },
+    });
+
+    // Step 9: カテゴリ別売上ヘッダー
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!D17',
+      valueInputOption: 'RAW',
+      resource: { values: [['カテゴリ別売上集計']] },
+    });
+
+    // Step 10: カテゴリ別売上データ
+    const categoryIncomeData = [
+      ['サービス収入', '=SUMIF(Income!C:C, "サービス収入", Income!B:B)'],
+      ['商品販売', '=SUMIF(Income!C:C, "商品販売", Income!B:B)'],
+      ['その他収入', '=SUMIF(Income!C:C, "その他収入", Income!B:B)'],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!D18:E21',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: categoryIncomeData },
+    });
+
+    // Step 11: 損益比較ヘッダー
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!G1',
+      valueInputOption: 'RAW',
+      resource: { values: [['月別損益比較']] },
+    });
+
+    // Step 12: 損益比較データ
+    const profitLossData = [
+      ['月', '収入', '支出', '損益'],
+      ['1月', '=E2', '=B2', '=E2-B2'],
+      ['2月', '=E3', '=B3', '=E3-B3'],
+      ['3月', '=E4', '=B4', '=E4-B4'],
+      ['4月', '=E5', '=B5', '=E5-B5'],
+      ['5月', '=E6', '=B6', '=E6-B6'],
+      ['6月', '=E7', '=B7', '=E7-B7'],
+      ['7月', '=E8', '=B8', '=E8-B8'],
+      ['8月', '=E9', '=B9', '=E9-B9'],
+      ['9月', '=E10', '=B10', '=E10-B10'],
+      ['10月', '=E11', '=B11', '=E11-B11'],
+      ['11月', '=E12', '=B12', '=E12-B12'],
+      ['12月', '=E13', '=B13', '=E13-B13'],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!G2:J14',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: profitLossData },
     });
 
     console.log(`📊 ${year}年度Summaryシート初期化完了`);
@@ -636,11 +737,21 @@ async function createSpreadsheet(name, parentFolderId, userId) {
           },
           {
             properties: {
+              title: 'Income',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 10000,
+                columnCount: 5,
+              },
+            },
+          },
+          {
+            properties: {
               title: 'Summary',
               sheetType: 'GRID',
               gridProperties: {
-                rowCount: 100,
-                columnCount: 10,
+                rowCount: 150,
+                columnCount: 12,
               },
             },
           },

@@ -22,28 +22,63 @@ const upload = multer({
   },
 });
 
-// Google APIs setup
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    type: "service_account",
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-  },
-  scopes: [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/drive.file'
-  ],
-});
+// Google OAuth 2.0 setup
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
 
-const sheets = google.sheets({ version: 'v4', auth });
-const drive = google.drive({ version: 'v3', auth });
+// Scopes for Google Sheets and Drive access
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/drive.file'
+];
+
+// In-memory token storage (in production, use a database)
+let userTokens = {};
+
+// Helper function to create OAuth client for a user
+function createUserOAuthClient(tokens) {
+  const client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+  client.setCredentials(tokens);
+  return client;
+}
+
+// Helper function to get authenticated client for user
+function getAuthenticatedClient(userId) {
+  if (!userTokens[userId]) {
+    throw new Error('User not authenticated');
+  }
+
+  // Check if token is expired and refresh if needed
+  const tokens = userTokens[userId];
+  const client = createUserOAuthClient(tokens);
+
+  // If access token is expired, refresh it
+  if (tokens.expiry_date && tokens.expiry_date < Date.now()) {
+    return client.refreshAccessToken().then(({ credentials }) => {
+      userTokens[userId] = credentials;
+      return createUserOAuthClient(credentials);
+    });
+  }
+
+  return Promise.resolve(client);
+}
 
 // Global cache for spreadsheet IDs by year
 const spreadsheetCache = new Map();
 
 // Helper function to create or get gemini-expense-tracker root folder
-async function getOrCreateGeminiExpenseTrackerRootFolder() {
+async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
   let rootFolderId = configManager.getRootFolderId();
 
   if (rootFolderId) {
@@ -81,7 +116,10 @@ async function getOrCreateGeminiExpenseTrackerRootFolder() {
 }
 
 // Helper function to create or get receipts folder for a year
-async function getOrCreateReceiptsFolder(year, rootFolderId) {
+async function getOrCreateReceiptsFolder(year, rootFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
   let receiptsFolderId = configManager.getReceiptsFolder(year);
 
   if (receiptsFolderId) {
@@ -119,7 +157,10 @@ async function getOrCreateReceiptsFolder(year, rootFolderId) {
 }
 
 // Helper function to create or get monthly folder
-async function getOrCreateMonthlyFolder(year, month, receiptsFolderId) {
+async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
   const folderName = `${year}-${month.toString().padStart(2, '0')}`;
   let monthlyFolderId = configManager.getMonthlyFolder(year, month);
 
@@ -668,6 +709,54 @@ app.get('/api/config/folders', (req, res) => {
   }
 });
 
+// OAuth 2.0 endpoints
+app.get('/auth/google', (req, res) => {
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: SCOPES,
+    state: 'test-user' // In production, use proper session/user management
+  });
+  res.redirect(authUrl);
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const { code, state } = req.query;
+  const userId = state || 'test-user'; // In production, get from session
+
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    userTokens[userId] = tokens;
+
+    console.log(`✅ User ${userId} authenticated successfully`);
+
+    // Redirect to frontend with success
+    res.redirect('http://localhost:3000?auth=success');
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    res.redirect('http://localhost:3000?auth=error');
+  }
+});
+
+app.get('/auth/status', (req, res) => {
+  const userId = req.query.userId || 'test-user';
+  const isAuthenticated = !!userTokens[userId];
+
+  res.json({
+    authenticated: isAuthenticated,
+    userId: userId
+  });
+});
+
+app.post('/auth/logout', (req, res) => {
+  const userId = req.body.userId || 'test-user';
+  delete userTokens[userId];
+
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -675,5 +764,6 @@ app.get('/api/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Gemini Expense Tracker API Server running on port ${PORT}`);
+  console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
   console.log(`📊 Google Sheets integration ready`);
 });

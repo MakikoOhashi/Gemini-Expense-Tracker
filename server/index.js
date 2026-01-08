@@ -337,50 +337,77 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: expensesHeaders },
     });
 
-    // Initialize Summary sheet with formulas
-    const summaryData = [
-      ['月別支出集計'],
+    console.log(`📊 ${year}年度Expensesシート初期化完了`);
+
+    // Initialize Summary sheet in multiple steps to avoid API limits
+
+    // Step 1: 月別集計ヘッダー
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!A1',
+      valueInputOption: 'RAW',
+      resource: { values: [['月別支出集計']] },
+    });
+
+    // Step 2: 月別集計データ (1-6月)
+    const monthlyData1 = [
       ['1月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=1, YEAR(Expenses!A:A)=${year})`],
       ['2月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=2, YEAR(Expenses!A:A)=${year})`],
       ['3月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=3, YEAR(Expenses!A:A)=${year})`],
       ['4月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=4, YEAR(Expenses!A:A)=${year})`],
       ['5月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=5, YEAR(Expenses!A:A)=${year})`],
       ['6月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=6, YEAR(Expenses!A:A)=${year})`],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!A2:B7',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: monthlyData1 },
+    });
+
+    // Step 3: 月別集計データ (7-12月)
+    const monthlyData2 = [
       ['7月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=7, YEAR(Expenses!A:A)=${year})`],
       ['8月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=8, YEAR(Expenses!A:A)=${year})`],
       ['9月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=9, YEAR(Expenses!A:A)=${year})`],
       ['10月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=10, YEAR(Expenses!A:A)=${year})`],
       ['11月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=11, YEAR(Expenses!A:A)=${year})`],
       ['12月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=12, YEAR(Expenses!A:A)=${year})`],
-      [''],
-      ['カテゴリ別支出集計'],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!A8:B13',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: monthlyData2 },
+    });
+
+    // Step 4: カテゴリ別集計ヘッダー
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!A15',
+      valueInputOption: 'RAW',
+      resource: { values: [['カテゴリ別支出集計']] },
+    });
+
+    // Step 5: カテゴリ別集計データ
+    const categoryData = [
       ['食費', '=SUMIF(Expenses!C:C, "食費", Expenses!B:B)'],
       ['交通費', '=SUMIF(Expenses!C:C, "交通費", Expenses!B:B)'],
       ['日用品', '=SUMIF(Expenses!C:C, "日用品", Expenses!B:B)'],
       ['娯楽', '=SUMIF(Expenses!C:C, "娯楽", Expenses!B:B)'],
       ['その他', '=SUMIF(Expenses!C:C, "その他", Expenses!B:B)'],
     ];
-
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Summary!A1:B19',
+      range: 'Summary!A16:B21',
       valueInputOption: 'USER_ENTERED',
-      resource: { values: summaryData },
+      resource: { values: categoryData },
     });
+
+    console.log(`📊 ${year}年度Summaryシート初期化完了`);
 
     // Initialize Rules sheet with headers and sample data
     const rulesHeaders = [['Keyword', 'Category', 'Confidence', 'Notes']];
-    const sampleRules = [
-      ['ベローチェ', '地代家賃', 95, 'オフィス家賃'],
-      ['Slack', '通信費', 90, 'サブスクリプション'],
-      ['AWS', '外注費', 85, 'インフラサービス'],
-      ['スターバックス', '食費', 88, 'カフェ・飲食'],
-      ['Amazon', '日用品', 75, 'オンラインショッピング'],
-      ['Uber', '交通費', 92, 'タクシー・配車'],
-      ['Netflix', '娯楽', 95, '動画配信サービス'],
-      ['Zoom', '通信費', 85, 'ビデオ会議'],
-    ];
-
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: 'Rules!A1:D1',
@@ -388,13 +415,34 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: rulesHeaders },
     });
 
+    // Rules data in smaller chunks
+    const sampleRules1 = [
+      ['ベローチェ', '地代家賃', 95, 'オフィス家賃'],
+      ['Slack', '通信費', 90, 'サブスクリプション'],
+      ['AWS', '外注費', 85, 'インフラサービス'],
+      ['スターバックス', '食費', 88, 'カフェ・飲食'],
+    ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Rules!A2:D9',
+      range: 'Rules!A2:D5',
       valueInputOption: 'RAW',
-      resource: { values: sampleRules },
+      resource: { values: sampleRules1 },
     });
 
+    const sampleRules2 = [
+      ['Amazon', '日用品', 75, 'オンラインショッピング'],
+      ['Uber', '交通費', 92, 'タクシー・配車'],
+      ['Netflix', '娯楽', 95, '動画配信サービス'],
+      ['Zoom', '通信費', 85, 'ビデオ会議'],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Rules!A6:D9',
+      valueInputOption: 'RAW',
+      resource: { values: sampleRules2 },
+    });
+
+    console.log(`📊 ${year}年度Rulesシート初期化完了`);
     console.log(`✅ ${year}年度スプレッドシートの初期化完了`);
   } catch (error) {
     console.error('シート初期化エラー:', error);

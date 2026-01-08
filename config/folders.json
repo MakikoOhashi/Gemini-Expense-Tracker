@@ -1,7 +1,7 @@
 {
-  "rootFolderId": "1Mokc3mjSRuYzROHcdvOX8LZr1xqNo6DI",
+  "rootFolderId": "1GIt9a1aJQk4AKOvSeMFri7jOXwHbC6BI",
   "receiptsFolders": {
-    "2026": "15MQ0yJrxPywVQ4z7OwN-Gsl3KMXSloEe"
+    "2026": "11JRQf0ZcWJHZ_UIKX0puJ313INTssrlF"
   },
   "yearFolders": {
     "2026": "1U1YJ9aVo-ngCC4QTRNDHGYSJyVuM15aT"
@@ -19,5 +19,8 @@
     "2026_10": "1q3YW3Ra-6iOGQCcw_mN2hKQ8oRAYWcgY",
     "2026_11": "1pa2Qr1fM1MSKpv59cHjGzYS7uv5wTORP",
     "2026_12": "1noQnwIthcCP-4ypr16NpM-yuyC9m-J1a"
+  },
+  "spreadsheets": {
+    "2026": "1v0mA2ag0rTjWKanDU-VxcJ-WyTs3yvQSFGJgdsfQPK4"
   }
 }

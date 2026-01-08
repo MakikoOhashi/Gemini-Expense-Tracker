@@ -320,7 +320,7 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
 
   const spreadsheetName = `${year}_Expenses`;
 
-  // Check cache first
+  // Check cache first (セッション中の高速参照用)
   if (spreadsheetCache.has(year)) {
     const cached = spreadsheetCache.get(year);
     console.log(`📋 キャッシュから${year}年度スプレッドシートを取得:`, cached.spreadsheetId);
@@ -328,9 +328,12 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
   }
 
   try {
-    // Try to find existing spreadsheet by name
+    // Gemini Expense Tracker フォルダ配下を確認
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+
+    // フォルダ配下でスプレッドシートを検索
     const searchResponse = await drive.files.list({
-      q: `name='${spreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
+      q: `name='${spreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and '${rootFolderId}' in parents and trashed=false`,
       fields: 'files(id, name)',
     });
 
@@ -339,7 +342,7 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
 
     if (searchResponse.data.files && searchResponse.data.files.length > 0) {
       spreadsheetId = searchResponse.data.files[0].id;
-      console.log(`📊 既存の${year}年度スプレッドシートを見つけました:`, spreadsheetId);
+      console.log(`📊 Gemini Expense Tracker フォルダ内で既存の${year}年度スプレッドシートを見つけました:`, spreadsheetId);
     } else {
       // Create new spreadsheet
       const createResponse = await sheets.spreadsheets.create({
@@ -389,7 +392,7 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
 
     const result = { spreadsheetId, spreadsheetName, isNew };
 
-    // Cache the result
+    // Cache the result (セッション中の高速参照用)
     spreadsheetCache.set(year, result);
 
     // Initialize sheets if newly created
@@ -882,6 +885,10 @@ app.get('/auth/google/callback', async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     userTokens[userId] = tokens;
+
+    // ユーザーログイン時にキャッシュクリア
+    spreadsheetCache.clear();
+    console.log(`🧹 User ${userId} login: cache cleared`);
 
     console.log(`✅ User ${userId} authenticated successfully`);
 

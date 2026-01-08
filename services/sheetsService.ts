@@ -47,7 +47,27 @@ export class SheetsService {
   }
 
   async initialize(year?: number): Promise<{ spreadsheetId: string; spreadsheetName: string }> {
-    return this.getOrCreateSpreadsheet(year);
+    try {
+      const currentYear = year || new Date().getFullYear();
+      const response = await fetch(`${this.baseUrl}/initialize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: this.userId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'システムの初期化に失敗しました');
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('System Initialize Error:', error);
+      throw new Error(error.message || 'ネットワークエラーが発生しました');
+    }
   }
 
   async getRules(year?: number): Promise<Rule[]> {

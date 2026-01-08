@@ -74,8 +74,8 @@ function getAuthenticatedClient(userId) {
 // Global cache for spreadsheet IDs by year
 const spreadsheetCache = new Map();
 
-// Helper function to create or get gemini-expense-tracker root folder
-async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
+// Helper function to create or get ExpenseGPT root folder
+async function getOrCreateExpenseGPTRootFolder(userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
@@ -85,16 +85,16 @@ async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
     try {
       // Verify the folder still exists
       await drive.files.get({ fileId: rootFolderId, fields: 'id,name' });
-      console.log('📁 gemini-expense-tracker ルートフォルダを確認:', rootFolderId);
+      console.log('📁 ExpenseGPT ルートフォルダを確認:', rootFolderId);
       return rootFolderId;
     } catch (error) {
       console.warn('既存のルートフォルダが見つからないため新規作成します');
     }
   }
 
-  // Create gemini-expense-tracker root folder
+  // Create ExpenseGPT root folder
   const folderMetadata = {
-    name: 'gemini-expense-tracker',
+    name: 'ExpenseGPT',
     mimeType: 'application/vnd.google-apps.folder',
   };
 
@@ -107,10 +107,92 @@ async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
     rootFolderId = response.data.id;
     configManager.setRootFolderId(rootFolderId);
 
-    console.log('✅ gemini-expense-tracker ルートフォルダを作成しました:', rootFolderId);
+    console.log('✅ ExpenseGPT ルートフォルダを作成しました:', rootFolderId);
     return rootFolderId;
   } catch (error) {
     console.error('ルートフォルダ作成エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to create or get year folder (under ExpenseGPT root)
+async function getOrCreateYearFolder(year, rootFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
+  let yearFolderId = configManager.getYearFolder(year);
+
+  if (yearFolderId) {
+    try {
+      await drive.files.get({ fileId: yearFolderId, fields: 'id,name' });
+      console.log(`📁 ${year}年度フォルダを確認:`, yearFolderId);
+      return yearFolderId;
+    } catch (error) {
+      console.warn(`${year}年度フォルダが見つからないため新規作成します`);
+    }
+  }
+
+  // Create year folder under ExpenseGPT root
+  const folderMetadata = {
+    name: year.toString(),
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [rootFolderId],
+  };
+
+  try {
+    const response = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id',
+    });
+
+    yearFolderId = response.data.id;
+    configManager.setYearFolder(year, yearFolderId);
+
+    console.log(`✅ ${year}年度フォルダを作成しました:`, yearFolderId);
+    return yearFolderId;
+  } catch (error) {
+    console.error(`${year}年度フォルダ作成エラー:`, error);
+    throw error;
+  }
+}
+
+// Helper function to create or get receipts folder for a year (under year folder)
+async function getOrCreateReceiptsFolderForYear(year, yearFolderId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
+  let receiptsFolderId = configManager.getReceiptsFolder(year);
+
+  if (receiptsFolderId) {
+    try {
+      await drive.files.get({ fileId: receiptsFolderId, fields: 'id,name' });
+      console.log(`📁 ${year}年度Receiptsフォルダを確認:`, receiptsFolderId);
+      return receiptsFolderId;
+    } catch (error) {
+      console.warn(`${year}年度Receiptsフォルダが見つからないため新規作成します`);
+    }
+  }
+
+  // Create receipts folder under year folder
+  const folderMetadata = {
+    name: 'Receipts',
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [yearFolderId],
+  };
+
+  try {
+    const response = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id',
+    });
+
+    receiptsFolderId = response.data.id;
+    configManager.setReceiptsFolder(year, receiptsFolderId);
+
+    console.log(`✅ ${year}年度Receiptsフォルダを作成しました:`, receiptsFolderId);
+    return receiptsFolderId;
+  } catch (error) {
+    console.error(`${year}年度Receiptsフォルダ作成エラー:`, error);
     throw error;
   }
 }
@@ -481,31 +563,36 @@ app.post('/api/spreadsheet/:year', async (req, res) => {
 app.post('/api/initialize', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
-    console.log('🔄 gemini-expense-tracker システム初期化を開始...');
+    console.log('🔄 ExpenseGPT システム初期化を開始...');
 
-    // Create gemini-expense-tracker root folder
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    // Create ExpenseGPT root folder
+    const rootFolderId = await getOrCreateExpenseGPTRootFolder(userId);
 
-    // Create receipts folder for current year
+    // Create year folder
     const currentYear = new Date().getFullYear();
-    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId, userId);
+    const yearFolderId = await getOrCreateYearFolder(currentYear, rootFolderId, userId);
 
-    // Create spreadsheet
+    // Create receipts folder for current year (under year folder)
+    const receiptsFolderId = await getOrCreateReceiptsFolderForYear(currentYear, yearFolderId, userId);
+
+    // Create spreadsheet in year folder (move to year folder)
     const result = await getOrCreateSpreadsheetForYear(currentYear, userId);
 
     // Save spreadsheet ID to config
     configManager.setSpreadsheetId(currentYear, result.spreadsheetId);
 
-    console.log('✅ gemini-expense-tracker セットアップ完了');
+    console.log('✅ ExpenseGPT セットアップ完了');
     console.log(`📁 Root Folder ID: ${rootFolderId}`);
+    console.log(`📁 Year Folder ID: ${yearFolderId}`);
     console.log(`📄 スプレッドシート: ${result.spreadsheetName}`);
 
     res.json({
       success: true,
-      message: 'gemini-expense-tracker システムの初期化が完了しました',
+      message: 'ExpenseGPT システムの初期化が完了しました',
       spreadsheetId: result.spreadsheetId,
       spreadsheetName: result.spreadsheetName,
       rootFolderId,
+      yearFolderId,
       receiptsFolderId
     });
 
@@ -726,9 +813,10 @@ app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
       return res.status(400).json({ error: '無効な月です' });
     }
 
-    // Get or create folder structure
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
-    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId, userId);
+    // Get or create folder structure using new hierarchy
+    const rootFolderId = await getOrCreateExpenseGPTRootFolder(userId);
+    const yearFolderId = await getOrCreateYearFolder(currentYear, rootFolderId, userId);
+    const receiptsFolderId = await getOrCreateReceiptsFolderForYear(currentYear, yearFolderId, userId);
     const monthlyFolderId = await getOrCreateMonthlyFolder(currentYear, currentMonth, receiptsFolderId, userId);
 
     // Generate unique filename
@@ -831,6 +919,58 @@ app.post('/auth/logout', (req, res) => {
   });
 });
 
+// Test endpoint to create folders only (without spreadsheets)
+app.get('/api/test/create-folders-only', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'test-user';
+    console.log('🧪 フォルダ構造テスト開始...');
+
+    // 1. ExpenseGPT ルートフォルダ作成
+    const rootFolderId = await getOrCreateExpenseGPTRootFolder(userId);
+    console.log('✅ Step 1: ExpenseGPT ルートフォルダ作成完了');
+
+    // 2. 2026 年別フォルダ作成
+    const currentYear = 2026; // 固定で2026年を使用
+    const yearFolderId = await getOrCreateYearFolder(currentYear, rootFolderId, userId);
+    console.log('✅ Step 2: 年別フォルダ作成完了');
+
+    // 3. Receipts フォルダ作成
+    const receiptsFolderId = await getOrCreateReceiptsFolderForYear(currentYear, yearFolderId, userId);
+    console.log('✅ Step 3: Receiptsフォルダ作成完了');
+
+    // 4. 月別フォルダ作成（1-12月）
+    const monthlyFolderIds = [];
+    for (let month = 1; month <= 12; month++) {
+      const monthlyFolderId = await getOrCreateMonthlyFolder(currentYear, month, receiptsFolderId, userId);
+      monthlyFolderIds.push({ month, folderId: monthlyFolderId });
+    }
+    console.log('✅ Step 4: 月別フォルダ作成完了（1-12月）');
+
+    // 5. スプレッドシート作成はしない
+
+    console.log('🎉 フォルダ構造テスト完了 - スプレッドシートは作成されていません');
+
+    res.json({
+      success: true,
+      message: 'フォルダ構造のみ作成しました（スプレッドシートなし）',
+      structure: {
+        rootFolderId,
+        yearFolderId,
+        receiptsFolderId,
+        monthlyFolders: monthlyFolderIds
+      },
+      googleDrivePath: `ExpenseGPT/${currentYear}/Receipts/`
+    });
+
+  } catch (error) {
+    console.error('フォルダ構造テストエラー:', error);
+    res.status(500).json({
+      error: 'フォルダ構造テストに失敗しました',
+      details: error.message
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -840,4 +980,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Gemini Expense Tracker API Server running on port ${PORT}`);
   console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
   console.log(`📊 Google Sheets integration ready`);
+  console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
 });

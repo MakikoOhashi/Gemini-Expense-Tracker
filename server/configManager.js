@@ -52,6 +52,20 @@ class ConfigManager {
     return this.saveConfig(config);
   }
 
+  getYearFolder(year) {
+    const config = this.loadConfig();
+    return config.yearFolders?.[year];
+  }
+
+  setYearFolder(year, folderId) {
+    const config = this.loadConfig();
+    if (!config.yearFolders) {
+      config.yearFolders = {};
+    }
+    config.yearFolders[year] = folderId;
+    return this.saveConfig(config);
+  }
+
   getReceiptsFolder(year) {
     const config = this.loadConfig();
     return config.receiptsFolders?.[year];

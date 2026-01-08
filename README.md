@@ -251,21 +251,19 @@ scopes: [
 ### Driveフォルダ構造
 
 ```
-ExpenseGPT/（ルートフォルダ）
-├─ 2026/
-│   ├─ 2026_Expenses.xlsx
-│   ├─ Receipts/
-│   │   ├─ 2026-01/
-│   │   │   └─ receipt_123456.jpg
-│   │   ├─ 2026-02/
-│   │   │   └─ receipt_789012.jpg
-│   │   └─ 2026-12/
+Gemini Expense Tracker/（ルートフォルダ）
+├─ 2026_Expenses.xlsx ← 年別ファイル直下
+├─ Receipts/
+│   ├─ 2026-01/（月別フォルダ）
+│   │   └─ receipt_123456.jpg
+│   ├─ 2026-02/
+│   │   └─ receipt_789012.jpg
+│   └─ 2026-12/
 │
-├─ 2027/（翌年自動作成）
-│   ├─ 2027_Expenses.xlsx
-│   ├─ Receipts/
-│   │   ├─ 2027-01/
-│   │   └─ ...
+├─ 2027_Expenses.xlsx（翌年自動作成）
+├─ Receipts/
+│   ├─ 2027-01/
+│   └─ ...
 └─ ...
 ```
 

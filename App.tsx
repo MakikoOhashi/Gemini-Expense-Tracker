@@ -146,27 +146,75 @@ const App: React.FC = () => {
     });
   };
 
-  const commitTransaction = () => {
+  const commitTransaction = async () => {
     if (!pendingExtraction) return;
-    const { data, imageUrl } = pendingExtraction;
-    const newTx: Transaction = {
-      id: crypto.randomUUID(),
-      date: data.date || new Date().toISOString().split('T')[0],
-      amount: Number(data.amount) || 0,
-      description: data.description || '内容なし',
-      category: data.category || '雑費',
-      type: data.category === '売上' ? 'income' : 'expense',
-      receiptUrl: imageUrl,
-      createdAt: Date.now()
-    };
-    setTransactions(prev => [newTx, ...prev]);
-    setMessages(prev => [...prev, {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: `✅ 保存完了: ${newTx.description}`,
-      timestamp: Date.now()
-    }]);
-    setPendingExtraction(null);
+
+    try {
+      const { data, imageUrl } = pendingExtraction;
+
+      // Determine type based on category
+      const type = data.category === '売上' ? 'income' : 'expense';
+
+      // Prepare data for API
+      const expenseData = {
+        date: data.date || new Date().toISOString().split('T')[0],
+        amount: Number(data.amount) || 0,
+        category: data.category || '雑費',
+        memo: data.description || '内容なし',
+        receipt_url: imageUrl || '',
+        type: type,
+        userId: authStatus?.userId || 'test-user'
+      };
+
+      // Save to Sheet via API
+      const response = await fetch('http://localhost:3001/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expenseData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.details || result.error || '保存に失敗しました');
+      }
+
+      // Create local transaction object for UI display
+      const newTx: Transaction = {
+        id: crypto.randomUUID(),
+        date: expenseData.date,
+        amount: expenseData.amount,
+        description: expenseData.memo,
+        category: expenseData.category,
+        type: type,
+        receiptUrl: expenseData.receipt_url,
+        createdAt: Date.now()
+      };
+
+      // Update local state
+      setTransactions(prev => [newTx, ...prev]);
+
+      // Show success message
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `✅ 保存完了: ${newTx.description} (${result.id ? `行${result.id}` : ''})`,
+        timestamp: Date.now()
+      }]);
+
+      setPendingExtraction(null);
+
+    } catch (error: any) {
+      console.error('Transaction save error:', error);
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `❌ 保存に失敗しました: ${error.message}`,
+        timestamp: Date.now()
+      }]);
+    }
   };
 
   const commitRule = () => {

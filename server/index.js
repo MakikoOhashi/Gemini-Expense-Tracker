@@ -79,20 +79,30 @@ async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
-  let rootFolderId = configManager.getRootFolderId();
+  // 常に名前で検索（configManagerのIDは補助的に使用）
+  console.log('🔍 Google Driveで "Gemini Expense Tracker" フォルダを検索...');
 
-  if (rootFolderId) {
-    try {
-      // Verify the folder still exists
-      await drive.files.get({ fileId: rootFolderId, fields: 'id,name' });
-      console.log('📁 Gemini Expense Tracker ルートフォルダを確認:', rootFolderId);
+  try {
+    const searchResponse = await drive.files.list({
+      q: `name='Gemini Expense Tracker' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      fields: 'files(id, name)',
+    });
+
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      const rootFolderId = searchResponse.data.files[0].id;
+      console.log('📁 ✅ 既存の Gemini Expense Tracker フォルダを見つけました:', rootFolderId);
+
+      // configManagerを更新（同期）
+      configManager.setRootFolderId(rootFolderId);
       return rootFolderId;
-    } catch (error) {
-      console.warn('既存のルートフォルダが見つからないため新規作成します');
     }
+  } catch (error) {
+    console.warn('フォルダ検索エラー:', error);
   }
 
-  // Create Gemini Expense Tracker root folder
+  // 見つからない場合は新規作成
+  console.log('📁 ⚠️ Gemini Expense Tracker フォルダが見つからないため新規作成します');
+
   const folderMetadata = {
     name: 'Gemini Expense Tracker',
     mimeType: 'application/vnd.google-apps.folder',
@@ -104,7 +114,7 @@ async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
       fields: 'id',
     });
 
-    rootFolderId = response.data.id;
+    const rootFolderId = response.data.id;
     configManager.setRootFolderId(rootFolderId);
 
     console.log('✅ Gemini Expense Tracker ルートフォルダを作成しました:', rootFolderId);
@@ -330,21 +340,29 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
   try {
     // Gemini Expense Tracker フォルダ配下を確認
     const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    console.log(`🔍 ルートフォルダID: ${rootFolderId}`);
 
     // フォルダ配下でスプレッドシートを検索
+    const searchQuery = `name='${spreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and '${rootFolderId}' in parents and trashed=false`;
+    console.log(`🔍 検索クエリ: ${searchQuery}`);
+
     const searchResponse = await drive.files.list({
-      q: `name='${spreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and '${rootFolderId}' in parents and trashed=false`,
+      q: searchQuery,
       fields: 'files(id, name)',
     });
+
+    console.log(`🔍 検索結果: ${searchResponse.data.files ? searchResponse.data.files.length : 0}件見つかりました`);
 
     let spreadsheetId;
     let isNew = false;
 
     if (searchResponse.data.files && searchResponse.data.files.length > 0) {
       spreadsheetId = searchResponse.data.files[0].id;
-      console.log(`📊 Gemini Expense Tracker フォルダ内で既存の${year}年度スプレッドシートを見つけました:`, spreadsheetId);
+      console.log(`📊 ✅ 既存の${year}年度スプレッドシートを見つけました:`, spreadsheetId);
     } else {
-      // Create new spreadsheet
+      console.log(`📊 ⚠️ ${year}年度スプレッドシートが見つからないため新規作成します`);
+
+      // Incomeシートも含めて作成
       const createResponse = await sheets.spreadsheets.create({
         requestBody: {
           properties: {
@@ -363,11 +381,21 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
             },
             {
               properties: {
+                title: 'Income',
+                sheetType: 'GRID',
+                gridProperties: {
+                  rowCount: 10000,
+                  columnCount: 5,
+                },
+              },
+            },
+            {
+              properties: {
                 title: 'Summary',
                 sheetType: 'GRID',
                 gridProperties: {
-                  rowCount: 100,
-                  columnCount: 10,
+                  rowCount: 150,
+                  columnCount: 12,
                 },
               },
             },
@@ -387,7 +415,11 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
 
       spreadsheetId = createResponse.data.spreadsheetId;
       isNew = true;
-      console.log(`📊 新しい${year}年度スプレッドシートを作成しました:`, spreadsheetId);
+      console.log(`📊 🆕 新しい${year}年度スプレッドシートを作成しました:`, spreadsheetId);
+
+      // 作成したスプレッドシートをルートフォルダに移動
+      await moveFileToParent(spreadsheetId, rootFolderId, userId);
+      console.log(`📁 スプレッドシートをルートフォルダに移動しました`);
     }
 
     const result = { spreadsheetId, spreadsheetName, isNew };
@@ -846,6 +878,32 @@ async function moveFileToParent(fileId, parentFolderId, userId) {
   }
 }
 
+// Helper function to ensure Gemini Expense Tracker root folder exists
+async function ensureGeminiFolder(userId) {
+  try {
+    // getOrCreateGeminiExpenseTrackerRootFolder() を使用（既存関数）
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    console.log('📁 Gemini Expense Tracker フォルダ確認済み');
+    return rootFolderId;
+  } catch (error) {
+    console.error('Geminiフォルダ確保エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to ensure spreadsheet for specific year exists
+async function ensureSpreadsheet(year, userId) {
+  try {
+    // getOrCreateSpreadsheetForYear() を使用（既存関数）
+    const result = await getOrCreateSpreadsheetForYear(year, userId);
+    console.log(`📊 ${year}年度スプレッドシート確認済み: ${result.spreadsheetId}`);
+    return result.spreadsheetId;
+  } catch (error) {
+    console.error(`${year}年度スプレッドシート確保エラー:`, error);
+    throw error;
+  }
+}
+
 // Helper function to create spreadsheet under parent folder
 async function createSpreadsheetUnderParent(spreadsheetName, parentFolderId, year, userId) {
   const client = await getAuthenticatedClient(userId);
@@ -1116,21 +1174,25 @@ app.delete('/api/rules/:year/:id', async (req, res) => {
 app.post('/api/expenses', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
-    const { date, amount, category, memo, receipt_url } = req.body;
+    const { date, amount, category, memo, receipt_url, type } = req.body;
 
     if (!date || !amount || !category) {
       return res.status(400).json({ error: '必須フィールドが不足しています' });
     }
 
-    // Get current year's spreadsheet
+    // Determine sheet based on type
+    const sheetType = type === 'income' ? 'Income' : 'Expenses';
+    const message = type === 'income' ? '収入データが保存されました' : '支出データが保存されました';
+
+    // Ensure spreadsheet exists for current year
     const currentYear = new Date().getFullYear();
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    const spreadsheetId = await ensureSpreadsheet(currentYear, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Append data to sheet
+    // Append data to appropriate sheet
     const values = [[date, amount, category, memo || '', receipt_url || '']];
-    const range = 'Expenses!A:E'; // A: date, B: amount, C: category, D: memo, E: receipt_url
+    const range = `${sheetType}!A:E`; // A: date, B: amount, C: category, D: memo, E: receipt_url
 
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId,
@@ -1139,10 +1201,24 @@ app.post('/api/expenses', async (req, res) => {
       resource: { values },
     });
 
+    // Get the row number where data was added
+    const updatedRange = response.data.updates?.updatedRange;
+    let rowNumber = null;
+    if (updatedRange) {
+      // Extract row number from range like "Expenses!A123:E123"
+      const match = updatedRange.match(/!A(\d+):E\d+/);
+      if (match) {
+        rowNumber = parseInt(match[1]);
+      }
+    }
+
+    console.log(`💾 ${type === 'income' ? '収入' : '支出'}データを保存: ${category} - ¥${amount} (${rowNumber ? `行${rowNumber}` : ''})`);
+
     res.json({
       success: true,
-      message: '支出データが保存されました',
-      data: { date, amount, category, memo, receipt_url }
+      message: message,
+      id: rowNumber,
+      data: { date, amount, category, memo, receipt_url, type }
     });
 
   } catch (error) {

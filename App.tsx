@@ -116,10 +116,9 @@ const App: React.FC = () => {
     }
   }, [messages, activeTab, pendingExtraction, isEditing, isProcessing]);
 
-  // 画像圧縮設定（品質重視のバランス）
-  const MAX_WIDTH = 1200;         // 最大幅1200px（詳細保持）
-  const MAX_FILE_SIZE = 500 * 1024; // 最大500KB（高品質＆サーバー対応）
-  const INITIAL_QUALITY = 0.75;   // 初期品質75%（高画質）
+  // 画像圧縮設定（AI解析用に最適化：より小さく・高速）
+  const MAX_WIDTH = 600;         // 最大幅600px（AI解析には十分）
+  const MAX_FILE_SIZE = 100 * 1024; // 最大100KB（高速送信）
 
   // base64からBlobサイズを計算
   const getBase64Size = (base64: string): number => {
@@ -136,7 +135,7 @@ const App: React.FC = () => {
         let width = img.width;
         let height = img.height;
 
-        // 幅を1200pxに制限（アスペクト比維持）
+        // 幅を600pxに制限（アスペクト比維持）
         if (width > MAX_WIDTH) {
           height = Math.round(height * MAX_WIDTH / width);
           width = MAX_WIDTH;
@@ -153,11 +152,11 @@ const App: React.FC = () => {
         // 画像を描画
         ctx.drawImage(img, 0, 0, width, height);
         
-        // PNG形式で出力（高品質・透過問題解決）
-        const compressedDataUrl = canvas.toDataURL('image/png', 0.85);
+        // JPEG形式で出力（大幅にサイズ削減）
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
 
         const finalSize = getBase64Size(compressedDataUrl);
-        console.log(`🖼️ 画像圧縮完了: ${Math.round(finalSize / 1024)}KB (形式: PNG, サイズ: ${width}x${height})`);
+        console.log(`🖼️ 画像圧縮完了: ${Math.round(finalSize / 1024)}KB (形式: JPEG, サイズ: ${width}x${height})`);
         resolve(compressedDataUrl);
       };
     });

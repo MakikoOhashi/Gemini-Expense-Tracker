@@ -124,24 +124,64 @@ const App: React.FC = () => {
     }
   }, [messages, activeTab, pendingExtraction, isEditing, isProcessing]);
 
+  // 画像圧縮設定
+  const MAX_WIDTH = 800;        // 最大幅800px（OCRには十分）
+  const MAX_FILE_SIZE = 200 * 1024; // 最大200KB（サーバー制限対応）
+  const INITIAL_QUALITY = 0.4;  // 初期品質40%（低めに設定）
+
+  // base64からBlobサイズを計算
+  const getBase64Size = (base64: string): number => {
+    const base64WithoutPrefix = base64.split(',')[1] || base64;
+    return Math.round((base64WithoutPrefix.length * 3) / 4);
+  };
+
   const compressImage = (base64Str: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = base64Str;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1024;
         let width = img.width;
         let height = img.height;
+
+        // 幅が高ければ800pxに制限（アスペクト比維持）
         if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
+          height = Math.round(height * MAX_WIDTH / width);
           width = MAX_WIDTH;
         }
+
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6));
+        
+        // 更低品質で初期圧縮
+        let quality = INITIAL_QUALITY;
+        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        
+        // 目標サイズを超える場合は更低品質に再圧縮
+        const maxIterations = 5;
+        let iterations = 0;
+        
+        while (getBase64Size(compressedDataUrl) > MAX_FILE_SIZE && iterations < maxIterations) {
+          quality = Math.max(0.1, quality - 0.1);
+          compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          iterations++;
+        }
+        
+        // それでも大きい場合は尺寸を縮小
+        if (getBase64Size(compressedDataUrl) > MAX_FILE_SIZE) {
+          const scaleFactor = Math.sqrt(MAX_FILE_SIZE / getBase64Size(compressedDataUrl));
+          width = Math.round(width * scaleFactor);
+          height = Math.round(height * scaleFactor);
+          canvas.width = width;
+          canvas.height = height;
+          ctx?.drawImage(img, 0, 0, width, height);
+          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.2);
+        }
+
+        const finalSize = getBase64Size(compressedDataUrl);
+        console.log(`🖼️ 画像圧縮完了: ${Math.round(finalSize / 1024)}KB (品質: ${quality}, サイズ: ${width}x${height})`);
+        resolve(compressedDataUrl);
       };
     });
   };

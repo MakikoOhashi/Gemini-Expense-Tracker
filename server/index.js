@@ -295,6 +295,32 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId,
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
+  // ブラウザのBlobをBufferに変換
+  let buffer = fileBuffer;
+  if (Buffer.isBuffer(fileBuffer)) {
+    // 既にBufferの場合
+    buffer = fileBuffer;
+  } else if (fileBuffer instanceof ArrayBuffer) {
+    // ArrayBufferの場合
+    buffer = Buffer.from(fileBuffer);
+  } else if (typeof fileBuffer === 'object' && fileBuffer !== null) {
+    // Blobやその他のオブジェクトの場合
+    try {
+      // Blobの場合はarrayBuffer()メソッドを使用
+      if (typeof fileBuffer.arrayBuffer === 'function') {
+        const arrayBuffer = await fileBuffer.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+      } else {
+        // その他の場合はJSON文字列化して逆パース
+        buffer = Buffer.from(JSON.stringify(fileBuffer));
+      }
+    } catch (e) {
+      console.warn('Blob変換エラー:', e);
+      // フォールバック: 空のBuffer
+      buffer = Buffer.alloc(0);
+    }
+  }
+
   const fileMetadata = {
     name: fileName,
     parents: [parentFolderId],
@@ -302,7 +328,7 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId,
 
   const media = {
     mimeType: mimeType,
-    body: fileBuffer,
+    body: buffer,
   };
 
   try {

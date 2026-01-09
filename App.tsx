@@ -19,7 +19,6 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline';
 import { Transaction, ChatMessage, AIAction, TransactionRule } from './types';
-import { storageService } from './services/storageService';
 import { sheetsService } from './services/sheetsService';
 import { GeminiService } from './services/geminiService';
 import { authService, AuthStatus } from './services/authService';
@@ -44,17 +43,14 @@ const App: React.FC = () => {
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   
-  const [transactions, setTransactions] = useState<Transaction[]>(() => storageService.loadTransactions());
-  const [rules, setRules] = useState<TransactionRule[]>(() => storageService.loadRules());
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const saved = storageService.loadMessages();
-    return saved.length > 0 ? saved : [{
-      id: 'welcome',
-      role: 'assistant',
-      content: 'こんにちは！Gemini Expenseです。\n入力内容からデータを抽出し、確認カードを表示します。',
-      timestamp: Date.now()
-    }];
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [rules, setRules] = useState<TransactionRule[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{
+    id: 'welcome',
+    role: 'assistant',
+    content: 'こんにちは！Gemini Expenseです。\n入力内容からデータを抽出し、確認カードを表示します。',
+    timestamp: Date.now()
+  }]);
 
   const [inputText, setInputText] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -71,10 +67,6 @@ const App: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => { storageService.saveTransactions(transactions); }, [transactions]);
-  useEffect(() => { storageService.saveMessages(messages); }, [messages]);
-  useEffect(() => { storageService.saveRules(rules); }, [rules]);
 
   // Check authentication status on app load
   useEffect(() => {
@@ -668,3 +660,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

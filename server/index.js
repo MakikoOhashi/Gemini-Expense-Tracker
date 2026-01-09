@@ -1171,6 +1171,85 @@ app.delete('/api/rules/:year/:id', async (req, res) => {
   }
 });
 
+// GET all expenses
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'test-user';
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+    
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // Get all data from Expenses sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Expenses!A2:E',
+    });
+
+    const rows = response.data.values || [];
+    const expenses = rows.map((row, index) => ({
+      id: `${year}_exp_${index + 2}`,
+      date: row[0] || '',
+      amount: parseFloat(row[1]) || 0,
+      category: row[2] || '',
+      memo: row[3] || '',
+      receiptUrl: row[4] || '',
+      type: 'expense',
+      createdAt: Date.now()
+    }));
+
+    res.json({ expenses });
+
+  } catch (error) {
+    console.error('Get Expenses Error:', error);
+    res.status(500).json({
+      error: '経費データの取得に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// GET all income
+app.get('/api/income', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'test-user';
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+    
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // Get all data from Income sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Income!A2:E',
+    });
+
+    const rows = response.data.values || [];
+    const income = rows.map((row, index) => ({
+      id: `${year}_inc_${index + 2}`,
+      date: row[0] || '',
+      amount: parseFloat(row[1]) || 0,
+      category: row[2] || '',
+      memo: row[3] || '',
+      receiptUrl: row[4] || '',
+      type: 'income',
+      createdAt: Date.now()
+    }));
+
+    res.json({ income });
+
+  } catch (error) {
+    console.error('Get Income Error:', error);
+    res.status(500).json({
+      error: '売上データの取得に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// POST new expense/income
 app.post('/api/expenses', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';

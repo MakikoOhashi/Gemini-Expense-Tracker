@@ -163,6 +163,35 @@ const App: React.FC = () => {
     });
   };
 
+  // 画像をDriveにアップロードしてURLを取得
+  const uploadImageToDrive = async (base64Image: string): Promise<string> => {
+    // Base64からBlobを作成
+    const base64Data = base64Image.split(',')[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/png' });
+
+    const formData = new FormData();
+    formData.append('receipt', blob, `receipt_${Date.now()}.png`);
+    formData.append('userId', authStatus?.userId || 'test-user');
+
+    const response = await fetch('http://localhost:3001/api/upload-receipt', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('画像アップロードに失敗しました');
+    }
+
+    const result = await response.json();
+    return result.webViewLink || '';
+  };
+
   const commitTransaction = async () => {
     if (!pendingExtraction) return;
 
@@ -172,13 +201,24 @@ const App: React.FC = () => {
       // Determine type based on category
       const type = data.category === '売上' ? 'income' : 'expense';
 
-      // Prepare data for API
+      // 画像をDriveにアップロード（Base64ではなくURLを保存）
+      let receiptUrl = '';
+      if (imageUrl && imageUrl.startsWith('data:image')) {
+        try {
+          receiptUrl = await uploadImageToDrive(imageUrl);
+          console.log('✅ 画像をDriveにアップロード:', receiptUrl);
+        } catch (uploadError) {
+          console.warn('画像アップロードに失敗しました:', uploadError);
+        }
+      }
+
+      // Prepare data for API（URLのみを送信）
       const expenseData = {
         date: data.date || new Date().toISOString().split('T')[0],
         amount: Number(data.amount) || 0,
         category: data.category || '雑費',
         memo: data.description || '内容なし',
-        receipt_url: imageUrl || '',
+        receipt_url: receiptUrl, // URLのみ（Base64ではない）
         type: type,
         userId: authStatus?.userId || 'test-user'
       };

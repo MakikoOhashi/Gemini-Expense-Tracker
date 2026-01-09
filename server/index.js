@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import multer from 'multer';
 import { google } from 'googleapis';
 import { configManager } from './configManager.js';
+import Busboy from 'busboy';
 
 dotenv.config();
 
@@ -13,14 +13,6 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // 10MBに増加（画像対応）
-
-// Multer setup for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-});
 
 // Google OAuth 2.0 setup
 const oauth2Client = new google.auth.OAuth2(
@@ -291,45 +283,25 @@ async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
 }
 
 // Helper function to upload file to Google Drive
+// Blob をそのまま Drive API にアップロード（Base64変換なし）
 async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId, userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
-  // ブラウザのBlobをBufferに変換
-  let buffer = fileBuffer;
-  if (Buffer.isBuffer(fileBuffer)) {
-    // 既にBufferの場合
-    buffer = fileBuffer;
-  } else if (fileBuffer instanceof ArrayBuffer) {
-    // ArrayBufferの場合
-    buffer = Buffer.from(fileBuffer);
-  } else if (typeof fileBuffer === 'object' && fileBuffer !== null) {
-    // Blobやその他のオブジェクトの場合
-    try {
-      // Blobの場合はarrayBuffer()メソッドを使用
-      if (typeof fileBuffer.arrayBuffer === 'function') {
-        const arrayBuffer = await fileBuffer.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
-      } else {
-        // その他の場合はJSON文字列化して逆パース
-        buffer = Buffer.from(JSON.stringify(fileBuffer));
-      }
-    } catch (e) {
-      console.warn('Blob変換エラー:', e);
-      // フォールバック: 空のBuffer
-      buffer = Buffer.alloc(0);
-    }
-  }
+  console.log(`📦 アップロード開始: ${fileName}, ${mimeType}, buffer=${Buffer.isBuffer(fileBuffer)}`);
 
   const fileMetadata = {
     name: fileName,
     parents: [parentFolderId],
   };
 
+  // Buffer をそのまま Drive API に渡す（Drive APIが処理）
   const media = {
     mimeType: mimeType,
-    body: buffer,
+    body: fileBuffer,  // Blob/Buffer をそのまま
   };
+
+  console.log('📤 Google Drive APIにアップロード中...');
 
   try {
     const response = await drive.files.create({
@@ -338,12 +310,16 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId,
       fields: 'id,webViewLink',
     });
 
+    console.log('✅ Driveアップロード成功:', response.data.id);
     return {
       fileId: response.data.id,
       webViewLink: response.data.webViewLink,
     };
   } catch (error) {
-    console.error('ファイルアップロードエラー:', error);
+    console.error('❌ Google Drive APIエラー:', error.message);
+    if (error.response) {
+      console.error('   レスポンスデータ:', JSON.stringify(error.response.data));
+    }
     throw error;
   }
 }
@@ -1340,56 +1316,85 @@ app.post('/api/expenses', async (req, res) => {
   }
 });
 
-// Receipt upload endpoint
-app.post('/api/upload-receipt', upload.single('receipt'), async (req, res) => {
+// Receipt upload endpoint - using Busboy for streaming
+app.post('/api/upload-receipt', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
-    }
+    const userId = req.query.userId || 'test-user';
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+    const month = req.query.month ? parseInt(req.query.month) : new Date().getMonth() + 1;
 
-    const userId = req.body.userId || 'test-user';
-    const { year, month } = req.body;
-    const currentYear = year ? parseInt(year) : new Date().getFullYear();
-    const currentMonth = month ? parseInt(month) : new Date().getMonth() + 1;
-
-    if (isNaN(currentYear) || currentYear < 2000 || currentYear > 2100) {
+    if (isNaN(year) || year < 2000 || year > 2100) {
       return res.status(400).json({ error: '無効な年度です' });
     }
 
-    if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) {
+    if (isNaN(month) || month < 1 || month > 12) {
       return res.status(400).json({ error: '無効な月です' });
     }
 
-    // Get or create folder structure using new hierarchy
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
-    const receiptsFolderId = await getOrCreateReceiptsFolder(currentYear, rootFolderId, userId);
-    const monthlyFolderId = await getOrCreateMonthlyFolder(currentYear, currentMonth, receiptsFolderId, userId);
+    // Busboyでストリーム処理
+    const busboy = Busboy({ headers: req.headers });
+    let fileBuffer = null;
+    let fileName = '';
+    let fileMimetype = '';
+    let receivedUserId = userId;
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = req.file.originalname;
-    const extension = originalName.split('.').pop() || 'jpg';
-    const fileName = `receipt_${timestamp}.${extension}`;
-
-    // Upload file to Google Drive
-    const uploadResult = await uploadFileToDrive(
-      req.file.buffer,
-      fileName,
-      req.file.mimetype,
-      monthlyFolderId,
-      userId
-    );
-
-    console.log(`✅ レシートをアップロードしました: ${fileName}`);
-
-    res.json({
-      success: true,
-      message: 'レシートをアップロードしました',
-      fileName,
-      fileId: uploadResult.fileId,
-      webViewLink: uploadResult.webViewLink,
-      folderPath: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
+    busboy.on('file', (fieldname, file, info) => {
+      const chunks = [];
+      file.on('data', (data) => chunks.push(data));
+      file.on('end', () => {
+        fileBuffer = Buffer.concat(chunks);
+        fileName = info.filename || `receipt_${Date.now()}.jpg`;
+        fileMimetype = info.mimeType || 'image/jpeg';
+        console.log(`📦 ファイル受信完了: ${fileName}, ${fileBuffer.length} bytes`);
+      });
     });
+
+    busboy.on('field', (fieldname, value) => {
+      if (fieldname === 'userId') {
+        receivedUserId = value;
+      }
+      console.log(`📝 フィールド: ${fieldname} = ${value}`);
+    });
+
+    busboy.on('finish', async () => {
+      if (!fileBuffer || fileBuffer.length === 0) {
+        return res.status(400).json({ error: 'ファイルがアップロードされていません' });
+      }
+
+      console.log(`📤 Driveアップロード開始: userId=${receivedUserId}, year=${year}, month=${month}`);
+
+      // Get or create folder structure
+      const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(receivedUserId);
+      const receiptsFolderId = await getOrCreateReceiptsFolder(year, rootFolderId, receivedUserId);
+      const monthlyFolderId = await getOrCreateMonthlyFolder(year, month, receiptsFolderId, receivedUserId);
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const extension = fileName.split('.').pop() || 'jpg';
+      const uniqueFileName = `receipt_${timestamp}.${extension}`;
+
+      // Upload file to Google Drive
+      const uploadResult = await uploadFileToDrive(
+        fileBuffer,
+        uniqueFileName,
+        fileMimetype,
+        monthlyFolderId,
+        receivedUserId
+      );
+
+      console.log(`✅ レシートをアップロードしました: ${uniqueFileName}`);
+
+      res.json({
+        success: true,
+        message: 'レシートをアップロードしました',
+        fileName: uniqueFileName,
+        fileId: uploadResult.fileId,
+        webViewLink: uploadResult.webViewLink,
+        folderPath: `${year}-${month.toString().padStart(2, '0')}`
+      });
+    });
+
+    req.pipe(busboy);
 
   } catch (error) {
     console.error('Receipt Upload Error:', error);
@@ -1527,3 +1532,4 @@ app.listen(PORT, () => {
   console.log(`📊 Google Sheets integration ready`);
   console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
 });
+

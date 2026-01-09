@@ -242,24 +242,48 @@ async function getOrCreateReceiptsFolder(year, rootFolderId, userId) {
 }
 
 // Helper function to create or get monthly folder
+// 必ず Receipts/{year}_Receipts/{year}-{month} フォルダを取得・作成
 async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
   const folderName = `${year}-${month.toString().padStart(2, '0')}`;
-  let monthlyFolderId = configManager.getMonthlyFolder(year, month);
+  console.log(`📁 月別フォルダを検索: ${folderName} (receiptsFolderId: ${receiptsFolderId})`);
 
+  // configManagerからの取得を試みる
+  let monthlyFolderId = configManager.getMonthlyFolder(year, month);
   if (monthlyFolderId) {
+    console.log(`📁 configManagerから取得: ${monthlyFolderId}`);
+    // 実際に存在するか確認
     try {
       await drive.files.get({ fileId: monthlyFolderId, fields: 'id,name' });
-      console.log(`📁 月別フォルダを確認: ${folderName}`);
+      console.log(`✅ 月別フォルダ確認済み: ${folderName}`);
       return monthlyFolderId;
     } catch (error) {
-      console.warn(`月別フォルダが見つからないため新規作成します: ${folderName}`);
+      console.warn(`⚠️ フォルダが存在しないため再検索: ${folderName}`);
+      monthlyFolderId = null;
     }
   }
 
-  // Create monthly folder
+  // Driveで検索
+  try {
+    const searchResponse = await drive.files.list({
+      q: `name='${folderName}' and '${receiptsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      fields: 'files(id, name)',
+    });
+
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      monthlyFolderId = searchResponse.data.files[0].id;
+      configManager.setMonthlyFolder(year, month, monthlyFolderId);
+      console.log(`✅ 月別フォルダを発見: ${folderName} (${monthlyFolderId})`);
+      return monthlyFolderId;
+    }
+  } catch (error) {
+    console.warn(`⚠️ フォルダ検索エラー: ${error.message}`);
+  }
+
+  // 新規作成
+  console.log(`📁 月別フォルダを新規作成: ${folderName}`);
   const folderMetadata = {
     name: folderName,
     mimeType: 'application/vnd.google-apps.folder',
@@ -275,10 +299,10 @@ async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
     monthlyFolderId = response.data.id;
     configManager.setMonthlyFolder(year, month, monthlyFolderId);
 
-    console.log(`✅ 月別フォルダを作成しました: ${folderName}`);
+    console.log(`✅ 月別フォルダを作成しました: ${folderName} (${monthlyFolderId})`);
     return monthlyFolderId;
   } catch (error) {
-    console.error(`月別フォルダ作成エラー: ${folderName}`, error);
+    console.error(`❌ 月別フォルダ作成エラー: ${folderName}`, error);
     throw error;
   }
 }

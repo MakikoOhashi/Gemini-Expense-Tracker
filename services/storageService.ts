@@ -14,7 +14,19 @@ export const storageService = {
     return data ? JSON.parse(data) : [];
   },
   saveMessages: (messages: ChatMessage[]) => {
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+    // 画像を除いてメッセージを保存（localStorage制限対策）
+    const messagesWithoutImages = messages.map(m => {
+      const { image, ...rest } = m;
+      return rest;
+    });
+    try {
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(messagesWithoutImages));
+    } catch (e) {
+      console.warn('メッセージ保存に失敗しました（容量制限）');
+      // 古いメッセージを削除して再試行
+      const trimmedMessages = messagesWithoutImages.slice(-20);
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(trimmedMessages));
+    }
   },
   loadMessages: (): ChatMessage[] => {
     const data = localStorage.getItem(MESSAGES_KEY);

@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
-import { configManager } from './configManager.js';
 import Busboy from 'busboy';
 
 dotenv.config();
@@ -67,227 +66,41 @@ function getAuthenticatedClient(userId) {
 // Global cache for spreadsheet IDs by year
 const spreadsheetCache = new Map();
 
-// Helper function to create or get Gemini Expense Tracker root folder
-async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
+// Helper function to search folder by name within parent folder
+async function searchFolder(folderName, parentFolderId, userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
-  // 常に名前で検索（configManagerのIDは補助的に使用）
-  console.log('🔍 Google Driveで "Gemini Expense Tracker" フォルダを検索...');
-
   try {
+    // 親フォルダ配下のみを検索（階層構造を完全に隔離）
+    const query = `name='${folderName}' and '${parentFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+
     const searchResponse = await drive.files.list({
-      q: `name='Gemini Expense Tracker' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      q: query,
       fields: 'files(id, name)',
+      spaces: 'drive'
     });
 
     if (searchResponse.data.files && searchResponse.data.files.length > 0) {
-      const rootFolderId = searchResponse.data.files[0].id;
-      console.log('📁 ✅ 既存の Gemini Expense Tracker フォルダを見つけました:', rootFolderId);
-
-      // configManagerを更新（同期）
-      configManager.setRootFolderId(rootFolderId);
-      return rootFolderId;
+      console.log(`📁 フォルダを発見: ${folderName} (${searchResponse.data.files[0].id})`);
+      return searchResponse.data.files[0].id;
     }
+    return null;
   } catch (error) {
-    console.warn('フォルダ検索エラー:', error);
-  }
-
-  // 見つからない場合は新規作成
-  console.log('📁 ⚠️ Gemini Expense Tracker フォルダが見つからないため新規作成します');
-
-  const folderMetadata = {
-    name: 'Gemini Expense Tracker',
-    mimeType: 'application/vnd.google-apps.folder',
-  };
-
-  try {
-    const response = await drive.files.create({
-      resource: folderMetadata,
-      fields: 'id',
-    });
-
-    const rootFolderId = response.data.id;
-    configManager.setRootFolderId(rootFolderId);
-
-    console.log('✅ Gemini Expense Tracker ルートフォルダを作成しました:', rootFolderId);
-    return rootFolderId;
-  } catch (error) {
-    console.error('ルートフォルダ作成エラー:', error);
-    throw error;
+    console.warn(`⚠️ フォルダ検索エラー (${folderName}): ${error.message}`);
+    return null;
   }
 }
 
-// Helper function to create or get year folder (under ExpenseGPT root)
-async function getOrCreateYearFolder(year, rootFolderId, userId) {
+// Helper function to create folder
+async function createFolder(folderName, parentFolderId, userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
-  let yearFolderId = configManager.getYearFolder(year);
-
-  if (yearFolderId) {
-    try {
-      await drive.files.get({ fileId: yearFolderId, fields: 'id,name' });
-      console.log(`📁 ${year}年度フォルダを確認:`, yearFolderId);
-      return yearFolderId;
-    } catch (error) {
-      console.warn(`${year}年度フォルダが見つからないため新規作成します`);
-    }
-  }
-
-  // Create year folder under ExpenseGPT root
-  const folderMetadata = {
-    name: year.toString(),
-    mimeType: 'application/vnd.google-apps.folder',
-    parents: [rootFolderId],
-  };
-
-  try {
-    const response = await drive.files.create({
-      resource: folderMetadata,
-      fields: 'id',
-    });
-
-    yearFolderId = response.data.id;
-    configManager.setYearFolder(year, yearFolderId);
-
-    console.log(`✅ ${year}年度フォルダを作成しました:`, yearFolderId);
-    return yearFolderId;
-  } catch (error) {
-    console.error(`${year}年度フォルダ作成エラー:`, error);
-    throw error;
-  }
-}
-
-// Helper function to create or get receipts folder for a year (under year folder)
-async function getOrCreateReceiptsFolderForYear(year, yearFolderId, userId) {
-  const client = await getAuthenticatedClient(userId);
-  const drive = google.drive({ version: 'v3', auth: client });
-
-  let receiptsFolderId = configManager.getReceiptsFolder(year);
-
-  if (receiptsFolderId) {
-    try {
-      await drive.files.get({ fileId: receiptsFolderId, fields: 'id,name' });
-      console.log(`📁 ${year}年度Receiptsフォルダを確認:`, receiptsFolderId);
-      return receiptsFolderId;
-    } catch (error) {
-      console.warn(`${year}年度Receiptsフォルダが見つからないため新規作成します`);
-    }
-  }
-
-  // Create receipts folder under year folder
-  const folderMetadata = {
-    name: 'Receipts',
-    mimeType: 'application/vnd.google-apps.folder',
-    parents: [yearFolderId],
-  };
-
-  try {
-    const response = await drive.files.create({
-      resource: folderMetadata,
-      fields: 'id',
-    });
-
-    receiptsFolderId = response.data.id;
-    configManager.setReceiptsFolder(year, receiptsFolderId);
-
-    console.log(`✅ ${year}年度Receiptsフォルダを作成しました:`, receiptsFolderId);
-    return receiptsFolderId;
-  } catch (error) {
-    console.error(`${year}年度Receiptsフォルダ作成エラー:`, error);
-    throw error;
-  }
-}
-
-// Helper function to create or get receipts folder for a year
-async function getOrCreateReceiptsFolder(year, rootFolderId, userId) {
-  const client = await getAuthenticatedClient(userId);
-  const drive = google.drive({ version: 'v3', auth: client });
-
-  let receiptsFolderId = configManager.getReceiptsFolder(year);
-
-  if (receiptsFolderId) {
-    try {
-      await drive.files.get({ fileId: receiptsFolderId, fields: 'id,name' });
-      console.log(`📁 ${year}年度レシートフォルダを確認:`, receiptsFolderId);
-      return receiptsFolderId;
-    } catch (error) {
-      console.warn(`${year}年度レシートフォルダが見つからないため新規作成します`);
-    }
-  }
-
-  // Create receipts folder for the year
-  const folderMetadata = {
-    name: `${year}_Receipts`,
-    mimeType: 'application/vnd.google-apps.folder',
-    parents: [rootFolderId],
-  };
-
-  try {
-    const response = await drive.files.create({
-      resource: folderMetadata,
-      fields: 'id',
-    });
-
-    receiptsFolderId = response.data.id;
-    configManager.setReceiptsFolder(year, receiptsFolderId);
-
-    console.log(`✅ ${year}年度レシートフォルダを作成しました:`, receiptsFolderId);
-    return receiptsFolderId;
-  } catch (error) {
-    console.error(`${year}年度レシートフォルダ作成エラー:`, error);
-    throw error;
-  }
-}
-
-// Helper function to create or get monthly folder
-// 必ず Receipts/{year}_Receipts/{year}-{month} フォルダを取得・作成
-async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
-  const client = await getAuthenticatedClient(userId);
-  const drive = google.drive({ version: 'v3', auth: client });
-
-  const folderName = `${year}-${month.toString().padStart(2, '0')}`;
-  console.log(`📁 月別フォルダを検索: ${folderName} (receiptsFolderId: ${receiptsFolderId})`);
-
-  // configManagerからの取得を試みる
-  let monthlyFolderId = configManager.getMonthlyFolder(year, month);
-  if (monthlyFolderId) {
-    console.log(`📁 configManagerから取得: ${monthlyFolderId}`);
-    // 実際に存在するか確認
-    try {
-      await drive.files.get({ fileId: monthlyFolderId, fields: 'id,name' });
-      console.log(`✅ 月別フォルダ確認済み: ${folderName}`);
-      return monthlyFolderId;
-    } catch (error) {
-      console.warn(`⚠️ フォルダが存在しないため再検索: ${folderName}`);
-      monthlyFolderId = null;
-    }
-  }
-
-  // Driveで検索
-  try {
-    const searchResponse = await drive.files.list({
-      q: `name='${folderName}' and '${receiptsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-      fields: 'files(id, name)',
-    });
-
-    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
-      monthlyFolderId = searchResponse.data.files[0].id;
-      configManager.setMonthlyFolder(year, month, monthlyFolderId);
-      console.log(`✅ 月別フォルダを発見: ${folderName} (${monthlyFolderId})`);
-      return monthlyFolderId;
-    }
-  } catch (error) {
-    console.warn(`⚠️ フォルダ検索エラー: ${error.message}`);
-  }
-
-  // 新規作成
-  console.log(`📁 月別フォルダを新規作成: ${folderName}`);
   const folderMetadata = {
     name: folderName,
     mimeType: 'application/vnd.google-apps.folder',
-    parents: [receiptsFolderId],
+    parents: [parentFolderId],
   };
 
   try {
@@ -295,16 +108,54 @@ async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
       resource: folderMetadata,
       fields: 'id',
     });
-
-    monthlyFolderId = response.data.id;
-    configManager.setMonthlyFolder(year, month, monthlyFolderId);
-
-    console.log(`✅ 月別フォルダを作成しました: ${folderName} (${monthlyFolderId})`);
-    return monthlyFolderId;
+    console.log(`📁 フォルダを作成: ${folderName} (${response.data.id})`);
+    return response.data.id;
   } catch (error) {
-    console.error(`❌ 月別フォルダ作成エラー: ${folderName}`, error);
+    console.error(`❌ フォルダ作成エラー (${folderName}):`, error);
     throw error;
   }
+}
+
+// Helper function to get or create Gemini Expense Tracker root folder
+async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
+  const folderName = 'Gemini Expense Tracker';
+  
+  // 名前で検索
+  const existingId = await searchFolder(folderName, null, userId);
+  if (existingId) {
+    return existingId;
+  }
+  
+  // ないなら作成
+  return await createFolder(folderName, null, userId);
+}
+
+// Helper function to get or create receipts folder for a year
+async function getOrCreateReceiptsFolder(year, rootFolderId, userId) {
+  const folderName = `${year}_Receipts`;
+  
+  // 名前で検索
+  const existingId = await searchFolder(folderName, rootFolderId, userId);
+  if (existingId) {
+    return existingId;
+  }
+  
+  // ないなら作成
+  return await createFolder(folderName, rootFolderId, userId);
+}
+
+// Helper function to get or create monthly folder
+async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
+  const folderName = `${year}-${String(month).padStart(2, '0')}`;
+  
+  // 名前で検索
+  const existingId = await searchFolder(folderName, receiptsFolderId, userId);
+  if (existingId) {
+    return existingId;
+  }
+  
+  // ないなら作成
+  return await createFolder(folderName, receiptsFolderId, userId);
 }
 
 // Helper function to upload file to Google Drive
@@ -1026,9 +877,6 @@ app.post('/api/initialize', async (req, res) => {
     const receiptsStructure = await createReceiptsStructure(rootFolder.id, currentYear, userId);
     console.log(`✅ Step 3 完了: receiptsFolderId = ${receiptsStructure.receiptsFolderId}`);
 
-    // Save spreadsheet ID to config
-    configManager.setSpreadsheetId(currentYear, spreadsheetResult.spreadsheetId);
-
     console.log('🎉 Gemini Expense Tracker システム初期化完了');
     console.log(`📁 Root Folder: ${rootFolder.id}`);
     console.log(`📊 Spreadsheet: ${spreadsheetResult.spreadsheetName} (${spreadsheetResult.spreadsheetId})`);
@@ -1435,19 +1283,10 @@ app.post('/api/upload-receipt', async (req, res) => {
 
 // Get folder configuration
 app.get('/api/config/folders', (req, res) => {
-  try {
-    const config = configManager.getAllConfig();
-    res.json({
-      success: true,
-      config
-    });
-  } catch (error) {
-    console.error('Get Folders Config Error:', error);
-    res.status(500).json({
-      error: 'フォルダ設定の取得に失敗しました',
-      details: error.message
-    });
-  }
+  res.json({
+    success: true,
+    message: 'configManagerは削除されました。名前でフォルダを検索してください。'
+  });
 });
 
 // OAuth 2.0 endpoints
@@ -1499,6 +1338,14 @@ app.post('/auth/logout', (req, res) => {
   res.json({
     success: true,
     message: 'Logged out successfully'
+  });
+});
+
+// Test endpoint to reset config
+app.get('/api/test/reset-config', (req, res) => {
+  res.json({
+    success: true,
+    message: 'configManagerは削除されました。'
   });
 });
 
@@ -1560,4 +1407,3 @@ app.listen(PORT, () => {
   console.log(`📊 Google Sheets integration ready`);
   console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
 });
-

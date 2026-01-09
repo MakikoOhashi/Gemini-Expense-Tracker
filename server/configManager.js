@@ -113,6 +113,18 @@ class ConfigManager {
   getAllConfig() {
     return this.loadConfig();
   }
+
+  // 月別フォルダ情報を全削除（テスト用）
+  resetMonthlyFolders() {
+    const config = this.loadConfig();
+    config.monthlyFolders = {};
+    return this.saveConfig(config);
+  }
+
+  // 全設定をリセット（テスト用）
+  resetAll() {
+    return this.saveConfig({});
+  }
 }
 
 export const configManager = new ConfigManager();

@@ -164,7 +164,9 @@ const App: React.FC = () => {
   };
 
   // 画像をDriveにアップロードしてURLを取得
-  const uploadImageToDrive = async (base64Image: string): Promise<string> => {
+  const uploadImageToDrive = async (base64Image: string, userId: string): Promise<string> => {
+    console.log('🔄 Driveアップロード開始:', userId);
+    
     // Base64からBlobを作成
     const base64Data = base64Image.split(',')[1];
     const byteCharacters = atob(base64Data);
@@ -174,21 +176,28 @@ const App: React.FC = () => {
     }
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: 'image/png' });
+    console.log('📦 Blob作成完了:', blob.size, 'bytes');
 
     const formData = new FormData();
     formData.append('receipt', blob, `receipt_${Date.now()}.png`);
-    formData.append('userId', authStatus?.userId || 'test-user');
+    formData.append('userId', userId);
 
+    console.log('📤 /api/upload-receipt にリクエスト送信中...');
     const response = await fetch('http://localhost:3001/api/upload-receipt', {
       method: 'POST',
       body: formData,
     });
 
+    console.log('📥 レスポンス:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error('画像アップロードに失敗しました');
+      const errorText = await response.text();
+      console.error('❌ アップロード失敗:', errorText);
+      throw new Error(`画像アップロードに失敗しました: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('✅ アップロード成功:', result);
     return result.webViewLink || '';
   };
 
@@ -197,6 +206,8 @@ const App: React.FC = () => {
 
     try {
       const { data, imageUrl } = pendingExtraction;
+      const userId = authStatus?.userId || 'test-user';
+      console.log('💾 保存開始: userId=', userId);
 
       // Determine type based on category
       const type = data.category === '売上' ? 'income' : 'expense';
@@ -204,11 +215,18 @@ const App: React.FC = () => {
       // 画像をDriveにアップロード（Base64ではなくURLを保存）
       let receiptUrl = '';
       if (imageUrl && imageUrl.startsWith('data:image')) {
+        console.log('📸 画像をDriveにアップロード中...');
         try {
-          receiptUrl = await uploadImageToDrive(imageUrl);
+          receiptUrl = await uploadImageToDrive(imageUrl, userId);
           console.log('✅ 画像をDriveにアップロード:', receiptUrl);
-        } catch (uploadError) {
-          console.warn('画像アップロードに失敗しました:', uploadError);
+        } catch (uploadError: any) {
+          console.error('❌ 画像アップロードエラー:', uploadError.message);
+          setMessages(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `⚠️ 画像アップロードに失敗しました: ${uploadError.message}`,
+            timestamp: Date.now()
+          }]);
         }
       }
 
@@ -294,7 +312,10 @@ const App: React.FC = () => {
 
   const handleSendMessage = async () => {
     const currentInput = inputText.trim();
-    if (isProcessing || isConvertingImage) return;
+    if (isProcessing || isConvertingImage) {
+      console.log('⚠️ 処理中のためスキップ: isProcessing=', isProcessing, 'isConvertingImage=', isConvertingImage);
+      return;
+    }
     if (!currentInput && !selectedImage) return;
 
     setInputText('');
@@ -302,6 +323,12 @@ const App: React.FC = () => {
     setSelectedImage(null);
     setIsProcessing(true);
     setPendingExtraction(null);
+
+    // 15秒後に自動的にリセット（タイムアウト対策）
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ AI応答タイムアウト、処理をリセットします');
+      setIsProcessing(false);
+    }, 15000);
 
     setMessages(prev => [...prev, {
       id: crypto.randomUUID(),

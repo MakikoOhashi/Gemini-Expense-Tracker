@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
+import { Readable } from 'stream';
 import { configManager } from './configManager.js';
 import Busboy from 'busboy';
 
@@ -283,22 +284,25 @@ async function getOrCreateMonthlyFolder(year, month, receiptsFolderId, userId) {
 }
 
 // Helper function to upload file to Google Drive
-// Blob をそのまま Drive API にアップロード（Base64変換なし）
+// Readable stream を使用して Drive API にアップロード
 async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId, userId) {
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
 
   console.log(`📦 アップロード開始: ${fileName}, ${mimeType}, buffer=${Buffer.isBuffer(fileBuffer)}`);
 
+  // Buffer を Readable stream に変換
+  const fileStream = Readable.from(fileBuffer);
+
   const fileMetadata = {
     name: fileName,
     parents: [parentFolderId],
   };
 
-  // Buffer をそのまま Drive API に渡す（Drive APIが処理）
+  // Readable stream を Drive API に渡す
   const media = {
     mimeType: mimeType,
-    body: fileBuffer,  // Blob/Buffer をそのまま
+    body: fileStream,
   };
 
   console.log('📤 Google Drive APIにアップロード中...');

@@ -72,14 +72,24 @@ async function searchFolder(folderName, parentFolderId, userId) {
   const drive = google.drive({ version: 'v3', auth: client });
 
   try {
-    // 親フォルダ配下のみを検索（階層構造を完全に隔離）
-    const query = `name='${folderName}' and '${parentFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+    // 親フォルダIDがnullの場合はMy Drive直下を検索
+    let query;
+    if (parentFolderId) {
+      query = `name='${folderName}' and '${parentFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`;
+    } else {
+      // My Drive直下のフォルダを検索（親がない＝root）
+      query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
+    }
+
+    console.log('🔍 検索クエリ:', query);
 
     const searchResponse = await drive.files.list({
       q: query,
       fields: 'files(id, name)',
       spaces: 'drive'
     });
+
+    console.log('🔍 検索結果:', searchResponse.data.files);
 
     if (searchResponse.data.files && searchResponse.data.files.length > 0) {
       console.log(`📁 フォルダを発見: ${folderName} (${searchResponse.data.files[0].id})`);
@@ -130,17 +140,18 @@ async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   return await createFolder(folderName, null, userId);
 }
 
-// Helper function to get or create receipts folder for a year
+// Helper function to get or create receipts folder
 async function getOrCreateReceiptsFolder(year, rootFolderId, userId) {
-  const folderName = `${year}_Receipts`;
+  const folderName = 'Receipts';
   
-  // 名前で検索
+  // rootFolderId 配下のみ検索（Gemini Expense Tracker 直下）
   const existingId = await searchFolder(folderName, rootFolderId, userId);
+  
   if (existingId) {
     return existingId;
   }
   
-  // ないなら作成
+  // ないなら rootFolderId 配下に作成
   return await createFolder(folderName, rootFolderId, userId);
 }
 

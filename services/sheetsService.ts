@@ -162,7 +162,7 @@ export class SheetsService {
     }
   }
 
-  async getTransactions(year?: number): Promise<TransactionData[]> {
+  async getTransactions(year?: number): Promise<any> {
     try {
       const currentYear = year || new Date().getFullYear();
       
@@ -180,6 +180,17 @@ export class SheetsService {
       }
       if (!incomeResponse.ok) {
         throw new Error(incomeResult.error || '売上データの取得に失敗しました');
+      }
+
+      // フォルダ競合チェック
+      if (expensesResult.isFolderAmbiguous || incomeResult.isFolderAmbiguous) {
+        console.warn('⚠️ フォルダ名の重複を検出しました');
+        return {
+          isFolderAmbiguous: true,
+          folderConflict: expensesResult.folderConflict || incomeResult.folderConflict,
+          expenses: [],
+          income: []
+        };
       }
 
       // データを結合（receiptUrlフィールドをreceipt_urlに統一、idも保持）

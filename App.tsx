@@ -114,6 +114,31 @@ const App: React.FC = () => {
     checkAuth();
   }, []);
 
+  // Check for folder conflicts immediately after authentication
+  useEffect(() => {
+    const checkFolderConflict = async () => {
+      // Only check if user is authenticated
+      if (!authStatus?.authenticated) return;
+      
+      try {
+        const userId = authStatus?.userId || 'test-user';
+        console.log('🔍 フォルダ競合チェック開始...');
+        
+        const response = await fetch(`http://localhost:3001/api/check-folder-conflict?userId=${userId}`);
+        const data = await response.json();
+        
+        if (data.isFolderAmbiguous && data.folderConflict) {
+          console.log('⚠️ 認証後にフォルダ競合を検出しました');
+          setFolderConflict(data.folderConflict);
+        }
+      } catch (error) {
+        console.error('フォルダ競合チェックエラー:', error);
+      }
+    };
+
+    checkFolderConflict();
+  }, [authStatus?.authenticated]);
+
   useEffect(() => {
     if (activeTab === 'chat') {
       const timer = setTimeout(() => {
@@ -858,17 +883,48 @@ const App: React.FC = () => {
               <p className="text-sm font-bold text-gray-700">検出されたフォルダ一覧：</p>
               {folderConflict.duplicateFolders.map((folder, index) => (
                 <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
                         {index + 1}
                       </div>
-                      <div>
-                        <p className="font-bold text-gray-800">{folder.name}</p>
-                        <p className="text-xs text-gray-500 font-mono">ID: {folder.id}</p>
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-800 truncate">{folder.name}</p>
+                        <p className="text-xs text-gray-500 font-mono truncate">ID: {folder.id}</p>
                         <p className="text-xs text-gray-400">作成日: {folder.createdTime ? new Date(folder.createdTime).toLocaleString('ja-JP') : '不明'}</p>
                       </div>
                     </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await fetch('http://localhost:3001/api/select-folder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: authStatus?.userId || 'test-user', folderId: folder.id })
+                          });
+                          console.log(`📁 フォルダ ${folder.id} を選択しました`);
+                          
+                          // Clear server cache and close modal
+                          await fetch('http://localhost:3001/api/clear-folder-cache', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
+                          });
+                          
+                          setFolderConflict(null);
+                          
+                          // Reload transactions if on history tab
+                          if (activeTab === 'history') {
+                            setActiveTab('history');
+                          }
+                        } catch (e) {
+                          console.error('フォルダ選択エラー:', e);
+                        }
+                      }}
+                      className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 active:scale-95 transition"
+                    >
+                      このフォルダを使用
+                    </button>
                   </div>
                 </div>
               ))}
@@ -887,7 +943,19 @@ const App: React.FC = () => {
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
+                try {
+                  // Clear server cache
+                  await fetch('http://localhost:3001/api/clear-folder-cache', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
+                  });
+                  console.log('🧹 サーバーキャッシュをクリアしました');
+                } catch (e) {
+                  console.warn('キャッシュクリアに失敗しました', e);
+                }
+                
                 setFolderConflict(null);
                 // Reload transactions to check if conflict is resolved
                 if (activeTab === 'history') {

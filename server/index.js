@@ -76,6 +76,12 @@ function getAuthenticatedClient(userId) {
 // Global cache for spreadsheet IDs by year
 const spreadsheetCache = new Map();
 
+// Folder cache for folder IDs (to avoid repeated Drive API calls)
+const folderCache = new Map();
+
+// User's selected folder ID (in production, use a database)
+const userSelectedFolder = new Map();
+
 // Helper function to search folder by name within parent folder
 async function searchFolder(folderName, parentFolderId, userId) {
   const client = await getAuthenticatedClient(userId);
@@ -168,6 +174,13 @@ async function getGeminiExpenseTrackerRootFolderInfo(userId) {
 // Helper function to get or create Gemini Expense Tracker root folder
 async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   const folderName = 'Gemini Expense Tracker';
+  
+  // ユーザーが選択したフォルダIDがあれば、それを優先使用
+  const selectedFolderId = userSelectedFolder.get(userId);
+  if (selectedFolderId) {
+    console.log(`📁 ユーザーが選択したフォルダを使用: ${selectedFolderId}`);
+    return selectedFolderId;
+  }
   
   // 名前で検索（My Drive直下のみ）
   const client = await getAuthenticatedClient(userId);
@@ -1494,6 +1507,88 @@ app.get('/api/config/folder-conflict', async (req, res) => {
     console.error('Folder Conflict Check Error:', error);
     res.status(500).json({
       error: 'フォルダ競合の確認に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Clear folder and spreadsheet caches (called after folder rename)
+app.post('/api/clear-folder-cache', async (req, res) => {
+  try {
+    const userId = req.body.userId || 'test-user';
+    
+    // Clear caches
+    spreadsheetCache.clear();
+    folderCache.clear();
+    
+    console.log(`🧹 ユーザー ${userId} のキャッシュをクリアしました`);
+    
+    res.json({
+      success: true,
+      message: 'キャッシュをクリアしました'
+    });
+  } catch (error) {
+    console.error('Clear Cache Error:', error);
+    res.status(500).json({
+      error: 'キャッシュのクリアに失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Check for folder conflicts immediately after auth (dedicated endpoint for fast checking)
+app.get('/api/check-folder-conflict', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'test-user';
+    const duplicateFolders = await getGeminiExpenseTrackerRootFolderInfo(userId);
+    
+    if (duplicateFolders.length > 1) {
+      res.json({
+        isFolderAmbiguous: true,
+        folderConflict: {
+          duplicateFolders: duplicateFolders,
+          message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
+        }
+      });
+    } else {
+      res.json({
+        isFolderAmbiguous: false,
+        folderConflict: null
+      });
+    }
+  } catch (error) {
+    console.error('Folder Conflict Check Error:', error);
+    res.status(500).json({
+      error: 'フォルダ競合の確認に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Select a specific folder to use (stores user's choice)
+app.post('/api/select-folder', async (req, res) => {
+  try {
+    const userId = req.body.userId || 'test-user';
+    const selectedFolderId = req.body.folderId;
+    
+    if (!selectedFolderId) {
+      return res.status(400).json({ error: 'フォルダIDが必要です' });
+    }
+    
+    // Save selected folder ID
+    userSelectedFolder.set(userId, selectedFolderId);
+    
+    console.log(`📁 ユーザーがフォルダを選択しました: userId=${userId}, folderId=${selectedFolderId}`);
+    
+    res.json({
+      success: true,
+      message: 'フォルダを選択しました',
+      selectedFolderId
+    });
+  } catch (error) {
+    console.error('Select Folder Error:', error);
+    res.status(500).json({
+      error: 'フォルダ選択に失敗しました',
       details: error.message
     });
   }

@@ -21,7 +21,7 @@ import {
 import { Transaction, ChatMessage, AIAction, TransactionRule } from './types';
 import { sheetsService } from './services/sheetsService';
 import { GeminiService } from './services/geminiService';
-import { ocrService } from './services/ocrService';
+import { performOCR } from './services/ocrService';
 import { authService, AuthStatus } from './services/authService';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
@@ -345,7 +345,7 @@ const App: React.FC = () => {
       if (currentImage) {
         // Step 1: Tesseract で OCR
         console.log('📸 画像検出 - OCR処理開始');
-        const ocrText = await ocrService.performOCR(currentImage);
+        const ocrText = await performOCR(currentImage);
         console.log('📄 OCR テキスト:', ocrText);
         
         // 入力テキストとOCR結果を結合

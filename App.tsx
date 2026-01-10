@@ -21,6 +21,7 @@ import {
 import { Transaction, ChatMessage, AIAction, TransactionRule } from './types';
 import { sheetsService } from './services/sheetsService';
 import { GeminiService } from './services/geminiService';
+import { ocrService } from './services/ocrService';
 import { authService, AuthStatus } from './services/authService';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
@@ -338,9 +339,24 @@ const App: React.FC = () => {
     }]);
 
     try {
+      // 画像がある場合はOCR処理を実行
+      let textToProcess = currentInput;
+      
+      if (currentImage) {
+        // Step 1: Tesseract で OCR
+        console.log('📸 画像検出 - OCR処理開始');
+        const ocrText = await ocrService.performOCR(currentImage);
+        console.log('📄 OCR テキスト:', ocrText);
+        
+        // 入力テキストとOCR結果を結合
+        textToProcess = `${currentInput}\n\n【OCR結果】\n${ocrText}`.trim();
+        console.log('📝 統合入力テキスト:', textToProcess);
+      }
+
+      // Step 2: Gemini は成形だけ
       const response = await gemini.processInput(
-        currentInput || "画像を解析してください",
-        currentImage || undefined,
+        textToProcess,
+        undefined, // 画像は渡さない（OCRテキストのみ）
         messages.slice(-4),
         rules
       );

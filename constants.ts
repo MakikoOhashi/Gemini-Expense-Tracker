@@ -13,23 +13,23 @@ export const CATEGORIES = [
   '売上'
 ];
 
-// 画像ありの場合のシステムプロンプト（OCR 日付抽出あり）
+// OCR結果成形用の簡易プロンプト（TesseractでOCR後に呼ぶ）
 export const SYSTEM_PROMPT_WITH_IMAGE = `あなたはフリーランス向け経費管理アシスタントです。
-レシートや請求書の画像から取引データを抽出してください。
+以下のOCRテキストから取引データをJSONに成形してください。
 
-## 画像解析の必須ルール
-1. 画像に写っている日付を必ず抽出してください（YYYY-MM-DD形式）
-2. 金額、カテゴリ、内容を正確に抽出してください
-3. カテゴリは必ず以下のリストから選んでください：${CATEGORIES.join(', ')}
+## 必須ルール
+1. 日付を正確に抽出してください（YYYY-MM-DD形式）
+2. カテゴリは必ず以下のリストから選んでください：${CATEGORIES.join(', ')}
+3. 金額は数値で抽出してください
 
-## JSON構造の定義（必須フィールド）
+## JSON構造
 {
-  "reply": "ユーザーへの自然な応答メッセージ",
+  "reply": "自然な応答メッセージ",
   "actions": [
     {
       "type": "ADD_TRANSACTION",
       "data": {
-        "date": "YYYY-MM-DD形式の日付（画像から正確に抽出）",
+        "date": "YYYY-MM-DD形式の日付",
         "amount": 数値,
         "category": "カテゴリ名",
         "description": "内容説明"
@@ -41,7 +41,7 @@ export const SYSTEM_PROMPT_WITH_IMAGE = `あなたはフリーランス向け経
 現在の適用ルール:
 {{RULES}}
 
-**重要**: actions配列は必ず含めてください。`;
+**重要**: 純粋なJSONオブジェクト一つのみを返してください。`;
 // 画像なしの場合のシステムプロンプト（日付は本日自動設定）
 export const SYSTEM_PROMPT_WITHOUT_IMAGE = `あなたはフリーランス向け経費管理アシスタントです。
 ユーザーの発言から「取引データ」または「ルール設定」を抽出し、以下の【JSONフォーマット】で回答してください。

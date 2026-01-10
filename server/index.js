@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
+import vision from '@google-cloud/vision';
 import { Readable } from 'stream';
 import Busboy from 'busboy';
 
@@ -30,6 +31,9 @@ const SCOPES = [
 
 // In-memory token storage (in production, use a database)
 let userTokens = {};
+
+// Vision API client (uses Application Default Credentials)
+const visionClient = new vision.ImageAnnotatorClient();
 
 // Helper function to create OAuth client for a user
 function createUserOAuthClient(tokens) {
@@ -1410,6 +1414,37 @@ app.get('/api/test/create-folders-only', async (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Vision API OCR endpoint
+app.post('/api/ocr', async (req, res) => {
+  try {
+    const { image } = req.body;
+    
+    if (!image) {
+      return res.status(400).json({ error: '画像データが提供されていません' });
+    }
+
+    console.log('🔍 Vision API OCR処理開始...');
+
+    // Vision API でテキスト検出
+    const [result] = await visionClient.textDetection(image);
+    const text = result.fullTextAnnotation?.text || '';
+
+    console.log('📄 OCR結果:', text.substring(0, 100) + '...');
+
+    res.json({
+      success: true,
+      text: text
+    });
+
+  } catch (error) {
+    console.error('Vision API OCR Error:', error);
+    res.status(500).json({
+      error: 'OCR処理に失敗しました',
+      details: error.message
+    });
+  }
 });
 
 app.listen(PORT, () => {

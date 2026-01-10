@@ -136,6 +136,35 @@ async function createFolder(folderName, parentFolderId, userId) {
   }
 }
 
+// Helper function to get Gemini Expense Tracker root folder (returns array for conflict detection)
+async function getGeminiExpenseTrackerRootFolderInfo(userId) {
+  const folderName = 'Gemini Expense Tracker';
+  
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
+  // My Drive直下のフォルダを検索
+  const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
+  
+  const searchResponse = await drive.files.list({
+    q: query,
+    fields: 'files(id, name, createdTime)',
+    spaces: 'drive'
+  });
+
+  const files = searchResponse.data.files || [];
+  
+  if (files.length > 0) {
+    return files.map(f => ({
+      id: f.id,
+      name: f.name,
+      createdTime: f.createdTime
+    }));
+  }
+  
+  return [];
+}
+
 // Helper function to get or create Gemini Expense Tracker root folder
 async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   const folderName = 'Gemini Expense Tracker';
@@ -1134,8 +1163,19 @@ app.get('/api/expenses', async (req, res) => {
       };
     });
 
+    // Check for folder conflicts
+    const duplicateFolders = await getGeminiExpenseTrackerRootFolderInfo(userId);
+    const folderConflict = duplicateFolders.length > 1 ? {
+      duplicateFolders: duplicateFolders,
+      message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
+    } : null;
+
     console.log('Sample IDs:', expenses.slice(0, 3).map(e => e.id));
-    res.json({ expenses });
+    res.json({ 
+      expenses,
+      isFolderAmbiguous: duplicateFolders.length > 1,
+      folderConflict
+    });
 
   } catch (error) {
     console.error('Get Expenses Error:', error);
@@ -1181,7 +1221,18 @@ app.get('/api/income', async (req, res) => {
       createdAt: Date.now()
     }));
 
-    res.json({ income });
+    // Check for folder conflicts
+    const duplicateFolders = await getGeminiExpenseTrackerRootFolderInfo(userId);
+    const folderConflict = duplicateFolders.length > 1 ? {
+      duplicateFolders: duplicateFolders,
+      message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
+    } : null;
+
+    res.json({ 
+      income,
+      isFolderAmbiguous: duplicateFolders.length > 1,
+      folderConflict
+    });
 
   } catch (error) {
     console.error('Get Income Error:', error);
@@ -1417,6 +1468,35 @@ app.get('/api/config/folders', (req, res) => {
     success: true,
     message: 'configManagerは削除されました。名前でフォルダを検索してください。'
   });
+});
+
+// Check for folder conflicts (duplicate Gemini Expense Tracker folders)
+app.get('/api/config/folder-conflict', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'test-user';
+    const folders = await getGeminiExpenseTrackerRootFolderInfo(userId);
+    
+    if (folders.length > 1) {
+      res.json({
+        isFolderAmbiguous: true,
+        folderConflict: {
+          duplicateFolders: folders,
+          message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
+        }
+      });
+    } else {
+      res.json({
+        isFolderAmbiguous: false,
+        folderConflict: null
+      });
+    }
+  } catch (error) {
+    console.error('Folder Conflict Check Error:', error);
+    res.status(500).json({
+      error: 'フォルダ競合の確認に失敗しました',
+      details: error.message
+    });
+  }
 });
 
 // OAuth 2.0 endpoints

@@ -44,6 +44,12 @@ const App: React.FC = () => {
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   
+  // Folder conflict modal state
+  const [folderConflict, setFolderConflict] = useState<{
+    duplicateFolders: Array<{ id: string; name: string; createdTime: string }>;
+    message: string;
+  } | null>(null);
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [rules, setRules] = useState<TransactionRule[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([{
@@ -123,10 +129,15 @@ const App: React.FC = () => {
       const loadTransactions = async () => {
         try {
           console.log('📊 Google Sheetsから取引データを取得中...');
-          const data = await sheetsService.getTransactions();
+          const response = await sheetsService.getTransactions() as any;
+          
+          // Check for folder conflict from response
+          if (response.isFolderAmbiguous && response.folderConflict) {
+            setFolderConflict(response.folderConflict);
+          }
           
           // Transaction型に変換
-          const mappedTransactions: Transaction[] = data.map((t) => ({
+          const mappedTransactions: Transaction[] = response.map((t: any) => ({
             id: t.id,
             date: t.date,
             amount: t.amount,
@@ -820,6 +831,77 @@ const App: React.FC = () => {
         onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: '履歴をクリアしました。', timestamp: Date.now() }])}
         onInitializeSystem={handleInitializeSystem}
       />
+
+      {/* Folder Conflict Modal */}
+      {folderConflict && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">フォルダ名の重複を検出</h2>
+                <p className="text-sm text-gray-500">複数の同名フォルダが見つかりました</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+              <p className="text-amber-800 text-sm font-medium">
+                {folderConflict.message}
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <p className="text-sm font-bold text-gray-700">検出されたフォルダ一覧：</p>
+              {folderConflict.duplicateFolders.map((folder, index) => (
+                <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800">{folder.name}</p>
+                        <p className="text-xs text-gray-500 font-mono">ID: {folder.id}</p>
+                        <p className="text-xs text-gray-400">作成日: {folder.createdTime ? new Date(folder.createdTime).toLocaleString('ja-JP') : '不明'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <p className="text-blue-800 text-sm">
+                <span className="font-bold">解決方法：</span>
+                <br />
+                Google Drive で「いらない方」のフォルダ名を変更してください。
+                <br />
+                例：「Gemini Expense Tracker_old」など
+                <br />
+                名前を変更すると、この警告は表示されなくなります。
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setFolderConflict(null);
+                // Reload transactions to check if conflict is resolved
+                if (activeTab === 'history') {
+                  setActiveTab('history');
+                }
+              }}
+              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              <ArrowPathIcon className="w-5 h-5" />
+              変更后再読み込み
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

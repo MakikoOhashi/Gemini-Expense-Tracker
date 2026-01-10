@@ -33,6 +33,7 @@ export const SYSTEM_PROMPT = `あなたはフリーランス向け経費管理�
     {
       "type": "ADD_TRANSACTION",
       "data": {
+        "date": "YYYY-MM-DD形式の日付（画像から抽出するか、本日日付を使用）",
         "amount": 数値,
         "category": "カテゴリ名",
         "description": "内容説明"

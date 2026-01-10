@@ -568,6 +568,15 @@ const App: React.FC = () => {
                     <div className="space-y-4 bg-slate-50 p-4 rounded-2xl mb-4">
                       {pendingExtraction.type === 'transaction' ? (
                         <>
+                          <div>
+                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">日付</label>
+                            <input 
+                              type="date" 
+                              value={pendingExtraction.data.date || new Date().toISOString().split('T')[0]} 
+                              onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, date: e.target.value}})} 
+                              className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" 
+                            />
+                          </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-[10px] text-gray-400 font-bold mb-1 block">金額</label>
@@ -605,6 +614,10 @@ const App: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       {pendingExtraction.type === 'transaction' ? (
                         <>
+                          <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
+                            <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">日付</p>
+                            <p className="text-lg font-black text-indigo-700">{pendingExtraction.data.date || new Date().toISOString().split('T')[0]}</p>
+                          </div>
                           <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
                             <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">金額</p>
                             <p className="text-2xl font-black text-indigo-700">¥{Number(pendingExtraction.data.amount || 0).toLocaleString()}</p>

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef } from 'react';
 import {
   TrashIcon,
@@ -244,32 +243,27 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
                     </select>
                   </div>
                   <div className="col-span-2 mt-2">
-                    <label className="text-[10px] text-indigo-400 font-bold uppercase mb-1 block">証憑 (画像)</label>
-                    {editValues.receiptUrl ? (
-                      <div className="relative inline-block group">
-                        <img src={editValues.receiptUrl} className="w-20 h-20 object-cover rounded border border-indigo-200" />
+                    <label className="text-[10px] text-indigo-400 font-bold uppercase mb-1 block">証憑</label>
+                    {editValues.receiptUrl && editValues.receiptUrl.trim() ? (
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href={editValues.receiptUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 underline text-sm break-all"
+                        >
+                          📄 レシートを確認
+                        </a>
                         <button 
                           onClick={() => setEditValues(prev => ({...prev, receiptUrl: undefined}))}
-                          className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md"
+                          className="text-gray-400 hover:text-rose-500 transition"
+                          title="証憑を削除"
                         >
-                          <XMarkIcon className="w-3 h-3" />
+                          <XMarkIcon className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-indigo-200 rounded-lg text-indigo-400 hover:text-indigo-600 hover:border-indigo-300 transition"
-                      >
-                        <PhotoIcon className="w-5 h-5" />
-                        <span className="text-xs font-bold">証憑を登録する</span>
-                        <input 
-                          type="file" 
-                          hidden 
-                          ref={fileInputRef} 
-                          accept="image/*" 
-                          onChange={handleFileChange}
-                        />
-                      </button>
+                      <span className="text-gray-400 text-sm">証憑なし</span>
                     )}
                   </div>
                 </div>

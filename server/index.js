@@ -1094,17 +1094,22 @@ app.get('/api/expenses', async (req, res) => {
       console.log('  receiptUrl (row[4]):', rows[0]?.[4] || '(なし)');
     }
     
-    const expenses = rows.map((row, index) => ({
-      id: `${year}_exp_${index + 2}`,
-      date: row[0] || '',
-      amount: parseFloat(row[1]) || 0,
-      category: row[2] || '',
-      memo: row[3] || '',
-      receiptUrl: row[4] || '',
-      type: 'expense',
-      createdAt: Date.now()
-    }));
+    const expenses = rows.map((row, index) => {
+      const id = `exp_${index + 2}`;
+      console.log(`Generated expense ID: ${id} | date: ${row[0]}`);
+      return {
+        id,
+        date: row[0] || '',
+        amount: parseFloat(row[1]) || 0,
+        category: row[2] || '',
+        memo: row[3] || '',
+        receiptUrl: row[4] || '',
+        type: 'expense',
+        createdAt: Date.now()
+      };
+    });
 
+    console.log('Sample IDs:', expenses.slice(0, 3).map(e => e.id));
     res.json({ expenses });
 
   } catch (error) {
@@ -1141,7 +1146,7 @@ app.get('/api/income', async (req, res) => {
     }
     
     const income = rows.map((row, index) => ({
-      id: `${year}_inc_${index + 2}`,
+      id: `inc_${index + 2}`,
       date: row[0] || '',
       amount: parseFloat(row[1]) || 0,
       category: row[2] || '',
@@ -1167,6 +1172,7 @@ app.post('/api/update-transaction', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
     const { id, date, amount, category, memo, receiptUrl, type } = req.body;
+    console.log('ID:', id); 
 
     if (!id || !date || !amount || !category) {
       return res.status(400).json({ error: '必須フィールドが不足しています' });
@@ -1180,8 +1186,9 @@ app.post('/api/update-transaction', async (req, res) => {
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // IDから行番号を抽出（例: "2026_exp_3" → 3）
-    const rowNumber = parseInt(id.split('_').pop());
+    // IDから行番号を抽出（例: "exp_3" → 3）
+    const rowNumber = parseInt(id.split('_')[1]);
+    console.log('Row Number:', rowNumber);  // ← ここに追加
     if (isNaN(rowNumber)) {
       return res.status(400).json({ error: '無効なIDです' });
     }
@@ -1267,10 +1274,17 @@ app.post('/api/expenses', async (req, res) => {
 
     console.log(`💾 ${type === 'income' ? '収入' : '支出'}データを保存: ${category} - ¥${amount} (${rowNumber ? `行${rowNumber}` : ''})`);
 
+    // Generate proper ID format (exp_5 or inc_5)
+    const idPrefix = type === 'income' ? 'inc' : 'exp';
+    const generatedId = rowNumber ? `${idPrefix}_${rowNumber}` : null;
+
+    console.log(`💾 Generated ID: ${generatedId}`);
+
     res.json({
       success: true,
       message: message,
-      id: rowNumber,
+      id: generatedId,
+      rowNumber: rowNumber,
       data: { date, amount, category, memo, receipt_url, type }
     });
 

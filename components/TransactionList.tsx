@@ -91,6 +91,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
           receiptUrl: editValues.receiptUrl || '',
           type: editValues.type || 'expense'
         };
+        console.log('📤 送信データ:', transactionData); // ← ここに追加
         
         await sheetsService.updateTransaction(transactionData);
         console.log('✅ Google Sheets に更新しました');

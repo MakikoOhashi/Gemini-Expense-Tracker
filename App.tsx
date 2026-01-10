@@ -126,8 +126,8 @@ const App: React.FC = () => {
           const data = await sheetsService.getTransactions();
           
           // Transaction型に変換
-          const mappedTransactions: Transaction[] = data.map((t, index) => ({
-            id: `sheets_${index}`,
+          const mappedTransactions: Transaction[] = data.map((t) => ({
+            id: t.id,
             date: t.date,
             amount: t.amount,
             description: t.memo || '',
@@ -299,8 +299,9 @@ const App: React.FC = () => {
       }
 
       // Create local transaction object for UI display
+      // Use server-returned ID (exp_5, inc_3 format) for consistency with getTransactions
       const newTx: Transaction = {
-        id: crypto.randomUUID(),
+        id: result.id || crypto.randomUUID(),
         date: expenseData.date,
         amount: expenseData.amount,
         description: expenseData.memo,
@@ -310,6 +311,8 @@ const App: React.FC = () => {
         createdAt: Date.now()
       };
 
+      console.log('📋 新規取引のID:', newTx.id);
+
       // Update local state
       setTransactions(prev => [newTx, ...prev]);
 
@@ -317,7 +320,7 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `✅ 保存完了: ${newTx.description} (${result.id ? `行${result.id}` : ''})`,
+        content: `✅ 保存完了: ${newTx.description} (ID: ${newTx.id})`,
         timestamp: Date.now()
       }]);
 

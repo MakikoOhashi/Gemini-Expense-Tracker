@@ -7,6 +7,7 @@ export interface ExpenseData {
 }
 
 export interface TransactionData {
+  id?: string;
   date: string;
   amount: number;
   category: string;
@@ -181,27 +182,29 @@ export class SheetsService {
         throw new Error(incomeResult.error || '売上データの取得に失敗しました');
       }
 
-      // データを結合（receiptUrlフィールドをreceipt_urlに統一）
+      // データを結合（receiptUrlフィールドをreceipt_urlに統一、idも保持）
       const expenses: TransactionData[] = (expensesResult.expenses || []).map((e: any) => {
-        console.log('📋 支出データ受信:', { date: e.date, amount: e.amount, receiptUrl: e.receiptUrl });
+        console.log('📋 支出データ受信:', { id: e.id, date: e.date, amount: e.amount });
         return {
+          id: e.id,
           date: e.date,
           amount: e.amount,
           category: e.category,
           memo: e.memo,
-          receipt_url: e.receiptUrl || '', // receiptUrl → receipt_url に変換
+          receipt_url: e.receiptUrl || '',
           type: 'expense' as const
         };
       });
 
       const income: TransactionData[] = (incomeResult.income || []).map((i: any) => {
-        console.log('📋 売上データ受信:', { date: i.date, amount: i.amount, receiptUrl: i.receiptUrl });
+        console.log('📋 売上データ受信:', { id: i.id, date: i.date, amount: i.amount });
         return {
+          id: i.id,
           date: i.date,
           amount: i.amount,
           category: i.category,
           memo: i.memo,
-          receipt_url: i.receiptUrl || '', // receiptUrl → receipt_url に変換
+          receipt_url: i.receiptUrl || '',
           type: 'income' as const
         };
       });

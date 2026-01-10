@@ -1,5 +1,8 @@
+process.env.GOOGLE_APPLICATION_CREDENTIALS = '/Users/makiko/Documents/dev/gemini-expense-tracker/gemini-expense-tracker-483604-7a0c4df6eb04.json';
+
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
 import vision from '@google-cloud/vision';
@@ -34,6 +37,9 @@ let userTokens = {};
 
 // Vision API client (uses Application Default Credentials)
 const visionClient = new vision.ImageAnnotatorClient();
+
+// Multer configuration for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Helper function to create OAuth client for a user
 function createUserOAuthClient(tokens) {
@@ -1416,19 +1422,17 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Vision API OCR endpoint
-app.post('/api/ocr', async (req, res) => {
+// Vision API OCR endpoint (multipart file upload)
+app.post('/api/ocr', upload.single('file'), async (req, res) => {
   try {
-    const { image } = req.body;
-    
-    if (!image) {
-      return res.status(400).json({ error: '画像データが提供されていません' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'ファイルがアップロードされていません' });
     }
 
-    console.log('🔍 Vision API OCR処理開始...');
+    console.log('🔍 Vision API OCR処理開始...', req.file.size, 'bytes');
 
-    // Vision API でテキスト検出
-    const [result] = await visionClient.textDetection(image);
+    // Vision API でテキスト検出（bufferを使用）
+    const [result] = await visionClient.textDetection(req.file.buffer);
     const text = result.fullTextAnnotation?.text || '';
 
     console.log('📄 OCR結果:', text.substring(0, 100) + '...');

@@ -1,14 +1,14 @@
-// Call server-side Vision API for OCR
-export async function performOCR(imageData: string): Promise<string> {
+// Call server-side Vision API for OCR (multipart file upload)
+export async function performOCR(imageBlob: Blob): Promise<string> {
   try {
-    console.log('🔍 Vision API OCR処理開始...');
+    console.log('🔍 Vision API OCR処理開始...', imageBlob.size, 'bytes');
+
+    const formData = new FormData();
+    formData.append('file', imageBlob, 'receipt.jpg');
 
     const response = await fetch('http://localhost:3001/api/ocr', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ image: imageData }),
+      body: formData,
     });
 
     if (!response.ok) {

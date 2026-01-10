@@ -121,6 +121,17 @@ const App: React.FC = () => {
   const MAX_WIDTH = 600;         // 最大幅600px（AI解析には十分）
   const MAX_FILE_SIZE = 100 * 1024; // 最大100KB（高速送信）
 
+  // base64からBlobに変換（OCR用）
+  const base64ToBlob = (base64: string): Blob => {
+    const base64Data = base64.split(',')[1] || base64;
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    return new Blob([new Uint8Array(byteNumbers)], { type: 'image/jpeg' });
+  };
+
   // base64からBlobサイズを計算
   const getBase64Size = (base64: string): number => {
     const base64WithoutPrefix = base64.split(',')[1] || base64;
@@ -343,9 +354,10 @@ const App: React.FC = () => {
       let textToProcess = currentInput;
       
       if (currentImage) {
-        // Step 1: Tesseract で OCR
+        // Step 1: Vision API OCR
         console.log('📸 画像検出 - OCR処理開始');
-        const ocrText = await performOCR(currentImage);
+        const imageBlob = base64ToBlob(currentImage);
+        const ocrText = await performOCR(imageBlob);
         console.log('📄 OCR テキスト:', ocrText);
         
         // 入力テキストとOCR結果を結合

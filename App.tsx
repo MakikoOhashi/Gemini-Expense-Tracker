@@ -391,9 +391,27 @@ const App: React.FC = () => {
       // 保存完了メッセージはcommitTransaction/commitRuleで表示
 
       if (extractedAction) {
+        // パターン1: 画像あり → Geminiが抽出した日付を使用
+        // パターン2: 画像なし → 本日の日付を自動設定
+        const todayDate = new Date().toISOString().split('T')[0];
+        const extractedDate = extractedAction.data.date;
+        
+        // 🔍 デバッグ
+        console.log('🗓️ ========== 日付デバッグ ==========');
+        console.log('🗓️ 画像あり:', !!currentImage);
+        console.log('🗓️ Gemini抽出日付:', extractedDate);
+        console.log('🗓️ 本日の日付:', todayDate);
+        console.log('🗓️ 採用する日付:', currentImage && extractedDate ? extractedDate : todayDate);
+        console.log('🗓️ ========== デバッグ完了 ==========');
+        
         setPendingExtraction({
           type: extractedAction.type === 'ADD_TRANSACTION' ? 'transaction' : 'rule',
-          data: { ...extractedAction.data },
+          data: { 
+            ...extractedAction.data,
+            // 画像ありで Gemini が日付を返した場合はその日付を使用
+            // それ以外は本日の日付を自動設定
+            date: currentImage && extractedDate ? extractedDate : todayDate
+          },
           imageUrl: currentImage || undefined
         });
       } else {
@@ -616,7 +634,13 @@ const App: React.FC = () => {
                         <>
                           <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
                             <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">日付</p>
-                            <p className="text-lg font-black text-indigo-700">{pendingExtraction.data.date || new Date().toISOString().split('T')[0]}</p>
+                            <p className="text-lg font-black text-indigo-700">
+                              {(() => {
+                                const displayDate = pendingExtraction.data.date || new Date().toISOString().split('T')[0];
+                                console.log('🗓️ UI表示日付:', displayDate);
+                                return displayDate;
+                              })()}
+                            </p>
                           </div>
                           <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
                             <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">金額</p>

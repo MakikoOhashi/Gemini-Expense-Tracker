@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { SYSTEM_PROMPT } from "../constants";
+import { SYSTEM_PROMPT, SYSTEM_PROMPT_WITH_IMAGE, SYSTEM_PROMPT_WITHOUT_IMAGE } from "../constants";
 import { AIResponse, ChatMessage, TransactionRule } from "../types";
 import { sheetsService } from "./sheetsService";
 
@@ -59,7 +59,11 @@ export class GeminiService {
       ? allRules.map(r => `"${r.keyword}" → 勘定科目: ${r.category} (信頼度: ${r.confidence || 80}%)`).join('\n')
       : "なし";
 
-    const systemInstruction = SYSTEM_PROMPT.replace('{{RULES}}', ruleString) + "\n必ず純粋なJSONオブジェクト一つのみを返してください。";
+    // 画像の有無によってプロンプトを選択
+    const basePrompt = image ? SYSTEM_PROMPT_WITH_IMAGE : SYSTEM_PROMPT_WITHOUT_IMAGE;
+    const systemInstruction = basePrompt.replace('{{RULES}}', ruleString) + "\n必ず純粋なJSONオブジェクト一つのみを返してください。";
+    
+    console.log(`📝 使用するプロンプト: ${image ? '画像あり（日付抽出あり）' : '画像なし（日付なし）'}`);
 
     try {
       // 15秒のタイムアウトを設定

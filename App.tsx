@@ -117,6 +117,37 @@ const App: React.FC = () => {
     }
   }, [messages, activeTab, pendingExtraction, isEditing, isProcessing]);
 
+  // 取引履歴ページ開いたらGoogle Sheetsからデータを取得
+  useEffect(() => {
+    if (activeTab === 'history') {
+      const loadTransactions = async () => {
+        try {
+          console.log('📊 Google Sheetsから取引データを取得中...');
+          const data = await sheetsService.getTransactions();
+          
+          // Transaction型に変換
+          const mappedTransactions: Transaction[] = data.map((t, index) => ({
+            id: `sheets_${index}`,
+            date: t.date,
+            amount: t.amount,
+            description: t.memo || '',
+            category: t.category,
+            type: t.type,
+            receiptUrl: t.receipt_url || '',
+            createdAt: new Date(t.date).getTime()
+          }));
+          
+          setTransactions(mappedTransactions);
+          console.log(`✅ ${mappedTransactions.length}件の取引データを取得しました`);
+        } catch (error: any) {
+          console.error('❌ 取引データ取得エラー:', error);
+        }
+      };
+
+      loadTransactions();
+    }
+  }, [activeTab]);
+
   // 画像圧縮設定（AI解析用に最適化：より小さく・高速）
   const MAX_WIDTH = 600;         // 最大幅600px（AI解析には十分）
   const MAX_FILE_SIZE = 100 * 1024; // 最大100KB（高速送信）

@@ -6,6 +6,15 @@ export interface ExpenseData {
   receipt_url?: string;
 }
 
+export interface TransactionData {
+  date: string;
+  amount: number;
+  category: string;
+  memo?: string;
+  receipt_url?: string;
+  type: 'expense' | 'income';
+}
+
 export interface Rule {
   id?: string;
   keyword: string;
@@ -148,6 +157,50 @@ export class SheetsService {
       return result;
     } catch (error: any) {
       console.error('Sheets API Error:', error);
+      throw new Error(error.message || 'ネットワークエラーが発生しました');
+    }
+  }
+
+  async getTransactions(year?: number): Promise<TransactionData[]> {
+    try {
+      const currentYear = year || new Date().getFullYear();
+      
+      // 並列で支出と売上を取得
+      const [expensesResponse, incomeResponse] = await Promise.all([
+        fetch(`${this.baseUrl}/expenses?userId=${this.userId}&year=${currentYear}`),
+        fetch(`${this.baseUrl}/income?userId=${this.userId}&year=${currentYear}`)
+      ]);
+
+      const expensesResult = await expensesResponse.json();
+      const incomeResult = await incomeResponse.json();
+
+      if (!expensesResponse.ok) {
+        throw new Error(expensesResult.error || '支出データの取得に失敗しました');
+      }
+      if (!incomeResponse.ok) {
+        throw new Error(incomeResult.error || '売上データの取得に失敗しました');
+      }
+
+      // データを結合
+      const expenses: TransactionData[] = (expensesResult.expenses || []).map((e: any) => ({
+        ...e,
+        type: 'expense' as const
+      }));
+
+      const income: TransactionData[] = (incomeResult.income || []).map((i: any) => ({
+        ...i,
+        type: 'income' as const
+      }));
+
+      // 日付でソート（新しい順）
+      const allTransactions = [...expenses, ...income].sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+
+      console.log(`📊 ${currentYear}年度の取引データを取得: ${allTransactions.length}件`);
+      return allTransactions;
+    } catch (error: any) {
+      console.error('Get Transactions Error:', error);
       throw new Error(error.message || 'ネットワークエラーが発生しました');
     }
   }

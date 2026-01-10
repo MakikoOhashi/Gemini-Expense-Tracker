@@ -25,6 +25,11 @@ interface TransactionListProps {
 type SortKey = 'date' | 'category';
 type ProofFilter = 'all' | 'with' | 'without';
 
+// 証憑の有無を判定（URLが空または空白文字の場合は「なし」とする）
+const hasReceipt = (t: Transaction): boolean => {
+  return !!(t.receiptUrl && t.receiptUrl.trim() !== '');
+};
+
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemove, onUpdate }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Transaction>>({});
@@ -42,11 +47,11 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
       result = result.filter(t => t.category === filterCategory);
     }
 
-    // Filtering by Proof
+    // Filtering by Proof (receiptUrlの有無で判定)
     if (proofFilter === 'with') {
-      result = result.filter(t => !!t.receiptUrl);
+      result = result.filter(t => hasReceipt(t));
     } else if (proofFilter === 'without') {
-      result = result.filter(t => !t.receiptUrl);
+      result = result.filter(t => !hasReceipt(t));
     }
 
     // Sorting

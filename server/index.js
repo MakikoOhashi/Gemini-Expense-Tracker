@@ -1162,6 +1162,62 @@ app.get('/api/income', async (req, res) => {
   }
 });
 
+// Update transaction endpoint
+app.post('/api/update-transaction', async (req, res) => {
+  try {
+    const userId = req.body.userId || 'test-user';
+    const { id, date, amount, category, memo, receiptUrl, type } = req.body;
+
+    if (!id || !date || !amount || !category) {
+      return res.status(400).json({ error: '必須フィールドが不足しています' });
+    }
+
+    // Determine sheet based on type
+    const sheetType = type === 'income' ? 'Income' : 'Expenses';
+    const currentYear = new Date(date).getFullYear();
+    
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // IDから行番号を抽出（例: "2026_exp_3" → 3）
+    const rowNumber = parseInt(id.split('_').pop());
+    if (isNaN(rowNumber)) {
+      return res.status(400).json({ error: '無効なIDです' });
+    }
+
+    const range = `${sheetType}!A${rowNumber}:E${rowNumber}`;
+    
+    // 更新する値
+    const values = [[date, amount, category, memo || '', receiptUrl || '']];
+
+    console.log(`🔄 トランザクション更新: ${sheetType}!${range}`, values);
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values },
+    });
+
+    console.log(`✅ トランザクション更新成功: ${id}`);
+
+    res.json({
+      success: true,
+      message: 'データを更新しました',
+      id: id,
+      updated: { date, amount, category, memo, receiptUrl }
+    });
+
+  } catch (error) {
+    console.error('Update Transaction Error:', error);
+    res.status(500).json({
+      error: 'データの更新に失敗しました',
+      details: error.message
+    });
+  }
+});
+
 // POST new expense/income
 app.post('/api/expenses', async (req, res) => {
   try {

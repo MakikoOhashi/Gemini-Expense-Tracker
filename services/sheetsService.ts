@@ -222,6 +222,32 @@ export class SheetsService {
     }
   }
 
+  async updateTransaction(transaction: TransactionData): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/update-transaction`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...transaction,
+          userId: this.userId
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'データの更新に失敗しました');
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('Update Transaction Error:', error);
+      throw new Error(error.message || 'ネットワークエラーが発生しました');
+    }
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/health`);

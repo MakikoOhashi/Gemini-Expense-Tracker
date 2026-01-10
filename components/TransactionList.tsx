@@ -75,9 +75,30 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
     setEditValues({});
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingId && editValues) {
+      // まずローカル state を更新
       onUpdate(editValues as Transaction);
+      
+      // Google Sheets にも更新
+      try {
+        const transactionData = {
+          id: editValues.id,
+          date: editValues.date || new Date().toISOString().split('T')[0],
+          amount: editValues.amount || 0,
+          category: editValues.category || '雑費',
+          memo: editValues.description || '',
+          receiptUrl: editValues.receiptUrl || '',
+          type: editValues.type || 'expense'
+        };
+        
+        await sheetsService.updateTransaction(transactionData);
+        console.log('✅ Google Sheets に更新しました');
+      } catch (error: any) {
+        console.error('❌ Google Sheets 更新エラー:', error);
+        alert(`Google Sheetsへの更新に失敗しました: ${error.message}`);
+      }
+      
       setEditingId(null);
       setEditValues({});
     }

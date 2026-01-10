@@ -140,13 +140,38 @@ async function createFolder(folderName, parentFolderId, userId) {
 async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   const folderName = 'Gemini Expense Tracker';
   
-  // 名前で検索
-  const existingId = await searchFolder(folderName, null, userId);
-  if (existingId) {
-    return existingId;
+  // 名前で検索（My Drive直下のみ）
+  const client = await getAuthenticatedClient(userId);
+  const drive = google.drive({ version: 'v3', auth: client });
+
+  // My Drive直下のフォルダを検索
+  const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
+  
+  const searchResponse = await drive.files.list({
+    q: query,
+    fields: 'files(id, name)',
+    spaces: 'drive'
+  });
+
+  const files = searchResponse.data.files || [];
+  
+  // 同名フォルダが複数ある場合は警告
+  if (files.length > 1) {
+    console.warn(`⚠️ 警告: 「${folderName}」名が付けられたフォルダが${files.length}個見つかりました`);
+    console.warn(`   最初のフォルダを使用します: ${files[0].id}`);
+    console.warn(`   問題がある場合は、余分なフォルダを削除してください。`);
+    for (const file of files) {
+      console.warn(`   - ${file.name} (${file.id})`);
+    }
+  }
+  
+  if (files.length > 0) {
+    console.log(`📁 フォルダを発見: ${folderName} (${files[0].id})`);
+    return files[0].id;
   }
   
   // ないなら作成
+  console.log(`📁 「${folderName}」フォルダが見つからないため作成します`);
   return await createFolder(folderName, null, userId);
 }
 

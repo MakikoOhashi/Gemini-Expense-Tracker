@@ -181,16 +181,30 @@ export class SheetsService {
         throw new Error(incomeResult.error || '売上データの取得に失敗しました');
       }
 
-      // データを結合
-      const expenses: TransactionData[] = (expensesResult.expenses || []).map((e: any) => ({
-        ...e,
-        type: 'expense' as const
-      }));
+      // データを結合（receiptUrlフィールドをreceipt_urlに統一）
+      const expenses: TransactionData[] = (expensesResult.expenses || []).map((e: any) => {
+        console.log('📋 支出データ受信:', { date: e.date, amount: e.amount, receiptUrl: e.receiptUrl });
+        return {
+          date: e.date,
+          amount: e.amount,
+          category: e.category,
+          memo: e.memo,
+          receipt_url: e.receiptUrl || '', // receiptUrl → receipt_url に変換
+          type: 'expense' as const
+        };
+      });
 
-      const income: TransactionData[] = (incomeResult.income || []).map((i: any) => ({
-        ...i,
-        type: 'income' as const
-      }));
+      const income: TransactionData[] = (incomeResult.income || []).map((i: any) => {
+        console.log('📋 売上データ受信:', { date: i.date, amount: i.amount, receiptUrl: i.receiptUrl });
+        return {
+          date: i.date,
+          amount: i.amount,
+          category: i.category,
+          memo: i.memo,
+          receipt_url: i.receiptUrl || '', // receiptUrl → receipt_url に変換
+          type: 'income' as const
+        };
+      });
 
       // 日付でソート（新しい順）
       const allTransactions = [...expenses, ...income].sort((a, b) => {
@@ -198,6 +212,9 @@ export class SheetsService {
       });
 
       console.log(`📊 ${currentYear}年度の取引データを取得: ${allTransactions.length}件`);
+      if (allTransactions.length > 0) {
+        console.log('📋 サンプルデータ:', allTransactions[0]);
+      }
       return allTransactions;
     } catch (error: any) {
       console.error('Get Transactions Error:', error);

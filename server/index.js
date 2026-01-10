@@ -1087,6 +1087,13 @@ app.get('/api/expenses', async (req, res) => {
     });
 
     const rows = response.data.values || [];
+    console.log('📊 /api/expenses 取得データ:');
+    console.log('  行数:', rows.length);
+    if (rows.length > 0) {
+      console.log('  1行目:', rows[0]);
+      console.log('  receiptUrl (row[4]):', rows[0]?.[4] || '(なし)');
+    }
+    
     const expenses = rows.map((row, index) => ({
       id: `${year}_exp_${index + 2}`,
       date: row[0] || '',
@@ -1126,6 +1133,13 @@ app.get('/api/income', async (req, res) => {
     });
 
     const rows = response.data.values || [];
+    console.log('📊 /api/income 取得データ:');
+    console.log('  行数:', rows.length);
+    if (rows.length > 0) {
+      console.log('  1行目:', rows[0]);
+      console.log('  receiptUrl (row[4]):', rows[0]?.[4] || '(なし)');
+    }
+    
     const income = rows.map((row, index) => ({
       id: `${year}_inc_${index + 2}`,
       date: row[0] || '',

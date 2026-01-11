@@ -172,6 +172,7 @@ async function getGeminiExpenseTrackerRootFolderInfo(userId) {
 }
 
 // Helper function to get or create Gemini Expense Tracker root folder
+// Returns: string (folderId) if single folder exists, or object with conflict info
 async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   const folderName = 'Gemini Expense Tracker';
   
@@ -191,20 +192,29 @@ async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
   
   const searchResponse = await drive.files.list({
     q: query,
-    fields: 'files(id, name)',
+    fields: 'files(id, name, createdTime)',
     spaces: 'drive'
   });
 
   const files = searchResponse.data.files || [];
   
-  // 同名フォルダが複数ある場合は警告
   if (files.length > 1) {
+    // 複数同名フォルダがある場合は競合情報を返す
+    const duplicateFolders = files.map(f => ({
+      id: f.id,
+      name: f.name,
+      createdTime: f.createdTime
+    }));
+    
     console.warn(`⚠️ 警告: 「${folderName}」名が付けられたフォルダが${files.length}個見つかりました`);
-    console.warn(`   最初のフォルダを使用します: ${files[0].id}`);
-    console.warn(`   問題がある場合は、余分なフォルダを削除してください。`);
-    for (const file of files) {
-      console.warn(`   - ${file.name} (${file.id})`);
-    }
+    
+    return {
+      isFolderAmbiguous: true,
+      folderConflict: {
+        duplicateFolders: duplicateFolders,
+        message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
+      }
+    };
   }
   
   if (files.length > 0) {
@@ -302,13 +312,30 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
   // Check cache first (セッション中の高速参照用)
   if (spreadsheetCache.has(year)) {
     const cached = spreadsheetCache.get(year);
+    // Cache が文字列（フォルダID）の場合は何もしない、通常のキャッシュはオブジェクト
+    if (typeof cached === 'string') {
+      console.log(`📋 キャッシュから${year}年度スプレッドシートを取得:`, cached);
+      return cached;
+    }
     console.log(`📋 キャッシュから${year}年度スプレッドシートを取得:`, cached.spreadsheetId);
     return cached;
   }
 
   try {
     // Gemini Expense Tracker フォルダ配下を確認
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    
+    // 競合情報が返された場合は、エラーをスローして上位で処理
+    if (typeof folderResult === 'object' && folderResult.isFolderAmbiguous) {
+      console.warn('⚠️ フォルダ名の重複を検出しました');
+      throw {
+        isFolderAmbiguous: true,
+        folderConflict: folderResult.folderConflict,
+        message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
+      };
+    }
+    
+    const rootFolderId = folderResult;
     console.log(`🔍 ルートフォルダID: ${rootFolderId}`);
 
     // フォルダ配下でスプレッドシートを検索
@@ -1143,6 +1170,23 @@ app.get('/api/expenses', async (req, res) => {
     const userId = req.query.userId || 'test-user';
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
     
+    // Check for folder conflicts first
+    const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    
+    // Check if result is a conflict info object
+    if (typeof folderResult === 'object' && folderResult.isFolderAmbiguous === true) {
+      console.log('📁 フォルダ競合を検出 - 早期リターン');
+      return res.json({
+        expenses: [],
+        isFolderAmbiguous: true,
+        folderConflict: folderResult.folderConflict
+      });
+    }
+    
+    // folderResult is a folder ID (string)
+    const rootFolderId = folderResult;
+    console.log(`🔍 ルートフォルダID: ${rootFolderId}`);
+
     const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
@@ -1176,22 +1220,30 @@ app.get('/api/expenses', async (req, res) => {
       };
     });
 
-    // Check for folder conflicts
-    const duplicateFolders = await getGeminiExpenseTrackerRootFolderInfo(userId);
-    const folderConflict = duplicateFolders.length > 1 ? {
-      duplicateFolders: duplicateFolders,
-      message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
-    } : null;
+    // Debug log
+    console.log('📊 /api/expenses 最終レスポンス:', {
+      expensesCount: expenses.length,
+      isFolderAmbiguous: false,
+      hasConflict: false
+    });
 
     console.log('Sample IDs:', expenses.slice(0, 3).map(e => e.id));
     res.json({ 
       expenses,
-      isFolderAmbiguous: duplicateFolders.length > 1,
-      folderConflict
+      isFolderAmbiguous: false,
+      folderConflict: null
     });
 
   } catch (error) {
     console.error('Get Expenses Error:', error);
+    // Check if it's a folder conflict error from getOrCreateSpreadsheetForYear
+    if (error.isFolderAmbiguous) {
+      return res.json({
+        expenses: [],
+        isFolderAmbiguous: true,
+        folderConflict: error.folderConflict
+      });
+    }
     res.status(500).json({
       error: '経費データの取得に失敗しました',
       details: error.message
@@ -1205,6 +1257,23 @@ app.get('/api/income', async (req, res) => {
     const userId = req.query.userId || 'test-user';
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
     
+    // Check for folder conflicts first
+    const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    
+    // Check if result is a conflict info object
+    if (typeof folderResult === 'object' && folderResult.isFolderAmbiguous === true) {
+      console.log('📁 フォルダ競合を検出 - 早期リターン');
+      return res.json({
+        income: [],
+        isFolderAmbiguous: true,
+        folderConflict: folderResult.folderConflict
+      });
+    }
+    
+    // folderResult is a folder ID (string)
+    const rootFolderId = folderResult;
+    console.log(`🔍 ルートフォルダID: ${rootFolderId}`);
+
     const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
@@ -1234,21 +1303,28 @@ app.get('/api/income', async (req, res) => {
       createdAt: Date.now()
     }));
 
-    // Check for folder conflicts
-    const duplicateFolders = await getGeminiExpenseTrackerRootFolderInfo(userId);
-    const folderConflict = duplicateFolders.length > 1 ? {
-      duplicateFolders: duplicateFolders,
-      message: '複数の「Gemini Expense Tracker」フォルダが見つかりました'
-    } : null;
+    console.log('📊 /api/income 最終レスポンス:', {
+      incomeCount: income.length,
+      isFolderAmbiguous: false,
+      hasConflict: false
+    });
 
     res.json({ 
       income,
-      isFolderAmbiguous: duplicateFolders.length > 1,
-      folderConflict
+      isFolderAmbiguous: false,
+      folderConflict: null
     });
 
   } catch (error) {
     console.error('Get Income Error:', error);
+    // Check if it's a folder conflict error from getOrCreateSpreadsheetForYear
+    if (error.isFolderAmbiguous) {
+      return res.json({
+        income: [],
+        isFolderAmbiguous: true,
+        folderConflict: error.folderConflict
+      });
+    }
     res.status(500).json({
       error: '売上データの取得に失敗しました',
       details: error.message
@@ -1540,6 +1616,17 @@ app.post('/api/clear-folder-cache', async (req, res) => {
 app.get('/api/check-folder-conflict', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
+    
+    // Check if user has already selected a folder - if so, no conflict
+    if (userSelectedFolder.has(userId)) {
+      console.log(`📁 ユーザーが既にフォルダを選択済み: ${userId}`);
+      res.json({
+        isFolderAmbiguous: false,
+        folderConflict: null
+      });
+      return;
+    }
+    
     const duplicateFolders = await getGeminiExpenseTrackerRootFolderInfo(userId);
     
     if (duplicateFolders.length > 1) {

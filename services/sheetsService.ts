@@ -182,8 +182,8 @@ export class SheetsService {
         throw new Error(incomeResult.error || '売上データの取得に失敗しました');
       }
 
-      // フォルダ競合チェック
-      if (expensesResult.isFolderAmbiguous || incomeResult.isFolderAmbiguous) {
+      // フォルダ競合チェック（厳密比較: true の場合のみ）
+      if (expensesResult.isFolderAmbiguous === true || incomeResult.isFolderAmbiguous === true) {
         console.warn('⚠️ フォルダ名の重複を検出しました');
         return {
           isFolderAmbiguous: true,

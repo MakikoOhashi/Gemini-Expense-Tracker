@@ -75,6 +75,39 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Load transactions function (can be called from anywhere)
+  const loadTransactions = useCallback(async () => {
+    try {
+      console.log('📊 Google Sheetsから取引データを取得中...');
+      const response = await sheetsService.getTransactions() as any;
+      
+      // Check for folder conflict from response
+      if (response.isFolderAmbiguous && response.folderConflict) {
+        setFolderConflict(response.folderConflict);
+        setTransactions([]);
+        return;
+      }
+      
+      // Transaction型に変換
+      const mappedTransactions: Transaction[] = response.map((t: any) => ({
+        id: t.id,
+        date: t.date,
+        amount: t.amount,
+        description: t.memo || '',
+        category: t.category,
+        type: t.type,
+        receiptUrl: t.receipt_url || '',
+        createdAt: new Date(t.date).getTime()
+      }));
+      
+      setTransactions(mappedTransactions);
+      console.log(`✅ ${mappedTransactions.length}件の取引データを取得しました`);
+    } catch (error: any) {
+      console.error('❌ 取引データ取得エラー:', error);
+      setTransactions([]);
+    }
+  }, []);
+
   // Check authentication status on app load
   useEffect(() => {
     const checkAuth = async () => {
@@ -151,38 +184,9 @@ const App: React.FC = () => {
   // 取引履歴ページ開いたらGoogle Sheetsからデータを取得
   useEffect(() => {
     if (activeTab === 'history') {
-      const loadTransactions = async () => {
-        try {
-          console.log('📊 Google Sheetsから取引データを取得中...');
-          const response = await sheetsService.getTransactions() as any;
-          
-          // Check for folder conflict from response
-          if (response.isFolderAmbiguous && response.folderConflict) {
-            setFolderConflict(response.folderConflict);
-          }
-          
-          // Transaction型に変換
-          const mappedTransactions: Transaction[] = response.map((t: any) => ({
-            id: t.id,
-            date: t.date,
-            amount: t.amount,
-            description: t.memo || '',
-            category: t.category,
-            type: t.type,
-            receiptUrl: t.receipt_url || '',
-            createdAt: new Date(t.date).getTime()
-          }));
-          
-          setTransactions(mappedTransactions);
-          console.log(`✅ ${mappedTransactions.length}件の取引データを取得しました`);
-        } catch (error: any) {
-          console.error('❌ 取引データ取得エラー:', error);
-        }
-      };
-
       loadTransactions();
     }
-  }, [activeTab]);
+  }, [activeTab, loadTransactions]);
 
   // 画像圧縮設定（AI解析用に最適化：より小さく・高速）
   const MAX_WIDTH = 600;         // 最大幅600px（AI解析には十分）
@@ -904,19 +908,18 @@ const App: React.FC = () => {
                           });
                           console.log(`📁 フォルダ ${folder.id} を選択しました`);
                           
-                          // Clear server cache and close modal
+                          // Clear server cache
                           await fetch('http://localhost:3001/api/clear-folder-cache', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
                           });
                           
+                          // Close modal
                           setFolderConflict(null);
                           
-                          // Reload transactions if on history tab
-                          if (activeTab === 'history') {
-                            setActiveTab('history');
-                          }
+                          // Reload transactions directly
+                          loadTransactions();
                         } catch (e) {
                           console.error('フォルダ選択エラー:', e);
                         }
@@ -975,4 +978,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

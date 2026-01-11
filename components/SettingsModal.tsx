@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon, TrashIcon, SparklesIcon, CloudIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { TransactionRule } from '../types';
 
@@ -15,6 +15,32 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules, onDeleteRule, onClearHistory, onInitializeSystem }) => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [initMessage, setInitMessage] = useState<string | null>(null);
+  const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
+
+  // Fetch spreadsheet ID when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchSpreadsheetId();
+    }
+  }, [isOpen]);
+
+  const fetchSpreadsheetId = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/spreadsheet-id');
+      const data = await response.json();
+      if (data.spreadsheetId) {
+        setSpreadsheetId(data.spreadsheetId);
+      }
+    } catch (error) {
+      console.error('Failed to fetch spreadsheet ID:', error);
+    }
+  };
+
+  // Rules sheet gid (4th sheet = gid 3)
+  const RULES_SHEET_GID = 3;
+  const sheetsUrl = spreadsheetId 
+    ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${RULES_SHEET_GID}`
+    : null;
 
   if (!isOpen) return null;
 
@@ -69,6 +95,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules, o
                     </button>
                   </div>
                 ))}
+                {sheetsUrl && (
+                  <a
+                    href={sheetsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-3 px-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl hover:bg-green-100 transition text-center flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                      <path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>
+                    </svg>
+                    Google Sheets でルールを確認
+                  </a>
+                )}
               </div>
             )}
           </section>

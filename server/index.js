@@ -1858,6 +1858,4 @@ app.listen(PORT, () => {
   console.log(`📊 Google Sheets integration ready`);
   console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
 });
-  console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
 
-      details: error.message

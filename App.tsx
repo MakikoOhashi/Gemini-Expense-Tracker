@@ -43,6 +43,7 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Folder conflict modal state
   const [folderConflict, setFolderConflict] = useState<{
@@ -152,14 +153,14 @@ const App: React.FC = () => {
     const checkFolderConflict = async () => {
       // Only check if user is authenticated
       if (!authStatus?.authenticated) return;
-      
+
       try {
         const userId = authStatus?.userId || 'test-user';
         console.log('🔍 フォルダ競合チェック開始...');
-        
+
         const response = await fetch(`http://localhost:3001/api/check-folder-conflict?userId=${userId}`);
         const data = await response.json();
-        
+
         if (data.isFolderAmbiguous && data.folderConflict) {
           console.log('⚠️ 認証後にフォルダ競合を検出しました');
           setFolderConflict(data.folderConflict);
@@ -171,6 +172,19 @@ const App: React.FC = () => {
 
     checkFolderConflict();
   }, [authStatus?.authenticated]);
+
+  // Authentication check modal
+  useEffect(() => {
+    if (!authStatus) return; // Wait for auth status to be determined
+
+    if (!authStatus.authenticated) {
+      // Show auth modal if not authenticated
+      setShowAuthModal(true);
+    } else {
+      // Hide auth modal if authenticated
+      setShowAuthModal(false);
+    }
+  }, [authStatus]);
 
   useEffect(() => {
     if (activeTab === 'chat') {
@@ -594,6 +608,23 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto bg-white shadow-xl overflow-hidden relative">
+      {/* Authentication Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-in zoom-in-95 duration-300">
+            <h2 className="text-xl font-bold mb-4">🔐 Google Sheets 連携が必要です</h2>
+            <p className="text-gray-600 mb-6">
+              アプリを使用するには Google アカウントでの認証が必須です。
+            </p>
+            <button
+              onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+            >
+              Google で連携する
+            </button>
+          </div>
+        </div>
+      )}
       <header className="bg-indigo-600 text-white p-4 shadow-md flex items-center justify-between z-30">
         <div className="flex items-center gap-2 font-bold">
           <ReceiptPercentIcon className="w-8 h-8" />
@@ -648,7 +679,7 @@ const App: React.FC = () => {
       </header>
 
       {/* min-h-0 を追加してグラフ描画時のサイズ計算を安定化 */}
-      <main className="flex-1 overflow-y-auto bg-slate-50 relative min-h-0">
+      <main className={`flex-1 overflow-y-auto bg-slate-50 relative min-h-0 ${showAuthModal ? 'pointer-events-none opacity-50' : ''}`}>
         {activeTab === 'chat' ? (
           <div className="p-4 space-y-4 pb-48">
             {messages.map((m) => (

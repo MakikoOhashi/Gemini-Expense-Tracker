@@ -473,12 +473,12 @@ async function initializeSheets(spreadsheetId, year, userId) {
 
     // Step 2: 月別支出データ (1-6月)
     const monthlyExpenseData1 = [
-      ['1月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=1, YEAR(Expenses!A:A)=${year})`],
-      ['2月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=2, YEAR(Expenses!A:A)=${year})`],
-      ['3月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=3, YEAR(Expenses!A:A)=${year})`],
-      ['4月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=4, YEAR(Expenses!A:A)=${year})`],
-      ['5月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=5, YEAR(Expenses!A:A)=${year})`],
-      ['6月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=6, YEAR(Expenses!A:A)=${year})`],
+      ['1月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},1,1), Expenses!A:A, "<"&DATE(${year},2,1))`],
+      ['2月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},2,1), Expenses!A:A, "<"&DATE(${year},3,1))`],
+      ['3月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},3,1), Expenses!A:A, "<"&DATE(${year},4,1))`],
+      ['4月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},4,1), Expenses!A:A, "<"&DATE(${year},5,1))`],
+      ['5月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},5,1), Expenses!A:A, "<"&DATE(${year},6,1))`],
+      ['6月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},6,1), Expenses!A:A, "<"&DATE(${year},7,1))`],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
@@ -489,12 +489,12 @@ async function initializeSheets(spreadsheetId, year, userId) {
 
     // Step 3: 月別支出データ (7-12月)
     const monthlyExpenseData2 = [
-      ['7月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=7, YEAR(Expenses!A:A)=${year})`],
-      ['8月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=8, YEAR(Expenses!A:A)=${year})`],
-      ['9月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=9, YEAR(Expenses!A:A)=${year})`],
-      ['10月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=10, YEAR(Expenses!A:A)=${year})`],
-      ['11月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=11, YEAR(Expenses!A:A)=${year})`],
-      ['12月', `=SUMPRODUCT(Expenses!B:B, MONTH(Expenses!A:A)=12, YEAR(Expenses!A:A)=${year})`],
+      ['7月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},7,1), Expenses!A:A, "<"&DATE(${year},8,1))`],
+      ['8月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},8,1), Expenses!A:A, "<"&DATE(${year},9,1))`],
+      ['9月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},9,1), Expenses!A:A, "<"&DATE(${year},10,1))`],
+      ['10月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},10,1), Expenses!A:A, "<"&DATE(${year},11,1))`],
+      ['11月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},11,1), Expenses!A:A, "<"&DATE(${year},12,1))`],
+      ['12月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},12,1), Expenses!A:A, "<"&DATE(${year}+1,1,1))`],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
@@ -513,12 +513,12 @@ async function initializeSheets(spreadsheetId, year, userId) {
 
     // Step 5: 月別売上データ (1-6月)
     const monthlyIncomeData1 = [
-      ['1月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=1, YEAR(Income!A:A)=${year})`],
-      ['2月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=2, YEAR(Income!A:A)=${year})`],
-      ['3月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=3, YEAR(Income!A:A)=${year})`],
-      ['4月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=4, YEAR(Income!A:A)=${year})`],
-      ['5月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=5, YEAR(Income!A:A)=${year})`],
-      ['6月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=6, YEAR(Income!A:A)=${year})`],
+      ['1月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},1,1), Income!A:A, "<"&DATE(${year},2,1))`],
+      ['2月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},2,1), Income!A:A, "<"&DATE(${year},3,1))`],
+      ['3月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},3,1), Income!A:A, "<"&DATE(${year},4,1))`],
+      ['4月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},4,1), Income!A:A, "<"&DATE(${year},5,1))`],
+      ['5月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},5,1), Income!A:A, "<"&DATE(${year},6,1))`],
+      ['6月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},6,1), Income!A:A, "<"&DATE(${year},7,1))`],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
@@ -529,12 +529,12 @@ async function initializeSheets(spreadsheetId, year, userId) {
 
     // Step 6: 月別売上データ (7-12月)
     const monthlyIncomeData2 = [
-      ['7月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=7, YEAR(Income!A:A)=${year})`],
-      ['8月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=8, YEAR(Income!A:A)=${year})`],
-      ['9月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=9, YEAR(Income!A:A)=${year})`],
-      ['10月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=10, YEAR(Income!A:A)=${year})`],
-      ['11月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=11, YEAR(Income!A:A)=${year})`],
-      ['12月', `=SUMPRODUCT(Income!B:B, MONTH(Income!A:A)=12, YEAR(Income!A:A)=${year})`],
+      ['7月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},7,1), Income!A:A, "<"&DATE(${year},8,1))`],
+      ['8月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},8,1), Income!A:A, "<"&DATE(${year},9,1))`],
+      ['9月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},9,1), Income!A:A, "<"&DATE(${year},10,1))`],
+      ['10月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},10,1), Income!A:A, "<"&DATE(${year},11,1))`],
+      ['11月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},11,1), Income!A:A, "<"&DATE(${year},12,1))`],
+      ['12月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},12,1), Income!A:A, "<"&DATE(${year}+1,1,1))`],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,

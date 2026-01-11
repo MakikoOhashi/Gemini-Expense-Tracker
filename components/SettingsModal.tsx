@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, TrashIcon, SparklesIcon, CloudIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { TransactionRule } from '../types';
+import { AuthStatus } from '../services/authService';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -10,36 +11,54 @@ interface SettingsModalProps {
   onDeleteRule: (id: string) => void;
   onClearHistory: () => void;
   onInitializeSystem: () => Promise<void>;
+  authStatus: AuthStatus | null;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules, onDeleteRule, onClearHistory, onInitializeSystem }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: initialRules, onDeleteRule, onClearHistory, onInitializeSystem, authStatus }) => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [initMessage, setInitMessage] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
+  const [rulesSheetGid, setRulesSheetGid] = useState<number>(3);
+  const [rules, setRules] = useState<TransactionRule[]>(initialRules);
 
-  // Fetch spreadsheet ID when modal opens
+  // Fetch rules and spreadsheet ID when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchSpreadsheetId();
+      fetchRules();
     }
   }, [isOpen]);
 
   const fetchSpreadsheetId = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/spreadsheet-id');
+      const userId = authStatus?.userId || 'test-user';
+      const response = await fetch(`/api/spreadsheet-id?userId=${userId}`);
       const data = await response.json();
       if (data.spreadsheetId) {
         setSpreadsheetId(data.spreadsheetId);
+        setRulesSheetGid(data.rulesSheetGid || 3);
       }
     } catch (error) {
       console.error('Failed to fetch spreadsheet ID:', error);
     }
   };
 
-  // Rules sheet gid (4th sheet = gid 3)
-  const RULES_SHEET_GID = 3;
+  const fetchRules = async () => {
+    try {
+      const year = new Date().getFullYear();
+      const userId = authStatus?.userId || 'test-user';
+      const response = await fetch(`/api/rules?userId=${userId}&year=${year}`);
+      const data = await response.json();
+      if (data.success && data.rules) {
+        setRules(data.rules);
+      }
+    } catch (error) {
+      console.error('Failed to fetch rules:', error);
+    }
+  };
+
   const sheetsUrl = spreadsheetId 
-    ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${RULES_SHEET_GID}`
+    ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${rulesSheetGid}`
     : null;
 
   if (!isOpen) return null;
@@ -74,7 +93,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules, o
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           <section>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">自動分類ルール</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">自動分類ルール</h3>
+              {rules.length > 0 && (
+                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                  {rules.length}件
+                </span>
+              )}
+            </div>
+            
+            {/* Google Sheets へのリンクボタン - 常時表示 */}
+            {sheetsUrl && (
+              <a
+                href={sheetsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full mb-3 py-3 px-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl hover:bg-green-100 transition text-center flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                  <path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>
+                </svg>
+                Google Sheets でルールを確認
+              </a>
+            )}
+            
             {rules.length === 0 ? (
               <p className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-xl text-center">
                 チャットで「〜の時は〜の科目にして」と<br/>教えてもらうとここに自動追加されます。
@@ -95,20 +138,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules, o
                     </button>
                   </div>
                 ))}
-                {sheetsUrl && (
-                  <a
-                    href={sheetsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full py-3 px-4 bg-green-50 text-green-600 text-sm font-bold rounded-xl hover:bg-green-100 transition text-center flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
-                      <path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>
-                    </svg>
-                    Google Sheets でルールを確認
-                  </a>
-                )}
               </div>
             )}
           </section>

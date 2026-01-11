@@ -859,6 +859,7 @@ const App: React.FC = () => {
         onDeleteRule={(id) => setRules(p => p.filter(r => r.id !== id))}
         onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: '履歴をクリアしました。', timestamp: Date.now() }])}
         onInitializeSystem={handleInitializeSystem}
+        authStatus={authStatus}
       />
 
       {/* Folder Conflict Modal */}

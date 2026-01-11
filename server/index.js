@@ -1023,9 +1023,24 @@ app.get('/api/spreadsheet-id', async (req, res) => {
     const currentYear = new Date().getFullYear();
     const result = await getOrCreateSpreadsheetForYear(currentYear, userId);
 
+    // Get the actual Rules sheet gid
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+    
+    const metadataResponse = await sheets.spreadsheets.get({
+      spreadsheetId: result.spreadsheetId,
+      fields: 'sheets.properties'
+    });
+    
+    const rulesSheet = metadataResponse.data.sheets?.find(
+      s => s.properties?.title === 'Rules'
+    );
+    const rulesSheetGid = rulesSheet?.properties?.sheetId;
+
     res.json({
       spreadsheetId: result.spreadsheetId,
-      spreadsheetName: result.spreadsheetName
+      spreadsheetName: result.spreadsheetName,
+      rulesSheetGid: rulesSheetGid !== undefined ? rulesSheetGid : 3
     });
 
   } catch (error) {
@@ -1033,6 +1048,44 @@ app.get('/api/spreadsheet-id', async (req, res) => {
     res.status(500).json({
       error: 'スプレッドシートIDの取得に失敗しました',
       details: error.message
+    });
+  }
+});
+
+app.get('/api/rules', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'test-user';
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+    
+    // Rules シートから全ルールを取得
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Rules!A2:E',
+    });
+    
+    const rows = response.data.values || [];
+    const rules = rows.map((row, index) => ({
+      id: `rule_${index + 2}`,
+      keyword: row[0] || '',
+      category: row[1] || '',
+      confidence: parseInt(row[2]) || 0,
+      notes: row[3] || '',
+    }));
+    
+    res.json({ 
+      success: true,
+      rules,
+      count: rules.length
+    });
+  } catch (error) {
+    console.error('Get Rules Error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
     });
   }
 });

@@ -621,31 +621,16 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: rulesHeaders },
     });
 
-    // Rules data in smaller chunks
-    const sampleRules1 = [
-      ['ベローチェ', '地代家賃', 95, 'オフィス家賃'],
+    // Rules data - minimal example
+    const sampleRules = [
+      ['Amazon', '消耗品費', 75, 'オンラインショッピング'],
       ['Slack', '通信費', 90, 'サブスクリプション'],
-      ['AWS', '外注費', 85, 'インフラサービス'],
-      ['スターバックス', '食費', 88, 'カフェ・飲食'],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Rules!A2:D5',
+      range: 'Rules!A2:D3',
       valueInputOption: 'RAW',
-      resource: { values: sampleRules1 },
-    });
-
-    const sampleRules2 = [
-      ['Amazon', '日用品', 75, 'オンラインショッピング'],
-      ['Uber', '交通費', 92, 'タクシー・配車'],
-      ['Netflix', '娯楽', 95, '動画配信サービス'],
-      ['Zoom', '通信費', 85, 'ビデオ会議'],
-    ];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Rules!A6:D9',
-      valueInputOption: 'RAW',
-      resource: { values: sampleRules2 },
+      resource: { values: sampleRules },
     });
 
     console.log(`📊 ${year}年度Rulesシート初期化完了`);
@@ -1874,4 +1859,5 @@ app.listen(PORT, () => {
   console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
 });
   console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
-});
+
+      details: error.message

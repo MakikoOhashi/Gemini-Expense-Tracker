@@ -551,19 +551,14 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: [['カテゴリ別支出集計']] },
     });
 
-    // Step 8: カテゴリ別支出データ
-    const categoryExpenseData = [
-      ['食費', '=SUMIF(Expenses!C:C, "食費", Expenses!B:B)'],
-      ['交通費', '=SUMIF(Expenses!C:C, "交通費", Expenses!B:B)'],
-      ['日用品', '=SUMIF(Expenses!C:C, "日用品", Expenses!B:B)'],
-      ['娯楽', '=SUMIF(Expenses!C:C, "娯楽", Expenses!B:B)'],
-      ['その他', '=SUMIF(Expenses!C:C, "その他", Expenses!B:B)'],
-    ];
+    // Step 8: カテゴリ別支出集計（動的）- QUERY関数で年度フィルタ付き
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Summary!A18:B23',
+      range: 'Summary!A18',
       valueInputOption: 'USER_ENTERED',
-      resource: { values: categoryExpenseData },
+      resource: {
+        values: [[`=QUERY(Expenses!A:C, "SELECT C, SUM(B) WHERE YEAR(A)=${year} AND C IS NOT NULL GROUP BY C ORDER BY SUM(B) DESC")`]]
+      },
     });
 
     // Step 9: カテゴリ別売上ヘッダー
@@ -574,17 +569,14 @@ async function initializeSheets(spreadsheetId, year, userId) {
       resource: { values: [['カテゴリ別売上集計']] },
     });
 
-    // Step 10: カテゴリ別売上データ
-    const categoryIncomeData = [
-      ['サービス収入', '=SUMIF(Income!C:C, "サービス収入", Income!B:B)'],
-      ['商品販売', '=SUMIF(Income!C:C, "商品販売", Income!B:B)'],
-      ['その他収入', '=SUMIF(Income!C:C, "その他収入", Income!B:B)'],
-    ];
+    // Step 10: カテゴリ別売上集計（動的）- QUERY関数で年度フィルタ付き
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Summary!D18:E21',
+      range: 'Summary!D18',
       valueInputOption: 'USER_ENTERED',
-      resource: { values: categoryIncomeData },
+      resource: {
+        values: [[`=QUERY(Income!A:C, "SELECT C, SUM(B) WHERE YEAR(A)=${year} AND C IS NOT NULL GROUP BY C ORDER BY SUM(B) DESC")`]]
+      },
     });
 
     // Step 11: 損益比較ヘッダー
@@ -1880,4 +1872,6 @@ app.listen(PORT, () => {
   console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
   console.log(`📊 Google Sheets integration ready`);
   console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
+});
+  console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
 });

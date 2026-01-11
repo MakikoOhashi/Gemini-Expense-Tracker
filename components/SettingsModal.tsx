@@ -130,11 +130,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
                       <p className="text-xs font-bold text-indigo-600 mb-0.5">キーワード: {rule.keyword}</p>
                       <p className="text-sm text-gray-800 font-medium">勘定科目: {rule.category}</p>
                     </div>
-                    <button 
-                      onClick={() => onDeleteRule(rule.id)}
-                      className="p-2 text-gray-300 hover:text-rose-500 transition"
+                    <button
+                      onClick={() => {
+                        if (sheetsUrl) {
+                          window.open(sheetsUrl, '_blank');
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
+                      disabled={!sheetsUrl}
                     >
-                      <TrashIcon className="w-5 h-5" />
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
+                        <path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>
+                      </svg>
+                      Sheets で編集
                     </button>
                   </div>
                 ))}

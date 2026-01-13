@@ -26,6 +26,7 @@ import { authService, AuthStatus } from './services/authService';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
+import { BetsuhyoA } from './components/BetsuhyoA';
 import { CATEGORIES } from './constants';
 import heic2any from 'heic2any';
 
@@ -39,7 +40,7 @@ const QUICK_ACTIONS = [
 ];
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'history'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'history' | 'tax'>('chat');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -195,9 +196,9 @@ const App: React.FC = () => {
     }
   }, [messages, activeTab, pendingExtraction, isEditing, isProcessing]);
 
-  // 取引履歴ページ開いたらGoogle Sheetsからデータを取得
+  // 取引履歴ページまたは確定申告ページ開いたらGoogle Sheetsからデータを取得
   useEffect(() => {
-    if (activeTab === 'history') {
+    if (activeTab === 'history' || activeTab === 'tax') {
       loadTransactions();
     }
   }, [activeTab, loadTransactions]);
@@ -690,7 +691,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             ))}
-            
+
             {(isProcessing || isConvertingImage) && (
               <div className="flex justify-start">
                 <div className="bg-white border border-indigo-100 p-4 rounded-2xl flex items-center gap-3 text-indigo-500 shadow-sm border-l-4 border-l-indigo-500 animate-pulse">
@@ -714,18 +715,18 @@ const App: React.FC = () => {
                       <XMarkIcon className="w-6 h-6" />
                     </button>
                   </div>
-                  
+
                   {isEditing ? (
                     <div className="space-y-4 bg-slate-50 p-4 rounded-2xl mb-4">
                       {pendingExtraction.type === 'transaction' ? (
                         <>
                           <div>
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">日付</label>
-                            <input 
-                              type="date" 
-                              value={pendingExtraction.data.date || new Date().toISOString().split('T')[0]} 
-                              onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, date: e.target.value}})} 
-                              className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" 
+                            <input
+                              type="date"
+                              value={pendingExtraction.data.date || new Date().toISOString().split('T')[0]}
+                              onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, date: e.target.value}})}
+                              className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
@@ -800,14 +801,14 @@ const App: React.FC = () => {
                   )}
 
                   <div className="flex gap-3">
-                    <button 
+                    <button
                       onClick={pendingExtraction.type === 'transaction' ? commitTransaction : commitRule}
                       className="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition flex items-center justify-center gap-2"
                     >
                       <CheckCircleIcon className="w-6 h-6" />
                       この内容で保存
                     </button>
-                    <button 
+                    <button
                       onClick={() => setIsEditing(true)}
                       className="flex-1 bg-white text-indigo-600 py-4 rounded-2xl font-bold text-sm border-2 border-indigo-100 hover:bg-indigo-50 active:scale-95 transition flex items-center justify-center gap-1"
                     >
@@ -822,11 +823,22 @@ const App: React.FC = () => {
           </div>
         ) : activeTab === 'dashboard' ? (
           <Dashboard transactions={transactions} />
+        ) : activeTab === 'tax' ? (
+          <BetsuhyoA data={{
+            売上: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+            経費合計: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+            所得金額: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) - transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+            地代家賃: transactions.filter(t => t.category === '地代家賃').reduce((sum, t) => sum + t.amount, 0),
+            給与賃金: transactions.filter(t => t.category === '給与賃金').reduce((sum, t) => sum + t.amount, 0),
+            消耗品費: transactions.filter(t => t.category === '消耗品費').reduce((sum, t) => sum + t.amount, 0),
+            通信費: transactions.filter(t => t.category === '通信費').reduce((sum, t) => sum + t.amount, 0),
+            旅費交通費: transactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0)
+          }} />
         ) : (
-          <TransactionList 
-            transactions={transactions} 
-            onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))} 
-            onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))} 
+          <TransactionList
+            transactions={transactions}
+            onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))}
+            onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))}
           />
         )}
       </main>
@@ -877,6 +889,9 @@ const App: React.FC = () => {
         </button>
         <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
           <ChartBarIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">サマリー</span>
+        </button>
+        <button onClick={() => setActiveTab('tax')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
+          <ReceiptPercentIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">確定申告</span>
         </button>
         <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
           <ListBulletIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">履歴</span>

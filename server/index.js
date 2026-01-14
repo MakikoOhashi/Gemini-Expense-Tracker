@@ -357,7 +357,12 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
       console.log(`📊 ✅ 既存の${year}年度スプレッドシートを見つけました:`, spreadsheetId);
 
       // 既存スプレッドシートのシート構成を確認・修正
-      await ensureSheetsExist(spreadsheetId, year, userId);
+      try {
+        await ensureSheetsExist(spreadsheetId, year, userId);
+      } catch (ensureError) {
+        console.warn(`⚠️ シート構成確認エラー（既存スプレッドシート）:`, ensureError.message);
+        // エラーが発生しても続行（シートは後で作成される）
+      }
     } else {
       console.log(`📊 ⚠️ ${year}年度スプレッドシートが見つからないため新規作成します`);
 

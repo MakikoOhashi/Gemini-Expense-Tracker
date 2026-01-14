@@ -633,7 +633,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
-            区分：<br/>本アプリは「日々の取引を簡易な方法で記帳している場合」に該当します。第一表の区分欄には 4 を記入してください。
+            区分：<br/>本アプリは<br/>「日々の取引を簡易な方法で<br/>記帳している場合」<br/>に該当します。<br/>第一表の区分欄には 4 <br/>を記入してください。
           </div>
         </div>
         {/* 所得金額 - 第一表の所得金額欄 */}

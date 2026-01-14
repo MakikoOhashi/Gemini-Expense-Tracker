@@ -533,11 +533,16 @@ const App: React.FC = () => {
         
         setPendingExtraction({
           type: extractedAction.type === 'ADD_TRANSACTION' ? 'transaction' : 'rule',
-          data: { 
+          data: {
             ...extractedAction.data,
             // 画像ありで Gemini が日付を返した場合はその日付を使用
             // それ以外は本日の日付を自動設定
-            date: currentImage && extractedDate ? extractedDate : todayDate
+            date: currentImage && extractedDate ? extractedDate : todayDate,
+            // 収入データの場合にpayerNameとwithholdingTaxが含まれていない場合はデフォルト値を設定
+            ...(extractedAction.data.type === 'income' && {
+              payerName: extractedAction.data.payerName || '',
+              withholdingTax: extractedAction.data.withholdingTax || 0
+            })
           },
           imageUrl: currentImage || undefined
         });
@@ -744,12 +749,15 @@ const App: React.FC = () => {
                               <label className="text-[10px] text-gray-400 font-bold mb-1 block">金額</label>
                               <input type="number" value={pendingExtraction.data.amount} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, amount: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" />
                             </div>
-                            <div>
-                              <label className="text-[10px] text-gray-400 font-bold mb-1 block">科目</label>
-                              <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none">
-                                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                              </select>
-                            </div>
+                            {/* 収入データの場合は種別を表示せず、支出データの場合のみ科目を表示 */}
+                            {pendingExtraction.data.type !== 'income' && (
+                              <div>
+                                <label className="text-[10px] text-gray-400 font-bold mb-1 block">科目</label>
+                                <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none">
+                                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">内容</label>
@@ -803,10 +811,13 @@ const App: React.FC = () => {
                             <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">金額</p>
                             <p className="text-2xl font-black text-indigo-700">¥{Number(pendingExtraction.data.amount || 0).toLocaleString()}</p>
                           </div>
-                          <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
-                            <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">勘定科目</p>
-                            <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category || '未設定'}</p>
-                          </div>
+                          {/* 収入データの場合は種別を表示せず、支出データの場合のみ勘定科目を表示 */}
+                          {pendingExtraction.data.type !== 'income' && (
+                            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
+                              <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">勘定科目</p>
+                              <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category || '未設定'}</p>
+                            </div>
+                          )}
                           <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                             <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">内容</p>
                             <p className="text-sm font-bold text-gray-700">{pendingExtraction.data.description || '内容なし'}</p>

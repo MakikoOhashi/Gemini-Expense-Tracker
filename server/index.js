@@ -381,7 +381,7 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
                 sheetType: 'GRID',
                 gridProperties: {
                   rowCount: 10000,
-                  columnCount: 5,
+                  columnCount: 6,
                 },
               },
             },
@@ -1425,7 +1425,7 @@ app.post('/api/update-transaction', async (req, res) => {
 app.post('/api/expenses', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
-    const { date, amount, category, memo, receipt_url, type } = req.body;
+    const { date, amount, category, memo, receipt_url, type, payerName, withholdingTax } = req.body;
 
     if (!date || !amount || !category) {
       return res.status(400).json({ error: '必須フィールドが不足しています' });
@@ -1448,7 +1448,7 @@ app.post('/api/expenses', async (req, res) => {
     let values, range;
     if (type === 'income') {
       // Income sheet: A: date, B: amount, C: payerName, D: withholdingTax, E: memo, F: receipt_url
-      values = [[date, amount, category, 0, memo || '', receipt_url || '']]; // withholdingTax defaults to 0
+      values = [[date, amount, payerName || '', withholdingTax || 0, memo || '', receipt_url || '']];
       range = `${sheetType}!A:F`;
     } else {
       // Expenses sheet: A: date, B: amount, C: category, D: memo, E: receipt_url

@@ -832,7 +832,25 @@ const App: React.FC = () => {
             給与賃金: transactions.filter(t => t.category === '給与賃金').reduce((sum, t) => sum + t.amount, 0),
             消耗品費: transactions.filter(t => t.category === '消耗品費').reduce((sum, t) => sum + t.amount, 0),
             通信費: transactions.filter(t => t.category === '通信費').reduce((sum, t) => sum + t.amount, 0),
-            旅費交通費: transactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0)
+            旅費交通費: transactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0),
+            // 第二表 所得の内訳データ生成（支払者名ごとに集計）
+            所得の内訳: (() => {
+              const incomeTransactions = transactions.filter(t => t.type === 'income');
+              const groupedByPayer = incomeTransactions.reduce((acc, t) => {
+                const payerName = t.payerName || '未設定';
+                if (!acc[payerName]) {
+                  acc[payerName] = {
+                    種目: '営業等',
+                    収入金額: 0,
+                    源泉徴収税額: 0
+                  };
+                }
+                acc[payerName].収入金額 += t.amount;
+                acc[payerName].源泉徴収税額 += t.withholdingTax || 0;
+                return acc;
+              }, {} as Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>);
+              return groupedByPayer;
+            })()
           }} />
         ) : (
           <TransactionList

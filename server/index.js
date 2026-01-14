@@ -451,10 +451,10 @@ async function initializeSheets(spreadsheetId, year, userId) {
     });
 
     // Initialize Income sheet with headers
-    const incomeHeaders = [['日付', '金額', 'カテゴリ', 'メモ', 'レシートURL']];
+    const incomeHeaders = [['日付', '金額', '支払者名', '源泉徴収税額', 'メモ', 'レシートURL']];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Income!A1:E1',
+      range: 'Income!A1:F1',
       valueInputOption: 'RAW',
       resource: { values: incomeHeaders },
     });
@@ -1311,7 +1311,7 @@ app.get('/api/income', async (req, res) => {
     // Get all data from Income sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Income!A2:E',
+      range: 'Income!A2:F',
     });
 
     const rows = response.data.values || [];
@@ -1319,16 +1319,17 @@ app.get('/api/income', async (req, res) => {
     console.log('  行数:', rows.length);
     if (rows.length > 0) {
       console.log('  1行目:', rows[0]);
-      console.log('  receiptUrl (row[4]):', rows[0]?.[4] || '(なし)');
+      console.log('  receiptUrl (row[5]):', rows[0]?.[5] || '(なし)');
     }
-    
+
     const income = rows.map((row, index) => ({
       id: `inc_${index + 2}`,
       date: row[0] || '',
       amount: parseFloat(row[1]) || 0,
-      category: row[2] || '',
-      memo: row[3] || '',
-      receiptUrl: row[4] || '',
+      payerName: row[2] || '',
+      withholdingTax: parseFloat(row[3]) || 0,
+      memo: row[4] || '',
+      receiptUrl: row[5] || '',
       type: 'income',
       createdAt: Date.now()
     }));
@@ -1444,8 +1445,16 @@ app.post('/api/expenses', async (req, res) => {
     const sheets = google.sheets({ version: 'v4', auth: client });
 
     // Append data to appropriate sheet
-    const values = [[date, amount, category, memo || '', receipt_url || '']];
-    const range = `${sheetType}!A:E`; // A: date, B: amount, C: category, D: memo, E: receipt_url
+    let values, range;
+    if (type === 'income') {
+      // Income sheet: A: date, B: amount, C: payerName, D: withholdingTax, E: memo, F: receipt_url
+      values = [[date, amount, category, 0, memo || '', receipt_url || '']]; // withholdingTax defaults to 0
+      range = `${sheetType}!A:F`;
+    } else {
+      // Expenses sheet: A: date, B: amount, C: category, D: memo, E: receipt_url
+      values = [[date, amount, category, memo || '', receipt_url || '']];
+      range = `${sheetType}!A:E`;
+    }
 
     console.log(`💾 シート"${sheetType}"にデータを追加: ${JSON.stringify(values)}`);
     const response = await sheets.spreadsheets.values.append({
@@ -1460,8 +1469,8 @@ app.post('/api/expenses', async (req, res) => {
     const updatedRange = response.data.updates?.updatedRange;
     let rowNumber = null;
     if (updatedRange) {
-      // Extract row number from range like "Expenses!A123:E123"
-      const match = updatedRange.match(/!A(\d+):E\d+/);
+      // Extract row number from range like "Expenses!A123:E123" or "Income!A123:F123"
+      const match = updatedRange.match(/!A(\d+):[EF]\d+/);
       if (match) {
         rowNumber = parseInt(match[1]);
       }
@@ -1858,4 +1867,3 @@ app.listen(PORT, () => {
   console.log(`📊 Google Sheets integration ready`);
   console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
 });
-

@@ -10,6 +10,9 @@ export interface Transaction {
   type: TransactionType;
   receiptUrl?: string;
   createdAt: number;
+  // Income-specific fields
+  payerName?: string;
+  withholdingTax?: number;
 }
 
 export interface TransactionRule {

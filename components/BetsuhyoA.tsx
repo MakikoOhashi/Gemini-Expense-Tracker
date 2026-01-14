@@ -3,6 +3,19 @@ import { POS } from '../layout.locked';
 
 interface BetsuhyoAProps {
   data: {
+    雑費?: string;
+    福利厚生費?: string;
+    修繕費?: string;
+    損害保険料?: string;
+    接待交際費?: string;
+    広告宣伝費?: string;
+    水道光熱費?: string;
+    外注工賃?: string;
+    家事消費?: string;
+    給料?: string;
+    減価償却費?: string;
+    租税公課?: string;
+    荷造運賃?: string;
     売上: number;
     経費合計: number;
     所得金額: number;
@@ -11,6 +24,7 @@ interface BetsuhyoAProps {
     消耗品費: number;
     通信費: number;
     旅費交通費: number;
+    所得の内訳: Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>;
   };
 }
 
@@ -47,7 +61,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeSales}>
           <input
             type="number"
-            value={data.売上 || '0'}
+            value={data.売上 || ''}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
@@ -70,7 +84,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeHouseholdConsumption}>
           <input
             type="number"
-            value={data.家事消費 ||'0'}
+            value={data.家事消費 ||''}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />

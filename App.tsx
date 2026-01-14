@@ -81,34 +81,48 @@ const App: React.FC = () => {
   const loadTransactions = useCallback(async () => {
     try {
       console.log('📊 Google Sheetsから取引データを取得中...');
-      const response = await sheetsService.getTransactions() as any;
-      
-      // Check for folder conflict from response
-      if (response.isFolderAmbiguous && response.folderConflict) {
-        setFolderConflict(response.folderConflict);
-        setTransactions([]);
-        return;
+      // 現在の年度だけでなく、複数年度のデータを取得するように変更
+      const currentYear = new Date().getFullYear();
+      const yearsToLoad = [currentYear - 1, currentYear, currentYear + 1]; // 前年度、当年度、次年度
+
+      let allTransactions: Transaction[] = [];
+
+      for (const year of yearsToLoad) {
+        try {
+          const response = await sheetsService.getTransactions(year) as any;
+          // 競合チェック
+          if (response.isFolderAmbiguous && response.folderConflict) {
+            setFolderConflict(response.folderConflict);
+            continue; // 競合時はスキップ
+          }
+
+          // Transaction型に変換
+          const mappedTransactions: Transaction[] = response.map((t: any) => ({
+            id: t.id,
+            date: t.date,
+            amount: t.amount,
+            description: t.memo || '',
+            category: t.category,
+            type: t.type,
+            receiptUrl: t.receipt_url || '',
+            createdAt: new Date(t.date).getTime(),
+            // 収入データの場合のみ支払者名と源泉徴収税額を追加
+            ...(t.type === 'income' && {
+              payerName: t.payerName || '',
+              withholdingTax: t.withholdingTax || 0
+            })
+          }));
+
+          allTransactions = [...allTransactions, ...mappedTransactions];
+          console.log(`✅ ${year}年度: ${mappedTransactions.length}件の取引データを取得しました`);
+        } catch (yearError) {
+          console.warn(`${year}年度のデータ取得に失敗:`, yearError.message);
+          // 年度が存在しない場合はスキップ（エラーではない）
+        }
       }
       
-      // Transaction型に変換
-      const mappedTransactions: Transaction[] = response.map((t: any) => ({
-        id: t.id,
-        date: t.date,
-        amount: t.amount,
-        description: t.memo || '',
-        category: t.category,
-        type: t.type,
-        receiptUrl: t.receipt_url || '',
-        createdAt: new Date(t.date).getTime(),
-        // 収入データの場合のみ支払者名と源泉徴収税額を追加
-        ...(t.type === 'income' && {
-          payerName: t.payerName || '',
-          withholdingTax: t.withholdingTax || 0
-        })
-      }));
-      
-      setTransactions(mappedTransactions);
-      console.log(`✅ ${mappedTransactions.length}件の取引データを取得しました`);
+      setTransactions(allTransactions);
+      console.log(`✅ 全年度合計 ${allTransactions.length}件の取引データを取得しました`);
     } catch (error: any) {
       console.error('❌ 取引データ取得エラー:', error);
       setTransactions([]);

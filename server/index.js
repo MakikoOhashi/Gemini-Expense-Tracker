@@ -355,6 +355,9 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
     if (searchResponse.data.files && searchResponse.data.files.length > 0) {
       spreadsheetId = searchResponse.data.files[0].id;
       console.log(`📊 ✅ 既存の${year}年度スプレッドシートを見つけました:`, spreadsheetId);
+
+      // 既存スプレッドシートのシート構成を確認・修正
+      await ensureSheetsExist(spreadsheetId, year, userId);
     } else {
       console.log(`📊 ⚠️ ${year}年度スプレッドシートが見つからないため新規作成します`);
 
@@ -364,48 +367,38 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
           properties: {
             title: spreadsheetName,
           },
-          sheets: [
-            {
-              properties: {
-                title: 'Expenses',
-                sheetType: 'GRID',
-                gridProperties: {
-                  rowCount: 10000,
-                  columnCount: 5,
-                },
+        sheets: [
+          {
+            properties: {
+              title: 'Expenses',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 10000,
+                columnCount: 5,
               },
             },
-            {
-              properties: {
-                title: 'Income',
-                sheetType: 'GRID',
-                gridProperties: {
-                  rowCount: 10000,
-                  columnCount: 6,
-                },
+          },
+          {
+            properties: {
+              title: 'Income',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 10000,
+                columnCount: 6,
               },
             },
-            {
-              properties: {
-                title: 'Summary',
-                sheetType: 'GRID',
-                gridProperties: {
-                  rowCount: 150,
-                  columnCount: 12,
-                },
+          },
+          {
+            properties: {
+              title: 'Rules',
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 1000,
+                columnCount: 4,
               },
             },
-            {
-              properties: {
-                title: 'Rules',
-                sheetType: 'GRID',
-                gridProperties: {
-                  rowCount: 1000,
-                  columnCount: 4,
-                },
-              },
-            },
-          ],
+          },
+        ],
         },
       });
 
@@ -431,6 +424,73 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
     return result;
   } catch (error) {
     console.error(`${year}年度スプレッドシートの取得/作成エラー:`, error);
+    throw error;
+  }
+}
+
+// Helper function to ensure required sheets exist in existing spreadsheet
+async function ensureSheetsExist(spreadsheetId, year, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  try {
+    // Get current sheets in the spreadsheet
+    const spreadsheetResponse = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties'
+    });
+
+    const existingSheets = spreadsheetResponse.data.sheets || [];
+    const existingSheetTitles = existingSheets.map(s => s.properties?.title);
+
+    console.log(`📊 既存シート確認: ${existingSheetTitles.join(', ')}`);
+
+    const requiredSheets = ['Expenses', 'Income', 'Rules'];
+    const missingSheets = requiredSheets.filter(title => !existingSheetTitles.includes(title));
+
+    if (missingSheets.length === 0) {
+      console.log('✅ すべての必要なシートが存在します');
+      return;
+    }
+
+    console.log(`⚠️ 不足しているシート: ${missingSheets.join(', ')} - 追加します`);
+
+    // Add missing sheets
+    const addSheetRequests = missingSheets.map(title => {
+      let gridProperties = {};
+      if (title === 'Income') {
+        gridProperties = { rowCount: 10000, columnCount: 6 };
+      } else if (title === 'Expenses') {
+        gridProperties = { rowCount: 10000, columnCount: 5 };
+      } else if (title === 'Summary') {
+        gridProperties = { rowCount: 150, columnCount: 12 };
+      } else if (title === 'Rules') {
+        gridProperties = { rowCount: 1000, columnCount: 4 };
+      }
+
+      return {
+        addSheet: {
+          properties: {
+            title,
+            sheetType: 'GRID',
+            gridProperties
+          }
+        }
+      };
+    });
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      resource: { requests: addSheetRequests }
+    });
+
+    console.log(`✅ 不足していたシートを追加しました: ${missingSheets.join(', ')}`);
+
+    // Initialize the newly added sheets
+    await initializeSheets(spreadsheetId, year, userId);
+
+  } catch (error) {
+    console.error('シート構成確認エラー:', error);
     throw error;
   }
 }
@@ -461,154 +521,19 @@ async function initializeSheets(spreadsheetId, year, userId) {
 
     console.log(`📊 ${year}年度Expenses & Incomeシート初期化完了`);
 
-    // Initialize Summary sheet in multiple steps to avoid API limits
-
-    // Step 1: 月別支出集計ヘッダー
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!A1',
-      valueInputOption: 'RAW',
-      resource: { values: [['月別支出集計']] },
-    });
-
-    // Step 2: 月別支出データ (1-6月)
-    const monthlyExpenseData1 = [
-      ['1月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},1,1), Expenses!A:A, "<"&DATE(${year},2,1))`],
-      ['2月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},2,1), Expenses!A:A, "<"&DATE(${year},3,1))`],
-      ['3月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},3,1), Expenses!A:A, "<"&DATE(${year},4,1))`],
-      ['4月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},4,1), Expenses!A:A, "<"&DATE(${year},5,1))`],
-      ['5月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},5,1), Expenses!A:A, "<"&DATE(${year},6,1))`],
-      ['6月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},6,1), Expenses!A:A, "<"&DATE(${year},7,1))`],
-    ];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!A2:B7',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: monthlyExpenseData1 },
-    });
-
-    // Step 3: 月別支出データ (7-12月)
-    const monthlyExpenseData2 = [
-      ['7月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},7,1), Expenses!A:A, "<"&DATE(${year},8,1))`],
-      ['8月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},8,1), Expenses!A:A, "<"&DATE(${year},9,1))`],
-      ['9月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},9,1), Expenses!A:A, "<"&DATE(${year},10,1))`],
-      ['10月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},10,1), Expenses!A:A, "<"&DATE(${year},11,1))`],
-      ['11月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},11,1), Expenses!A:A, "<"&DATE(${year},12,1))`],
-      ['12月', `=SUMIFS(Expenses!B:B, Expenses!A:A, ">="&DATE(${year},12,1), Expenses!A:A, "<"&DATE(${year}+1,1,1))`],
-    ];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!A8:B13',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: monthlyExpenseData2 },
-    });
-
-    // Step 4: 月別売上集計ヘッダー
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!D1',
-      valueInputOption: 'RAW',
-      resource: { values: [['月別売上集計']] },
-    });
-
-    // Step 5: 月別売上データ (1-6月)
-    const monthlyIncomeData1 = [
-      ['1月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},1,1), Income!A:A, "<"&DATE(${year},2,1))`],
-      ['2月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},2,1), Income!A:A, "<"&DATE(${year},3,1))`],
-      ['3月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},3,1), Income!A:A, "<"&DATE(${year},4,1))`],
-      ['4月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},4,1), Income!A:A, "<"&DATE(${year},5,1))`],
-      ['5月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},5,1), Income!A:A, "<"&DATE(${year},6,1))`],
-      ['6月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},6,1), Income!A:A, "<"&DATE(${year},7,1))`],
-    ];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!D2:E7',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: monthlyIncomeData1 },
-    });
-
-    // Step 6: 月別売上データ (7-12月)
-    const monthlyIncomeData2 = [
-      ['7月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},7,1), Income!A:A, "<"&DATE(${year},8,1))`],
-      ['8月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},8,1), Income!A:A, "<"&DATE(${year},9,1))`],
-      ['9月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},9,1), Income!A:A, "<"&DATE(${year},10,1))`],
-      ['10月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},10,1), Income!A:A, "<"&DATE(${year},11,1))`],
-      ['11月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},11,1), Income!A:A, "<"&DATE(${year},12,1))`],
-      ['12月', `=SUMIFS(Income!B:B, Income!A:A, ">="&DATE(${year},12,1), Income!A:A, "<"&DATE(${year}+1,1,1))`],
-    ];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!D8:E13',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: monthlyIncomeData2 },
-    });
-
-    // Step 7: カテゴリ別集計ヘッダー
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!A17',
-      valueInputOption: 'RAW',
-      resource: { values: [['カテゴリ別支出集計']] },
-    });
-
-    // Step 8: カテゴリ別支出集計（動的）- QUERY関数で年度フィルタ付き
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!A18',
-      valueInputOption: 'USER_ENTERED',
-      resource: {
-        values: [[`=QUERY(Expenses!A:C, "SELECT C, SUM(B) WHERE YEAR(A)=${year} AND C IS NOT NULL GROUP BY C ORDER BY SUM(B) DESC")`]]
-      },
-    });
-
-    // Step 9: カテゴリ別売上ヘッダー
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!D17',
-      valueInputOption: 'RAW',
-      resource: { values: [['カテゴリ別売上集計']] },
-    });
-
-    // Step 10: カテゴリ別売上集計（動的）- QUERY関数で年度フィルタ付き
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!D18',
-      valueInputOption: 'USER_ENTERED',
-      resource: {
-        values: [[`=QUERY(Income!A:C, "SELECT C, SUM(B) WHERE YEAR(A)=${year} AND C IS NOT NULL GROUP BY C ORDER BY SUM(B) DESC")`]]
-      },
-    });
-
-    // Step 11: 損益比較ヘッダー
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!G1',
-      valueInputOption: 'RAW',
-      resource: { values: [['月別損益比較']] },
-    });
-
-    // Step 12: 損益比較データ
-    const profitLossData = [
-      ['月', '収入', '支出', '損益'],
-      ['1月', '=E2', '=B2', '=E2-B2'],
-      ['2月', '=E3', '=B3', '=E3-B3'],
-      ['3月', '=E4', '=B4', '=E4-B4'],
-      ['4月', '=E5', '=B5', '=E5-B5'],
-      ['5月', '=E6', '=B6', '=E6-B6'],
-      ['6月', '=E7', '=B7', '=E7-B7'],
-      ['7月', '=E8', '=B8', '=E8-B8'],
-      ['8月', '=E9', '=B9', '=E9-B9'],
-      ['9月', '=E10', '=B10', '=E10-B10'],
-      ['10月', '=E11', '=B11', '=E11-B11'],
-      ['11月', '=E12', '=B12', '=E12-B12'],
-      ['12月', '=E13', '=B13', '=E13-B13'],
-    ];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!G2:J14',
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: profitLossData },
-    });
+    // Initialize Summary sheet with minimal data to avoid API quota limits
+    // Only initialize basic headers for now
+    try {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: 'Summary!A1',
+        valueInputOption: 'RAW',
+        resource: { values: [['年度別集計シート']] },
+      });
+      console.log(`📊 ${year}年度Summaryシート初期化（最小限）完了`);
+    } catch (summaryError) {
+      console.warn(`⚠️ Summaryシート初期化スキップ（API制限のため）:`, summaryError.message);
+    }
 
     console.log(`📊 ${year}年度Summaryシート初期化完了`);
 
@@ -1435,10 +1360,10 @@ app.post('/api/expenses', async (req, res) => {
     const sheetType = type === 'income' ? 'Income' : 'Expenses';
     const message = type === 'income' ? '収入データが保存されました' : '支出データが保存されました';
 
-    // Ensure spreadsheet exists for current year
-    const currentYear = new Date().getFullYear();
-    console.log(`💾 データを保存しようとしています: 年=${currentYear}, type=${type}, category=${category}`);
-    const spreadsheetId = await ensureSpreadsheet(currentYear, userId);
+    // Ensure spreadsheet exists for the year of the transaction date
+    const transactionYear = new Date(date).getFullYear();
+    console.log(`💾 データを保存しようとしています: 年=${transactionYear}, type=${type}, category=${category}`);
+    const spreadsheetId = await ensureSpreadsheet(transactionYear, userId);
     console.log(`💾 スプレッドシートID取得: ${spreadsheetId}`);
 
     const client = await getAuthenticatedClient(userId);

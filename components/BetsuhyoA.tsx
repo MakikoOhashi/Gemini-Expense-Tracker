@@ -41,7 +41,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
       <div className="relative w-[800px] mx-auto">
         <img src="/01.png" alt="別表A第一表" className="w-full shadow-lg rounded-lg" />
 
-
+        {/* 以下 px指定の座標部分 は変更してはいけません */}
 
         {/* 経費合計 - 第一表の経費合計欄 
         <div className="group absolute" style={{ top: '245px', left: '520px', width: '100px' }} title="すべての経費の合計金額です">
@@ -140,11 +140,236 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
 
       {/* 収支内訳書1 */}
       <div className="relative w-[800px] mx-auto">
-        <img src="/07.png" alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
+        <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
+        {/* 収入 -売上欄 */}
+        <div className="group absolute" style={{ top: '191px', left: '162px', width: '100px' }} title="経費を引く前の売上合計を記入します">
+          <input
+            type="number"
+            value={data.売上 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 収入 - 家事消費*/}
+        <div className="group absolute" style={{ top: '208px', left: '162px', width: '100px' }} title="家事消費：該当しない場合は 0 円のままにしてください。（飲食店・物販など、商品を私用で使う場合のみ記入）">
+          <input
+            type="number"
+            value={data.家事消費 ||'0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 給料*/}
+        <div className="group absolute" style={{ top: '354px', left: '162px', width: '100px' }} title="給料：該当しない場合は 0 円のままにしてください。（従業員に給料を支払った場合のみ記入）">
+          <input
+            type="number"
+            value={data.給料 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 外注工賃*/}
+        <div className="group absolute" style={{ top: '373px', left: '162px', width: '100px' }} title="外注工賃：フリーランス・業者への業務委託費用。※内容によっては源泉徴収が必要になる場合があります。">
+          <input
+            type="number"
+            value={data.外注工賃 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 減価償却費*/}
+        <div className="group absolute" style={{ top: '390px', left: '162px', width: '100px' }} title="減価償却費：パソコン・機械・設備など高額資産の今年分の経費額を記入します。購入額そのままではありません。">
+          <input
+            type="number"
+            value={data.減価償却費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 貸し倒れ金*/}
+        <div className="group absolute" style={{ top: '406px', left: '162px', width: '100px' }} title="貸倒金：該当しない場合は 0 円のままにしてください。（※通常、白色申告では使用しません）">
+          <input
+            type="number"
+            value={'0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 地代家賃*/}
+        <div className="group absolute" style={{ top: '422px', left: '162px', width: '100px' }} title="地代家賃：※カフェ等の単発利用は会議費または雑費に分類してください※月額契約のコワーキング・事務所のみ対象">
+          <input
+            type="number"
+            value={data.減価償却費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 利子割引料*/}
+        <div className="group absolute" style={{ top: '439px', left: '162px', width: '100px' }} title="利子割引料：該当しない場合は 0 円のままにしてください。（※通常、白色申告では使用しません：手形・ファクタリングなど高度な取引をしている場合のみ使用）">
+          <input
+            type="number"
+            value={'0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 租税公課*/}
+        <div className="group absolute" style={{ top: '454px', left: '162px', width: '100px' }} title="租税公課：該当しない場合は 0 円のままにしてください。（※印紙税・固定資産税の一部（家事按分したとき）など：※ 所得税・住民税・社会保険料はここに入れません）">
+          <input
+            type="number"
+            value={data.租税公課 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 荷造運賃*/}
+        <div className="group absolute" style={{ top: '472px', left: '162px', width: '100px' }} title="荷造運賃：送料など">
+          <input
+            type="number"
+            value={data.荷造運賃 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 水道光熱費*/}
+        <div className="group absolute" style={{ top: '488px', left: '162px', width: '100px' }} title="水道光熱費：電気代など">
+          <input
+            type="number"
+            value={data.水道光熱費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 旅費交通費欄 */}
+        <div className="group absolute" style={{ top: '190px', left: '367px', width: '100px' }} title="旅費交通費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.旅費交通費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 通信費欄 */}
+        <div className="group absolute" style={{ top: '207px', left: '367px', width: '100px' }} title="通信費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.通信費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 広告宣伝費欄 */}
+        <div className="group absolute" style={{ top: '224px', left: '367px', width: '100px' }} title="広告宣伝費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.広告宣伝費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 接待交際費欄 */}
+        <div className="group absolute" style={{ top: '240px', left: '367px', width: '100px' }} title="接待交際費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.接待交際費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 損害保険料欄 */}
+        <div className="group absolute" style={{ top: '257px', left: '367px', width: '100px' }} title="損害保険料カテゴリの合計金額です（生命保険・医療保険はここに入れません）">
+          <input
+            type="number"
+            value={data.損害保険料 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 修繕費欄 */}
+        <div className="group absolute" style={{ top: '274px', left: '367px', width: '100px' }} title="修繕費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.修繕費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 消耗品費欄 */}
+        <div className="group absolute" style={{ top: '290px', left: '367px', width: '100px' }} title="消耗品費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.消耗品費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 福利厚生費欄 */}
+        <div className="group absolute" style={{ top: '306px', left: '367px', width: '100px' }} title="福利厚生費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.福利厚生費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 雑費欄 */}
+        <div className="group absolute" style={{ top: '406px', left: '367px', width: '100px' }} title="雑費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.雑費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 経費 - 経費合計欄 */}
+        <div className="group absolute" style={{ top: '440px', left: '367px', width: '100px' }} title="雑費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.経費合計 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 専従者控除前の所得金額欄 */}
+        <div className="group absolute" style={{ top: '456px', left: '367px', width: '100px' }} title="専従者控除前の所得金額です">
+          <input
+            type="number"
+            value={data.所得金額 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 専従者控除後の所得金額欄 */}
+        <div className="group absolute" style={{ top: '489px', left: '367px', width: '100px' }} title="専従者控除後の所得金額です">
+          <input
+            type="number"
+            value={data.所得金額 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+          />
+        </div>
+        {/* 旅費交通費 - 第二表の旅費交通費欄 
+        <div className="group absolute" style={{ top: '270px', left: '520px', width: '100px' }} title="旅費交通費カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.旅費交通費 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+        </div>*/}
+        {/* 地代家賃 - 第二表の地代家賃欄 
+        <div className="group absolute" style={{ top: '150px', left: '520px', width: '100px' }} title="地代家賃カテゴリの合計金額です">
+          <input
+            type="number"
+            value={data.地代家賃 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+        </div>*/}
       </div>
       {/* 収支内訳書2 */}
       <div className="relative w-[800px] mx-auto">
-        <img src="/07-.png" alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
+        <img src="/07-.png" alt="収支内訳書2" className="w-full shadow-lg rounded-lg" />
       </div>
 
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-2xl mx-auto">

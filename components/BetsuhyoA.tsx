@@ -38,316 +38,539 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           マウスをホバーすると、各項目の説明が表示されます。
         </p>
       </div>
-      {/* 第一表 */}
-      <div className="relative w-[800px] mx-auto">
-        <img src="/01.png" alt="別表A第一表" className="w-full shadow-lg rounded-lg" />
-
-        {/* 以下 px指定の座標部分 は変更してはいけません */}
-
-        {/* 経費合計 - 第一表の経費合計欄 
-        <div className="group absolute" style={{ top: '245px', left: '520px', width: '100px' }} title="すべての経費の合計金額です">
-          <input
-            type="number"
-            value={data.経費合計 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>*/}
-        {/* 所得金額 - 第一表の所得金額 事業（営業等・農業）の区分欄*/}
-        <div className="group absolute" style={POS.firstTableCategory} title="本アプリは「日々の取引を簡易な方法で記帳している場合」に該当します。第一表の区分欄には 4 を記入してください。">
-          <input
-            type="number"
-            value='4'
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
-          />
-        </div>
-        {/* 所得金額 - 第一表の所得金額欄 */}
-        <div className="group absolute" style={POS.firstTableIncomeAmount} title="売上 - 経費合計 = 所得金額 ← ここが「ア」です">
-          <input
-            type="number"
-            value={data.所得金額 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
-          />
-        </div>
-         {/* 売上 - 第一表の売上欄 */}
-        <div className="group absolute" style={POS.firstTableSales} title="経費を引く前の売上合計を記入します">
-          <input
-            type="number"
-            value={data.売上 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
-          />
-        </div>
-
-      </div>
-      
-
-      {/* 第二表 */}
-      <div className="relative w-[800px] mx-auto">
-        <img src="/02.png" alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
-
-        {/* 地代家賃 - 第二表の地代家賃欄 */}
-        <div className="group absolute" style={POS.secondTableRent} title="地代家賃カテゴリの合計金額です">
-          <input
-            type="number"
-            value={data.地代家賃 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>
-
-        {/* 給与賃金 - 第二表の給与賃金欄 */}
-        <div className="group absolute" style={POS.secondTableSalary} title="給与賃金カテゴリの合計金額です">
-          <input
-            type="number"
-            value={data.給与賃金 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>
-
-        {/* 消耗品費 - 第二表の消耗品費欄 */}
-        <div className="group absolute" style={POS.secondTableSupplies} title="消耗品費カテゴリの合計金額です">
-          <input
-            type="number"
-            value={data.消耗品費 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>
-
-        {/* 通信費 - 第二表の通信費欄 */}
-        <div className="group absolute" style={POS.secondTableCommunication} title="通信費カテゴリの合計金額です">
-          <input
-            type="number"
-            value={data.通信費 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>
-
-        {/* 旅費交通費 - 第二表の旅費交通費欄 */}
-        <div className="group absolute" style={POS.secondTableTravel} title="旅費交通費カテゴリの合計金額です">
-          <input
-            type="number"
-            value={data.旅費交通費 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>
-      </div>
+ 
 
       {/* 収支内訳書1 */}
       <div className="relative w-[800px] mx-auto">
         <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
         {/* 収入 -売上欄 */}
-        <div className="group absolute" style={POS.incomeSales} title="経費を引く前の売上合計を記入します">
+        <div className="group absolute" style={POS.incomeSales}>
           <input
             type="number"
-            value={data.売上 || ''}
+            value={data.売上 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            売上：<br/>経費を引く前の<br/>売上合計を記入します
+          </div>
         </div>
         {/* 収入 - 家事消費*/}
-        <div className="group absolute" style={POS.incomeHouseholdConsumption} title="家事消費：該当しない場合は 0 円のままにしてください。（飲食店・物販など、商品を私用で使う場合のみ記入）">
+        <div className="group absolute" style={POS.incomeHouseholdConsumption}>
           <input
             type="number"
             value={data.家事消費 ||'0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            家事消費：<br/>該当しない場合は 0 円のままにしてください。<br/>（飲食店・物販など、商品を私用で使う場合のみ記入）
+          </div>
         </div>
         {/* 経費 - 給料*/}
-        <div className="group absolute" style={POS.expenseSalary} title="給料：該当しない場合は 0 円のままにしてください。（従業員に給料を支払った場合のみ記入）">
+        <div className="group absolute" style={POS.expenseSalary}>
           <input
             type="number"
             value={data.給料 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            給料：該当しない場合は<br/>0 円のままにしてください。<br/>（従業員に給料を支払った場合のみ記入）
+          </div>
         </div>
         {/* 経費 - 外注工賃*/}
-        <div className="group absolute" style={POS.expenseOutsourcing} title="外注工賃：フリーランス・業者への業務委託費用。※内容によっては源泉徴収が必要になる場合があります。">
+        <div className="group absolute" style={POS.expenseOutsourcing}>
           <input
             type="number"
             value={data.外注工賃 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            外注工賃：フリーランス・業者への業務委託費用。<br/>※内容によっては源泉徴収が必要になる場合があります。
+          </div>
         </div>
         {/* 経費 - 減価償却費*/}
-        <div className="group absolute" style={POS.expenseDepreciation} title="減価償却費：パソコン・機械・設備など高額資産の今年分の経費額を記入します。購入額そのままではありません。">
+        <div className="group absolute" style={POS.expenseDepreciation}>
           <input
             type="number"
             value={data.減価償却費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            減価償却費：<br/>パソコン・機械・設備など高額資産の<br/>今年分の経費額を記入します。<br/>購入額そのままではありません。
+          </div>
         </div>
         {/* 経費 - 貸し倒れ金*/}
-        <div className="group absolute" style={POS.expenseBadDebt} title="貸倒金：該当しない場合は 0 円のままにしてください。（※通常、白色申告では使用しません）">
+        <div className="group absolute" style={POS.expenseBadDebt}>
           <input
             type="number"
             value={'0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            貸倒金：該当しない場合は<br/>0 円のままにしてください。<br/>（※通常、白色申告では使用しません）
+          </div>
         </div>
         {/* 経費 - 地代家賃*/}
-        <div className="group absolute" style={POS.expenseRent} title="地代家賃：※カフェ等の単発利用は会議費または雑費に分類してください※月額契約のコワーキング・事務所のみ対象">
+        <div className="group absolute" style={POS.expenseRent}>
           <input
             type="number"
             value={data.減価償却費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            地代家賃：<br/>※カフェ等の単発利用は会議費または雑費に分類してください<br/>※月額契約のコワーキング・事務所のみ対象
+          </div>
         </div>
         {/* 経費 - 利子割引料*/}
-        <div className="group absolute" style={POS.expenseInterestDiscount} title="利子割引料：該当しない場合は 0 円のままにしてください。（※通常、白色申告では使用しません：手形・ファクタリングなど高度な取引をしている場合のみ使用）">
+        <div className="group absolute" style={POS.expenseInterestDiscount}>
           <input
             type="number"
             value={'0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            利子割引料：該当しない場合は<br/>0 円のままにしてください。<br/>（※通常、白色申告では使用しません：<br/>手形・ファクタリングなど高度な取引をしている場合のみ使用）
+          </div>
         </div>
         {/* 経費 - 租税公課*/}
-        <div className="group absolute" style={POS.expenseTaxes} title="租税公課：該当しない場合は 0 円のままにしてください。（※印紙税・固定資産税の一部（家事按分したとき）など：※ 所得税・住民税・社会保険料はここに入れません）">
+        <div className="group absolute" style={POS.expenseTaxes}>
           <input
             type="number"
             value={data.租税公課 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            租税公課：該当しない場合は 0 円のままにしてください。<br/>（※印紙税・固定資産税の一部（家事按分したとき）など：<br/>※ 所得税・住民税・社会保険料はここに入れません）
+          </div>
         </div>
         {/* 経費 - 荷造運賃*/}
-        <div className="group absolute" style={POS.expenseShipping} title="荷造運賃：送料など">
+        <div className="group absolute" style={POS.expenseShipping}>
           <input
             type="number"
             value={data.荷造運賃 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            荷造運賃：<br/>送料など
+          </div>
         </div>
         {/* 経費 - 水道光熱費*/}
-        <div className="group absolute" style={POS.expenseUtilities} title="水道光熱費：電気代など">
+        <div className="group absolute" style={POS.expenseUtilities}>
           <input
             type="number"
             value={data.水道光熱費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            水道光熱費：<br/>電気代など
+          </div>
         </div>
         {/* 経費 - 旅費交通費欄 */}
-        <div className="group absolute" style={POS.expenseTravel} title="旅費交通費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseTravel}>
           <input
             type="number"
             value={data.旅費交通費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-yellow-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            旅費交通費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 通信費欄 */}
-        <div className="group absolute" style={POS.expenseCommunication} title="通信費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseCommunication}>
           <input
             type="number"
             value={data.通信費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            通信費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 広告宣伝費欄 */}
-        <div className="group absolute" style={POS.expenseAdvertising} title="広告宣伝費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseAdvertising}>
           <input
             type="number"
             value={data.広告宣伝費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            広告宣伝費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 接待交際費欄 */}
-        <div className="group absolute" style={POS.expenseEntertainment} title="接待交際費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseEntertainment}>
           <input
             type="number"
             value={data.接待交際費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            接待交際費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 損害保険料欄 */}
-        <div className="group absolute" style={POS.expenseInsurance} title="損害保険料カテゴリの合計金額です（生命保険・医療保険はここに入れません）">
+        <div className="group absolute" style={POS.expenseInsurance}>
           <input
             type="number"
             value={data.損害保険料 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            損害保険料：<br/>カテゴリの合計金額です<br/>（生命保険・医療保険はここに入れません）
+          </div>
         </div>
         {/* 経費 - 修繕費欄 */}
-        <div className="group absolute" style={POS.expenseRepair} title="修繕費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseRepair}>
           <input
             type="number"
             value={data.修繕費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            修繕費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 消耗品費欄 */}
-        <div className="group absolute" style={POS.expenseSupplies} title="消耗品費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseSupplies}>
           <input
             type="number"
             value={data.消耗品費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            消耗品費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 福利厚生費欄 */}
-        <div className="group absolute" style={POS.expenseWelfare} title="福利厚生費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseWelfare}>
           <input
             type="number"
             value={data.福利厚生費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            福利厚生費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 雑費欄 */}
-        <div className="group absolute" style={POS.expenseMiscellaneous} title="雑費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseMiscellaneous}>
           <input
             type="number"
             value={data.雑費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            雑費：<br/>カテゴリの合計金額です
+          </div>
         </div>
         {/* 経費 - 経費合計欄 */}
-        <div className="group absolute" style={POS.expenseTotal} title="雑費カテゴリの合計金額です">
+        <div className="group absolute" style={POS.expenseTotal}>
           <input
             type="number"
-            value={data.経費合計 || ''}
+            value={data.経費合計 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            雑費カテゴリの合計金額です
+          </div>
         </div>
         {/* 専従者控除前の所得金額欄 */}
-        <div className="group absolute" style={POS.incomeBeforeDeduction} title="専従者控除前の所得金額です">
+        <div className="group absolute" style={POS.incomeBeforeDeduction}>
           <input
             type="number"
-            value={data.所得金額 || ''}
+            value={data.所得金額 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            専従者控除前所得金額：<br/>です
+          </div>
         </div>
         {/* 専従者控除後の所得金額欄 */}
-        <div className="group absolute" style={POS.incomeAfterDeduction} title="専従者控除後の所得金額です">
+        <div className="group absolute" style={POS.incomeAfterDeduction}>
           <input
             type="number"
-            value={data.所得金額 || ''}
+            value={data.所得金額 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
           />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            専従者控除後所得金額：<br/>です
+          </div>
         </div>
         {/* 旅費交通費 - 第二表の旅費交通費欄
         <div className="group absolute" style={{ top: '270px', left: '520px', width: '100px' }} title="旅費交通費カテゴリの合計金額です">
@@ -372,6 +595,226 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
       <div className="relative w-[800px] mx-auto">
         <img src="/07-.png" alt="収支内訳書2" className="w-full shadow-lg rounded-lg" />
       </div>
+
+
+
+     {/* 第一表 */}
+     <div className="relative w-[800px] mx-auto">
+        <img src="/01.png" alt="別表A第一表" className="w-full shadow-lg rounded-lg" />
+
+        {/* 以下 px指定の座標部分 は変更してはいけません */}
+
+        {/* 経費合計 - 第一表の経費合計欄 
+        <div className="group absolute" style={{ top: '245px', left: '520px', width: '100px' }} title="すべての経費の合計金額です">
+          <input
+            type="number"
+            value={data.経費合計 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+        </div>*/}
+        {/* 所得金額 - 第一表の所得金額 事業（営業等・農業）の区分欄*/}
+        <div className="group absolute" style={POS.firstTableCategory}>
+          <input
+            type="number"
+            value={'4'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            区分：<br/>本アプリは「日々の取引を簡易な方法で記帳している場合」に該当します。第一表の区分欄には 4 を記入してください。
+          </div>
+        </div>
+        {/* 所得金額 - 第一表の所得金額欄 */}
+        <div className="group absolute" style={POS.firstTableIncomeAmount}>
+          <input
+            type="number"
+            value={data.所得金額 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
+          />
+
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            所得金額：<br/>売上 − 経費合計 = 所得金額（第一表「ア」）
+          </div>
+
+        </div>
+         {/* 売上 - 第一表の売上欄 */}
+        <div className="group absolute" style={POS.firstTableSales}>
+          <input
+            type="number"
+            value={data.売上 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            売上：<br/>経費を引く前の売上合計を記入します
+          </div>
+        </div>
+
+      </div>
+      
+
+      {/* 第二表 */}
+      <div className="relative w-[800px] mx-auto">
+        <img src="/02.png" alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
+
+        {/* 地代家賃 - 第二表の地代家賃欄 */}
+        <div className="group absolute" style={POS.secondTableRent}>
+          <input
+            type="number"
+            value={data.地代家賃 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            地代家賃：<br/>カテゴリの合計金額です
+          </div>
+        </div>
+
+        {/* 給与賃金 - 第二表の給与賃金欄 */}
+        <div className="group absolute" style={POS.secondTableSalary}>
+          <input
+            type="number"
+            value={data.給与賃金 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            給与賃金：<br/>カテゴリの合計金額です
+          </div>
+        </div>
+
+        {/* 消耗品費 - 第二表の消耗品費欄 */}
+        <div className="group absolute" style={POS.secondTableSupplies}>
+          <input
+            type="number"
+            value={data.消耗品費 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            消耗品費カテゴリの合計金額です
+          </div>
+        </div>
+
+        {/* 通信費 - 第二表の通信費欄 */}
+        <div className="group absolute" style={POS.secondTableCommunication}>
+          <input
+            type="number"
+            value={data.通信費 || ''}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            通信費カテゴリの合計金額です
+          </div>
+        </div>
+
+        {/* 旅費交通費 - 第二表の旅費交通費欄 */}
+        <div className="group absolute" style={POS.secondTableTravel}>
+          <input
+            type="number"
+            value={data.旅費交通費 || '0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
+          />
+          {/* Tooltip */}
+          <div className="
+              pointer-events-none
+              absolute z-50
+              left-1/2 top-full mt-2 -translate-x-1/2
+              whitespace-nowrap
+              rounded-md bg-black/90 px-3 py-1.5
+              text-xs text-white
+              opacity-0 scale-95
+              transition-all duration-150
+              group-hover:opacity-100 group-hover:scale-100
+            ">
+            旅費交通費カテゴリの合計金額です
+          </div>
+        </div>
+      </div>
+
+
+
 
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-2xl mx-auto">
         <h3 className="font-bold text-red-800 mb-2">⚠️注意点⚠️</h3>

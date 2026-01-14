@@ -99,7 +99,12 @@ const App: React.FC = () => {
         category: t.category,
         type: t.type,
         receiptUrl: t.receipt_url || '',
-        createdAt: new Date(t.date).getTime()
+        createdAt: new Date(t.date).getTime(),
+        // 収入データの場合のみ支払者名と源泉徴収税額を追加
+        ...(t.type === 'income' && {
+          payerName: t.payerName || '',
+          withholdingTax: t.withholdingTax || 0
+        })
       }));
       
       setTransactions(mappedTransactions);
@@ -335,7 +340,12 @@ const App: React.FC = () => {
         memo: data.description || '内容なし',
         receipt_url: receiptUrl, // URLのみ（Base64ではない）
         type: type,
-        userId: authStatus?.userId || 'test-user'
+        userId: authStatus?.userId || 'test-user',
+        // 収入データの場合のみ支払者名と源泉徴収税額を追加
+        ...(type === 'income' && {
+          payerName: data.payerName || '',
+          withholdingTax: Number(data.withholdingTax) || 0
+        })
       };
 
       // Save to Sheet via API
@@ -745,6 +755,19 @@ const App: React.FC = () => {
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">内容</label>
                             <input type="text" value={pendingExtraction.data.description} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, description: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" />
                           </div>
+                          {/* 収入データの場合のみ支払者名と源泉徴収税額を編集可能 */}
+                          {pendingExtraction.data.type === 'income' && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] text-green-400 font-bold mb-1 block">支払者名</label>
+                                <input type="text" value={pendingExtraction.data.payerName || ''} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, payerName: e.target.value}})} className="w-full p-2 rounded-lg border border-green-200 text-sm font-bold outline-none" placeholder="支払者名を入力" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-green-400 font-bold mb-1 block">源泉徴収税額</label>
+                                <input type="number" value={pendingExtraction.data.withholdingTax || 0} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, withholdingTax: parseFloat(e.target.value) || 0}})} className="w-full p-2 rounded-lg border border-green-200 text-sm font-bold outline-none" placeholder="0" />
+                              </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="space-y-3">
@@ -788,6 +811,19 @@ const App: React.FC = () => {
                             <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">内容</p>
                             <p className="text-sm font-bold text-gray-700">{pendingExtraction.data.description || '内容なし'}</p>
                           </div>
+                          {/* 収入データの場合のみ支払者名と源泉徴収税額を表示 */}
+                          {pendingExtraction.data.type === 'income' && (
+                            <>
+                              <div className="bg-green-50/50 p-4 rounded-2xl border border-green-50">
+                                <p className="text-[10px] text-green-400 font-bold uppercase mb-1">支払者名</p>
+                                <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.payerName || '未設定'}</p>
+                              </div>
+                              <div className="bg-green-50/50 p-4 rounded-2xl border border-green-50">
+                                <p className="text-[10px] text-green-400 font-bold uppercase mb-1">源泉徴収税額</p>
+                                <p className="text-lg font-black text-green-700">¥{Number(pendingExtraction.data.withholdingTax || 0).toLocaleString()}</p>
+                              </div>
+                            </>
+                          )}
                         </>
                       ) : (
                         <div className="col-span-2 bg-indigo-50 p-4 rounded-2xl border border-indigo-100">

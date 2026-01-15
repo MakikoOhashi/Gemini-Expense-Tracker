@@ -20,7 +20,7 @@ const Dashboard: React.FC = () => {
         </h2>
         <p className="text-gray-600 text-sm leading-relaxed">
           ここに入力データから<br />
-          国税局質問予測と対応策を表示します。<br />
+          問題になりやすい項目の予測と推奨対応を表示します<br />
           Gemini 3 による推論は次段階で連携予定。
         </p>
       </div>

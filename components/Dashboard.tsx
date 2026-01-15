@@ -1,128 +1,73 @@
 
-import React, { useMemo } from 'react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell,
-  Legend
-} from 'recharts';
-import { Transaction } from '../types';
+import React from 'react';
+import { ExclamationTriangleIcon, EyeIcon } from '@heroicons/react/24/outline';
 
-interface DashboardProps {
-  transactions: Transaction[];
-}
-
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6'];
-
-const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-
-  const stats = useMemo(() => {
-    const monthlyData = transactions.filter(t => {
-      const d = new Date(t.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const totalExpense = monthlyData
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalIncome = monthlyData
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const categoryDataMap = monthlyData
-      .filter(t => t.type === 'expense')
-      .reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount;
-        return acc;
-      }, {} as Record<string, number>);
-
-    const pieData = Object.entries(categoryDataMap).map(([name, value]) => ({ name, value }));
-
-    const trendMap: Record<string, { income: number; expense: number }> = {};
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(currentYear, currentMonth - i, 1);
-      const key = `${d.getFullYear()}/${d.getMonth() + 1}`;
-      trendMap[key] = { income: 0, expense: 0 };
-    }
-
-    transactions.forEach(t => {
-      const d = new Date(t.date);
-      const key = `${d.getFullYear()}/${d.getMonth() + 1}`;
-      if (trendMap[key]) {
-        if (t.type === 'income') trendMap[key].income += t.amount;
-        else trendMap[key].expense += t.amount;
-      }
-    });
-
-    const trendData = Object.entries(trendMap).map(([name, vals]) => ({
-      name,
-      ...vals
-    }));
-
-    return { totalExpense, totalIncome, pieData, trendData };
-  }, [transactions, currentMonth, currentYear]);
+const Dashboard: React.FC = () => {
+  // ダミーデータ
+  const mockPredictionData = [
+    { item: 'AWSクラウドサービス', amount: 1200, score: '🟡 中程度', question: 'なぜ外注費として分類？' },
+    { item: '会議費（Zoom有料）', amount: 50, score: '🔴 高い', question: '適正な支出か確認を' },
+    { item: '通信費（ソフトバンク）', amount: 80, score: '🟢 低い', question: '問題なし' },
+  ];
 
   return (
     <div className="p-4 pb-24 space-y-6 overflow-x-hidden">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">今月の売上</p>
-          <p className="text-xl font-bold text-indigo-600">¥{stats.totalIncome.toLocaleString()}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">今月の経費</p>
-          <p className="text-xl font-bold text-rose-500">¥{stats.totalExpense.toLocaleString()}</p>
+      {/* タイトル・説明文 */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+          <EyeIcon className="w-6 h-6 text-indigo-600" />
+          監査予報
+        </h2>
+        <p className="text-gray-600 text-sm leading-relaxed">
+          ここに入力データから<br />
+          国税局質問予測と対応策を表示します。<br />
+          Gemini 3 による推論は次段階で連携予定。
+        </p>
+      </div>
+
+      {/* 予測スコア用テーブル */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <h3 className="text-sm font-bold text-gray-700 mb-4">予測スコア</h3>
+        <div className="space-y-3">
+          {mockPredictionData.map((item, index) => (
+            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">{item.item}</p>
+                <p className="text-xs text-gray-500">¥{item.amount.toLocaleString()}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold">{item.score}</p>
+                <p className="text-xs text-gray-600">{item.question}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* 予想質問・回答例エリア */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">支出トレンド (半年間)</h3>
-        {/* 親要素に relative w-full h-[300px] を指定してサイズを固定 */}
-        <div className="relative w-full h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stats.trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-              <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(val) => `¥${val/1000}k`} />
-              <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-              <Bar dataKey="income" name="売上" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" name="経費" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <h3 className="text-sm font-bold text-gray-700 mb-4">予想質問・回答例</h3>
+        <div className="space-y-4">
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm font-medium text-amber-800 mb-2">Q: AWS $1,200はなぜ外注費ですか？</p>
+            <p className="text-sm text-amber-700">A: 契約書により「基盤インフラ」として事業で使用。利用目的を確認済み。</p>
+          </div>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-medium text-red-800 mb-2">Q: この会議費 $50 は適切ですか？</p>
+            <p className="text-sm text-red-700">A: 出席者リスト・議事録で確認済み。会議費として妥当。</p>
+          </div>
         </div>
       </div>
 
+      {/* 次のアクション */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">支出カテゴリ内訳</h3>
-        {stats.pieData.length > 0 ? (
-          <div className="relative w-full h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {stats.pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-              </PieChart>
-            </ResponsiveContainer>
+        <div className="flex items-start gap-3">
+          <ExclamationTriangleIcon className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-bold text-gray-700 mb-2">次のアクション</h3>
+            <p className="text-sm text-gray-600">ここを確認してください。赤字項目の根拠を確認し、必要に応じて修正してください。</p>
           </div>
-        ) : (
-          <div className="h-32 flex items-center justify-center text-gray-400 text-sm italic">
-            データがありません
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

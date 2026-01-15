@@ -905,7 +905,7 @@ const App: React.FC = () => {
             <div ref={chatEndRef} className="h-4" />
           </div>
         ) : activeTab === 'dashboard' ? (
-          <Dashboard transactions={transactions} />
+          <Dashboard />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();
           return (
@@ -1022,7 +1022,7 @@ const App: React.FC = () => {
           <ChatBubbleLeftRightIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">チャット</span>
         </button>
         <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
-          <ChartBarIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">サマリー</span>
+          <ChartBarIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">監査予報</span>
         </button>
         <button onClick={() => {
           if (selectedTaxYear) {

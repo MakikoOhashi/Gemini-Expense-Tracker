@@ -9,7 +9,7 @@ export const POS = {
   secondTableSalary: { top: 180, left: 520, width: 100 },
   secondTableSupplies: { top: 210, left: 520, width: 100 },
   secondTableCommunication: { top: 240, left: 520, width: 100 },
-  secondTableTravel: { top: 270, left: 520, width: 100 },
+  secondTableTravel: { top: 340, left: 210, width: 100 },
 
   // 収支内訳書1 - 収入欄
   incomeSales: { top: 191, left: 162, width: 100 },

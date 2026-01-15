@@ -1252,17 +1252,33 @@ app.get('/api/income', async (req, res) => {
       console.log('  receiptUrl (row[5]):', rows[0]?.[5] || '(なし)');
     }
 
-    const income = rows.map((row, index) => ({
-      id: `inc_${index + 2}`,
-      date: row[0] || '',
-      amount: parseFloat(row[1]) || 0,
-      payerName: row[2] || '',
-      withholdingTax: parseFloat(row[3]) || 0,
+    // Income データの正規化（バグ防止策）
+    const normalizedRows = rows.map(row => ({
+      date: row[0],
+      amount: Number(row[1] || 0),
+      payerName: row[2]?.trim() || '',
+      withholding: Number(row[3] || 0),
       memo: row[4] || '',
-      receiptUrl: row[5] || '',
-      type: 'income',
-      createdAt: Date.now()
+      receiptUrl: row[5] || ''
     }));
+
+    const income = normalizedRows.map((row, index) => {
+      let { payerName } = row;
+      // 支払人が空の場合のみ "未設定" と表示
+      if (!payerName) payerName = '未設定';
+
+      return {
+        id: `inc_${index + 2}`,
+        date: row.date,
+        amount: row.amount,
+        payerName: payerName,
+        withholdingTax: row.withholding,
+        memo: row.memo,
+        receiptUrl: row.receiptUrl,
+        type: 'income',
+        createdAt: Date.now()
+      };
+    });
 
     console.log('📊 /api/income 最終レスポンス:', {
       incomeCount: income.length,

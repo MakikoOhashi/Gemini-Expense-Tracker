@@ -802,29 +802,26 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           </div>
         </div>
 
-        {/* 旅費交通費 - 第二表の旅費交通費欄 */}
-        <div className="group absolute" style={POS.secondTableTravel}>
-          <input
-            type="number"
-            value={data.旅費交通費 || '0'}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-          {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-50
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0 scale-95
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
-            旅費交通費カテゴリの合計金額です
+        {/* 所得の内訳 - 第二表の全支払者データを縦方向に表示 */}
+        {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) => (
+          <div
+            key={payerName}
+            className="absolute text-xs font-bold text-red-600"
+            style={{
+              top: POS.secondTableTravel.top + (index * 25),
+              left: POS.secondTableTravel.left - 150,
+              width: 350
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-8 text-left">事業</span>
+              <span className="w-12 text-center">営業等</span>
+              <span className="w-16 text-center truncate" title={payerName}>{payerName}</span>
+              <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
+              <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
 

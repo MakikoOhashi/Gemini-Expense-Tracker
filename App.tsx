@@ -26,6 +26,7 @@ import { authService, AuthStatus } from './services/authService';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
+import YearSelectionModal from './components/YearSelectionModal';
 import { BetsuhyoA } from './components/BetsuhyoA';
 import { CATEGORIES } from './constants';
 import heic2any from 'heic2any';
@@ -42,6 +43,8 @@ const QUICK_ACTIONS = [
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'history' | 'tax'>('chat');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isYearSelectionModalOpen, setIsYearSelectionModalOpen] = useState(false);
+  const [selectedTaxYear, setSelectedTaxYear] = useState<number | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -636,6 +639,25 @@ const App: React.FC = () => {
     }
   };
 
+  const handleYearSelect = (year: number) => {
+    setSelectedTaxYear(year);
+    setIsYearSelectionModalOpen(false);
+    setActiveTab('tax');
+  };
+
+  const getAvailableYears = (): number[] => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 1, currentYear, currentYear + 1];
+  };
+
+  const getFilteredTransactions = () => {
+    if (!selectedTaxYear) return transactions;
+    return transactions.filter(t => {
+      const transactionYear = new Date(t.date).getFullYear();
+      return transactionYear === selectedTaxYear;
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto bg-white shadow-xl overflow-hidden relative">
       {/* Authentication Modal */}
@@ -884,48 +906,61 @@ const App: React.FC = () => {
           </div>
         ) : activeTab === 'dashboard' ? (
           <Dashboard transactions={transactions} />
-        ) : activeTab === 'tax' ? (
-          <BetsuhyoA data={{
-            売上: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
-            経費合計: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
-            所得金額: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) - transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
-            地代家賃: transactions.filter(t => t.category === '地代家賃').reduce((sum, t) => sum + t.amount, 0),
-            給与賃金: transactions.filter(t => t.category === '給与賃金').reduce((sum, t) => sum + t.amount, 0),
-            消耗品費: transactions.filter(t => t.category === '消耗品費').reduce((sum, t) => sum + t.amount, 0),
-            通信費: transactions.filter(t => t.category === '通信費').reduce((sum, t) => sum + t.amount, 0),
-            旅費交通費: transactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0),
-            // 第二表 所得の内訳データ生成（支払者名ごとに集計）
-            所得の内訳: (() => {
-              const incomeTransactions = transactions.filter(t => t.type === 'income');
+        ) : activeTab === 'tax' ? (() => {
+          const filteredTransactions = getFilteredTransactions();
+          return (
+            <div>
+              <div  className="space-y-8 p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
+                <h3 className="font-bold text-blue-800 mb-2">📅 選択された年度</h3>
+                <p className="text-sm text-blue-700">
+                  {selectedTaxYear}年度（{selectedTaxYear}年1月1日〜{selectedTaxYear}年12月31日）の取引データを集計しています。
+                </p>
+              </div>
+              </div>
+              <BetsuhyoA data={{
+                売上: filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+                経費合計: filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+                所得金額: filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) - filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+                地代家賃: filteredTransactions.filter(t => t.category === '地代家賃').reduce((sum, t) => sum + t.amount, 0),
+                給与賃金: filteredTransactions.filter(t => t.category === '給与賃金').reduce((sum, t) => sum + t.amount, 0),
+                消耗品費: filteredTransactions.filter(t => t.category === '消耗品費').reduce((sum, t) => sum + t.amount, 0),
+                通信費: filteredTransactions.filter(t => t.category === '通信費').reduce((sum, t) => sum + t.amount, 0),
+                旅費交通費: filteredTransactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0),
+                // 第二表 所得の内訳データ生成（支払者名ごとに集計）
+                所得の内訳: (() => {
+                  const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');
 
-              // income取得直後に一回だけログ出力（デバッグ用）
-              if (incomeTransactions.length > 0) {
-                console.log("🔎 income sample:", incomeTransactions.slice(0, 3));
-              }
+                  // income取得直後に一回だけログ出力（デバッグ用）
+                  if (incomeTransactions.length > 0) {
+                    console.log("🔎 income sample:", incomeTransactions.slice(0, 3));
+                  }
 
-              const groupedByPayer = incomeTransactions.reduce((acc, t) => {
-                // 支払人キーを payerName に完全統一
-                const payer = t.payerName && t.payerName.trim()
-                  ? t.payerName.trim()
-                  : '未設定';
+                  const groupedByPayer = incomeTransactions.reduce((acc, t) => {
+                    // 支払人キーを payerName に完全統一
+                    const payer = t.payerName && t.payerName.trim()
+                      ? t.payerName.trim()
+                      : '未設定';
 
-                if (!acc[payer]) {
-                  acc[payer] = {
-                    種目: '営業等',
-                    収入金額: 0,
-                    源泉徴収税額: 0
-                  };
-                }
-                acc[payer].収入金額 += t.amount;
-                acc[payer].源泉徴収税額 += t.withholdingTax || 0;
-                return acc;
-              }, {} as Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>);
+                    if (!acc[payer]) {
+                      acc[payer] = {
+                        種目: '営業等',
+                        収入金額: 0,
+                        源泉徴収税額: 0
+                      };
+                    }
+                    acc[payer].収入金額 += t.amount;
+                    acc[payer].源泉徴収税額 += t.withholdingTax || 0;
+                    return acc;
+                  }, {} as Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>);
 
-              console.log("📊 所得の内訳集計結果:", groupedByPayer);
-              return groupedByPayer;
-            })()
-          }} />
-        ) : (
+                  console.log("📊 所得の内訳集計結果:", groupedByPayer);
+                  return groupedByPayer;
+                })()
+              }} />
+            </div>
+          );
+        })() : (
           <TransactionList
             transactions={transactions}
             onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))}
@@ -981,7 +1016,13 @@ const App: React.FC = () => {
         <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
           <ChartBarIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">サマリー</span>
         </button>
-        <button onClick={() => setActiveTab('tax')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
+        <button onClick={() => {
+          if (selectedTaxYear) {
+            setActiveTab('tax');
+          } else {
+            setIsYearSelectionModalOpen(true);
+          }
+        }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
           <ReceiptPercentIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">確定申告</span>
         </button>
         <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
@@ -997,6 +1038,13 @@ const App: React.FC = () => {
         onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: '履歴をクリアしました。', timestamp: Date.now() }])}
         onInitializeSystem={handleInitializeSystem}
         authStatus={authStatus}
+      />
+
+      <YearSelectionModal
+        isOpen={isYearSelectionModalOpen}
+        onClose={() => setIsYearSelectionModalOpen(false)}
+        onSelectYear={handleYearSelect}
+        availableYears={getAvailableYears()}
       />
 
       {/* Folder Conflict Modal */}

@@ -1,0 +1,96 @@
+import React from 'react';
+import { XMarkIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+
+interface YearSelectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectYear: (year: number) => void;
+  availableYears: number[];
+}
+
+const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
+  isOpen,
+  onClose,
+  onSelectYear,
+  availableYears
+}) => {
+  if (!isOpen) return null;
+
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-indigo-50">
+          <div className="flex items-center gap-2">
+            <CalendarDaysIcon className="w-5 h-5 text-indigo-600" />
+            <h2 className="font-bold text-gray-800">確定申告年度選択</h2>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition">
+            <XMarkIcon className="w-6 h-6 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="text-center mb-6">
+            <p className="text-sm text-gray-600">
+              確定申告に使用する年度のデータを選択してください
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {availableYears.map(year => (
+              <button
+                key={year}
+                onClick={() => onSelectYear(year)}
+                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                  year === currentYear
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-25 text-gray-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-lg">
+                      {year}年度
+                      {year === currentYear && (
+                        <span className="ml-2 text-xs bg-indigo-500 text-white px-2 py-1 rounded-full">
+                          当年度
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      {year}年1月1日〜{year}年12月31日の取引データ
+                    </div>
+                  </div>
+                  {year === currentYear && (
+                    <CalendarDaysIcon className="w-6 h-6 text-indigo-500" />
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-sm text-amber-800">
+              <span className="font-bold">注意：</span>
+              選択した年度の取引データのみが確定申告書に反映されます。
+              他の年度のデータは除外されます。
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-gray-50 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition shadow-sm"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default YearSelectionModal;

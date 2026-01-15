@@ -802,26 +802,28 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           </div>
         </div>
 
-        {/* 所得の内訳 - 第二表の全支払者データを縦方向に表示 */}
-        {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) => (
-          <div
-            key={payerName}
-            className="absolute text-xs font-bold text-red-600"
-            style={{
-              top: POS.secondTableTravel.top + (index * 25),
-              left: POS.secondTableTravel.left - 150,
-              width: 350
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="w-8 text-left">事業</span>
-              <span className="w-12 text-center">営業等</span>
-              <span className="w-18 text-center truncate" title={payerName}>{payerName}</span>
-              <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
-              <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+        {/* 所得の内訳 - 第二表の1件目〜4件目のみ表示 */}
+        {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) =>
+          index < 4 && (  // 1件目〜4件目のみ表示（0-indexedなのでindex < 4）
+            <div
+              key={payerName}
+              className="absolute text-xs font-bold text-red-600"
+              style={{
+                top: POS.secondTableTravel.top + (index * 30),
+                left: POS.secondTableTravel.left - 150,
+                width: 340
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-8 text-left">事業</span>
+                <span className="w-12 text-center">営業等</span>
+                <span className="flex-1 text-center truncate" title={payerName}>{payerName}</span>
+                <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
+                <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
 
       {/* 所得の内訳書 - payerNameの種類が5件以上の場合のみ表示 */}
@@ -829,26 +831,30 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="relative w-[800px] mx-auto">
           <img src="/09.png" alt="所得の内訳書" className="w-full shadow-lg rounded-lg" />
 
-          {/* 所得の内訳 - 第二表の全支払者データを縦方向に表示 */}
-          {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) => (
-            <div
-              key={payerName}
-              className="absolute text-xs font-bold text-red-600"
-              style={{
-                top: POS.secondTableTravel.top + (index * 25),
-                left: POS.secondTableTravel.left - 150,
-                width: 350
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-8 text-left">事業</span>
-                <span className="w-12 text-center">営業等</span>
-                <span className="w-18 text-center truncate" title={payerName}>{payerName}</span>
-                <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
-                <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+          {/* 所得の内訳 - 支払者5件目以降のみ縦方向に表示 */}
+          {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) =>
+            index >= 4 && (  // 5件目以降のみ表示（0-indexedなのでindex >= 4）
+              <div
+                key={payerName}
+                className="absolute text-xs font-bold text-red-600"
+                style={{
+                  top: POS.incomeBreakdownTable.top + ((index - 4) * 25), // indexを調整して5件目から0として配置
+                  left: POS.incomeBreakdownTable.left - 150,
+                  width: 560
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-8 text-left">事業</span>
+                  <span className="w-16 text-center">営業等</span>
+                  <span className="w-40 text-center truncate" title={payerName}>{payerName}</span>
+                  <span className="w-4 text-center"></span>
+                  <span className="w-28 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
+                  <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+                  <span className="w-4 text-center"></span>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       )}
 

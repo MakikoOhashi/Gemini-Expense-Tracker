@@ -11,6 +11,9 @@ export const POS = {
   secondTableCommunication: { top: 240, left: 520, width: 100 },
   secondTableTravel: { top: 340, left: 210, width: 100 },
 
+  // 所得の内訳書
+  incomeBreakdownTable: { top: 280, left: 300, width: 100 },
+
   // 収支内訳書1 - 収入欄
   incomeSales: { top: 191, left: 162, width: 100 },
   incomeHouseholdConsumption: { top: 208, left: 162, width: 100 },

@@ -208,7 +208,7 @@ export class SheetsService {
       });
 
       const income: TransactionData[] = (incomeResult.income || []).map((i: any) => {
-        console.log('📋 売上データ受信:', { id: i.id, date: i.date, amount: i.amount });
+        console.log('📋 売上データ受信:', { id: i.id, date: i.date, amount: i.amount, payerName: i.payerName });
         return {
           id: i.id,
           date: i.date,
@@ -216,7 +216,9 @@ export class SheetsService {
           category: i.category,
           memo: i.memo,
           receipt_url: i.receiptUrl || '',
-          type: 'income' as const
+          type: 'income' as const,
+          payerName: i.payerName || '',
+          withholdingTax: i.withholdingTax || 0
         };
       });
 

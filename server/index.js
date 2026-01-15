@@ -1253,14 +1253,29 @@ app.get('/api/income', async (req, res) => {
     }
 
     // Income データの正規化（バグ防止策）
-    const normalizedRows = rows.map(row => ({
-      date: row[0],
-      amount: Number(row[1] || 0),
-      payerName: row[2]?.trim() || '',
-      withholding: Number(row[3] || 0),
-      memo: row[4] || '',
-      receiptUrl: row[5] || ''
-    }));
+    const normalizedRows = rows.map(row => {
+      // row が配列かオブジェクトかを吸収
+      if (Array.isArray(row)) {
+        return {
+          date: row[0],
+          amount: Number(row[1] || 0),
+          payerName: row[2]?.trim() || '',
+          withholding: Number(row[3] || 0),
+          memo: row[4] || '',
+          receiptUrl: row[5] || ''
+        };
+      }
+
+      // すでにオブジェクト化されてるケース
+      return {
+        date: row.date,
+        amount: Number(row.amount || 0),
+        payerName: row.payerName?.trim() || '',
+        withholding: Number(row.withholding || 0),
+        memo: row.memo || '',
+        receiptUrl: row.receiptUrl || ''
+      };
+    });
 
     const income = normalizedRows.map((row, index) => {
       let { payerName } = row;

@@ -912,7 +912,15 @@ const App: React.FC = () => {
             <div>
               <div  className="space-y-8 p-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
-                <h3 className="font-bold text-blue-800 mb-2">📅 選択された年度</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-blue-800">📅 選択された年度</h3>
+                  <button
+                    onClick={() => setIsYearSelectionModalOpen(true)}
+                    className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition"
+                  >
+                    年度変更
+                  </button>
+                </div>
                 <p className="text-sm text-blue-700">
                   {selectedTaxYear}年度（{selectedTaxYear}年1月1日〜{selectedTaxYear}年12月31日）の取引データを集計しています。
                 </p>

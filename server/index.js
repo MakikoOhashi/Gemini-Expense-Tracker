@@ -1272,7 +1272,7 @@ app.get('/api/income', async (req, res) => {
         date: row.date,
         amount: row.amount,
         payerName: payerName,
-        withholdingTax: row.withholding,
+        withholding: row.withholding,
         memo: row.memo,
         receiptUrl: row.receiptUrl,
         type: 'income',
@@ -1286,7 +1286,10 @@ app.get('/api/income', async (req, res) => {
       hasConflict: false
     });
 
-    res.json({ 
+    // APIレスポンス直前にログ出力
+    console.log("🧾 income API sample:", income[0]);
+
+    res.json({
       income,
       isFolderAmbiguous: false,
       folderConflict: null

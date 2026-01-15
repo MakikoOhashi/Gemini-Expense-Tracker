@@ -96,9 +96,9 @@ const App: React.FC = () => {
             continue; // 競合時はスキップ
           }
 
-          // Transaction型に変換
-          const mappedTransactions: Transaction[] = response.map((t: any) => ({
-            id: t.id,
+          // Transaction型に変換（IDを必ずユニークに再生成）
+          const mappedTransactions: Transaction[] = response.map((t: any, index: number) => ({
+            id: t.type === 'income' ? `tx_inc_${year}_${index}` : `tx_exp_${year}_${index}`,
             date: t.date,
             amount: t.amount,
             description: t.memo || '',
@@ -897,19 +897,31 @@ const App: React.FC = () => {
             // 第二表 所得の内訳データ生成（支払者名ごとに集計）
             所得の内訳: (() => {
               const incomeTransactions = transactions.filter(t => t.type === 'income');
+
+              // income取得直後に一回だけログ出力（デバッグ用）
+              if (incomeTransactions.length > 0) {
+                console.log("🔎 income sample:", incomeTransactions.slice(0, 3));
+              }
+
               const groupedByPayer = incomeTransactions.reduce((acc, t) => {
-                const payerName = t.payerName || '未設定';
-                if (!acc[payerName]) {
-                  acc[payerName] = {
+                // 支払人キーを payerName に完全統一
+                const payer = t.payerName && t.payerName.trim()
+                  ? t.payerName.trim()
+                  : '未設定';
+
+                if (!acc[payer]) {
+                  acc[payer] = {
                     種目: '営業等',
                     収入金額: 0,
                     源泉徴収税額: 0
                   };
                 }
-                acc[payerName].収入金額 += t.amount;
-                acc[payerName].源泉徴収税額 += t.withholdingTax || 0;
+                acc[payer].収入金額 += t.amount;
+                acc[payer].源泉徴収税額 += t.withholdingTax || 0;
                 return acc;
               }, {} as Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>);
+
+              console.log("📊 所得の内訳集計結果:", groupedByPayer);
               return groupedByPayer;
             })()
           }} />

@@ -816,7 +816,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             <div className="flex items-center gap-2">
               <span className="w-8 text-left">事業</span>
               <span className="w-12 text-center">営業等</span>
-              <span className="w-16 text-center truncate" title={payerName}>{payerName}</span>
+              <span className="w-18 text-center truncate" title={payerName}>{payerName}</span>
               <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
               <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
             </div>

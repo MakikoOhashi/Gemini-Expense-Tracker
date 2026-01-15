@@ -1,0 +1,18 @@
+.form-area {
+  transform: none !important;
+  zoom: 1 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+/* SP用フォント変更を帳票エリアに適用しない */
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+  .form-area { font-size: 16px !important; }
+}
+
+/* iOS Safari 対策：描画丸め防止 */
+.form-area * {
+  -webkit-transform: translateZ(0);
+}

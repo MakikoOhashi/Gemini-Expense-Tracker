@@ -30,7 +30,7 @@ interface BetsuhyoAProps {
 
 export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
   return (
-    <div className="space-y-8 p-4">
+    <div className="form-area space-y-8 p-4">
 
     <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-2xl mx-auto">
         <h3 className="font-bold text-red-800 mb-2">⚠️注意⚠️</h3>
@@ -55,8 +55,9 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
  
 
       {/* 収支内訳書1 */}
-      <div className="relative w-[800px] mx-auto">
-        <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
+      <div className="relative w-[800px] mx-auto overflow-x-auto">
+        <div className="relative min-w-[800px]">
+          <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
         {/* 収入 -売上欄 */}
         <div className="group absolute" style={POS.incomeSales}>
           <input
@@ -73,9 +74,9 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
+              group-hover:opacity-100
             ">
             売上：<br/>経費を引く前の<br/>売上合計を記入します
           </div>
@@ -96,9 +97,9 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
+              group-hover:opacity-100
             ">
             家事消費：<br/>該当しない場合は 0 円のままにしてください。<br/>（飲食店・物販など、商品を私用で使う場合のみ記入）
           </div>
@@ -119,9 +120,9 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
+              group-hover:opacity-100
             ">
             給料：該当しない場合は<br/>0 円のままにしてください。<br/>（従業員に給料を支払った場合のみ記入）
           </div>
@@ -142,7 +143,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -165,7 +166,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -188,7 +189,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -211,7 +212,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -234,7 +235,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -257,7 +258,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -280,7 +281,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -303,7 +304,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -326,7 +327,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -349,7 +350,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -372,7 +373,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -395,7 +396,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -418,7 +419,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -441,7 +442,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -464,7 +465,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -487,7 +488,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -510,7 +511,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -533,7 +534,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -556,7 +557,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -579,7 +580,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -604,6 +605,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-center"
           />
         </div>*/}
+        </div>
       </div>
       {/* 収支内訳書2 */}
       <div className="relative w-[800px] mx-auto">
@@ -643,7 +645,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -667,7 +669,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -691,7 +693,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -722,7 +724,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -746,7 +748,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -770,7 +772,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">
@@ -794,7 +796,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
               text-xs text-white
-              opacity-0 scale-95
+              opacity-0
               transition-all duration-150
               group-hover:opacity-100 group-hover:scale-100
             ">

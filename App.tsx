@@ -1086,7 +1086,7 @@ const App: React.FC = () => {
                 <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-slate-900 font-bold text-sm flex-shrink-0">
+                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-700 font-bold text-sm flex-shrink-0">
                         {index + 1}
                       </div>
                       <div className="min-w-0">
@@ -1165,7 +1165,7 @@ const App: React.FC = () => {
               className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
             >
               <ArrowPathIcon className="w-5 h-5" />
-              変更后再読み込み
+              変更後再読み込み
             </button>
           </div>
         </div>

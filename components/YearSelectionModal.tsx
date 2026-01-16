@@ -46,7 +46,7 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
                 className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                   year === currentYear
                     ? 'border-slate-900 bg-slate-50 text-slate-900'
-                    : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-25 text-gray-700'
+                    : 'border-gray-200 bg-white hover:border-slate-300 hover:bg-slate-25 text-gray-700'
                 }`}
               >
                 <div className="flex items-center justify-between">

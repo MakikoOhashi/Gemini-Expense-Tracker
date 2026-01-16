@@ -2,6 +2,116 @@
 
 完全自動化されたAI経費管理システム。Google Gemini AIとGoogle Workspaceを統合し、領収書撮影だけで経費管理が完了します。
 
+## Why this app exists — the hidden anxiety in tax filing
+
+Individual business owners face a paradox.
+
+Each transaction usually looks fine on its own.  
+A cloud invoice, a meeting fee, a software subscription — all reasonable.
+
+But when the tax office asks:
+
+> “Why is your business structured like this?”
+
+No single transaction can answer that question.
+
+This is the real anxiety of tax filing:
+not whether *one expense* is acceptable,
+but whether the *entire business structure* is explainable.
+
+---
+
+## The core idea: from item-by-item to total story
+
+Most accounting tools stop at this level:
+
+- Categorize each transaction  
+- Flag suspicious individual items  
+- Show summaries for bookkeeping
+
+That solves **local correctness**, but not **global explainability**.
+
+This app flips the perspective.
+
+Instead of asking:
+> “Is this one expense okay?”
+
+It asks:
+> “When you look at the whole year,  
+> does your business tell a coherent story?”
+
+---
+
+## What “Audit Forecast” actually means here
+
+The Audit Forecast is not a judgment engine.
+It does not say “this is illegal” or “this will be audited”.
+
+It does something more practical:
+
+- Aggregates transactions across the entire year
+- Analyzes **ratios and structure**, not isolated entries
+- Identifies areas where a tax officer is likely to ask:
+  > “Why is this so high compared to your revenue?”
+
+Example:
+
+- Each meeting fee looks normal
+- Each cloud cost looks justified
+- **But together**, meeting fees account for 50% of revenue
+
+The problem is not a single receipt.
+The problem is whether the business model behind those numbers
+can be explained clearly.
+
+---
+
+## The shift for the user
+
+Before:
+
+- “This transaction seems fine.”
+- “That one is probably okay too.”
+- → False sense of security
+
+After:
+
+- “Individually fine, but structurally unusual.”
+- “I need to explain my business model, not just my receipts.”
+- → Real preparedness
+
+This is the moment of recognition the app is designed to create.
+
+---
+
+## How Gemini 3 is used (intentionally)
+
+Gemini 3 is not used as a simple classifier or chatbot.
+
+It is used to:
+
+- Reason over **aggregated financial structures**
+- Compare individual transactions *against the total picture*
+- Generate **explanation paths**, not just labels
+
+The model helps surface *why* something may need explanation,
+not merely *what* category it belongs to.
+
+---
+
+## Why this matters
+
+Tax filing is not about passing a checklist.
+It is about being able to explain your numbers as a whole.
+
+By making the “total story” visible,
+this app turns anxiety into preparation.
+
+Not automation for automation’s sake —
+but clarity where it actually matters.
+
+
+
 ## 🌟 主な特徴
 
 ### 🤖 AI自動分類

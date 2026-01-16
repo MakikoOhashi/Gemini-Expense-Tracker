@@ -40,6 +40,12 @@ export const POS = {
   expenseWelfare: { top: 306, left: 354, width: 100 },
   expenseMiscellaneous: { top: 406, left: 354, width: 100 },
   expenseTotal: { top: 440, left: 354, width: 100 },
+
+  // 専従者控除欄
+  dependentDeductionBefore: { top: 472, left: 354, width: 100 },
+  dependentDeductionAfter: { top: 520, left: 350, width: 120 },
+
+  // 既存の位置（後方互換性のため残す）
   incomeBeforeDeduction: { top: 456, left: 354, width: 100 },
   incomeAfterDeduction: { top: 489, left: 354, width: 100 },
 } as const;

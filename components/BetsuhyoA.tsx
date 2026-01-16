@@ -326,7 +326,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            雑費：<br/>カテゴリの合計金額です
+            雑費：<br/>雑費カテゴリの合計金額です
           </div>
         </div>
         {/* 経費 - 経費合計欄 */}
@@ -339,7 +339,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            雑費カテゴリの合計金額です
+          経費：<br/>経費カテゴリの合計金額です
           </div>
         </div>
         {/* 専従者控除前の所得金額欄 */}
@@ -352,7 +352,25 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            専従者控除前所得金額：<br/>です
+            専従者控除前所得金額：<br/>配偶者や親を事業に従事させている場合、<br/>
+            その給与を経費として控除できます。<br/>
+            この金額は、その控除『前』です
+          </div>
+        </div>
+        {/* 専従者控除 */}
+        <div className="group absolute" style={POS.dependentDeductionBefore}>
+          <input
+            type="number"
+            value={'0'}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            専従者控除：<br/>配偶者や親を事業に従事させている場合、<br/>
+            その給与を経費として控除できます。<br/>
+            専従者控除を使う場合記入してください<br/>
+            記入した場合、<br/>下記の専従者控除後の所得金額欄 は各自再計算ください
           </div>
         </div>
         {/* 専従者控除後の所得金額欄 */}
@@ -365,7 +383,9 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            専従者控除後所得金額：<br/>です
+            専従者控除後所得金額：<br/>配偶者や親を事業に従事させている場合、<br/>
+            その給与を経費として控除できます。<br/>
+            この金額は、その控除『後』です
           </div>
         </div>
         

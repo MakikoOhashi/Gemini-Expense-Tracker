@@ -28,6 +28,18 @@ interface BetsuhyoAProps {
   };
 }
 
+const TOOLTIP_CLASSES = `
+  pointer-events-none
+  absolute z-[9999]
+  left-1/2 top-full mt-2 -translate-x-1/2
+  whitespace-nowrap
+  rounded-md bg-black/90 px-3 py-1.5
+  text-xs text-white
+  opacity-0
+  transition-all duration-150
+  group-hover:opacity-100 group-hover:scale-100
+`.trim();
+
 export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
   return (
     <div className="form-area space-y-8 p-4">
@@ -66,17 +78,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0  [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             売上：<br/>経費を引く前の<br/>売上合計を記入します
           </div>
         </div>
@@ -89,17 +91,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             家事消費：<br/>該当しない場合は 0 円のままにしてください。<br/>（飲食店・物販など、商品を私用で使う場合のみ記入）
           </div>
         </div>
@@ -112,17 +104,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             給料：該当しない場合は<br/>0 円のままにしてください。<br/>（従業員に給料を支払った場合のみ記入）
           </div>
         </div>
@@ -135,17 +117,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             外注工賃：フリーランス・業者への業務委託費用。<br/>※内容によっては源泉徴収が必要になる場合があります。
           </div>
         </div>
@@ -158,17 +130,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             減価償却費：<br/>パソコン・機械・設備など高額資産の<br/>今年分の経費額を記入します。<br/>購入額そのままではありません。
           </div>
         </div>
@@ -181,17 +143,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             貸倒金：該当しない場合は<br/>0 円のままにしてください。<br/>（※通常、白色申告では使用しません）
           </div>
         </div>
@@ -204,17 +156,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             地代家賃：<br/>※カフェ等の単発利用は会議費または雑費に分類してください<br/>※月額契約のコワーキング・事務所のみ対象
           </div>
         </div>
@@ -227,17 +169,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             利子割引料：該当しない場合は<br/>0 円のままにしてください。<br/>（※通常、白色申告では使用しません：<br/>手形・ファクタリングなど高度な取引をしている場合のみ使用）
           </div>
         </div>
@@ -250,17 +182,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             租税公課：該当しない場合は 0 円のままにしてください。<br/>（※印紙税・固定資産税の一部（家事按分したとき）など：<br/>※ 所得税・住民税・社会保険料はここに入れません）
           </div>
         </div>
@@ -273,17 +195,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             荷造運賃：<br/>送料など
           </div>
         </div>
@@ -296,17 +208,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             水道光熱費：<br/>電気代など
           </div>
         </div>
@@ -319,17 +221,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             旅費交通費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -342,17 +234,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             通信費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -365,17 +247,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             広告宣伝費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -388,17 +260,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             接待交際費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -411,17 +273,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             損害保険料：<br/>カテゴリの合計金額です<br/>（生命保険・医療保険はここに入れません）
           </div>
         </div>
@@ -434,17 +286,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             修繕費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -457,17 +299,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             消耗品費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -480,17 +312,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             福利厚生費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -503,17 +325,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             雑費：<br/>カテゴリの合計金額です
           </div>
         </div>
@@ -526,17 +338,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             雑費カテゴリの合計金額です
           </div>
         </div>
@@ -549,17 +351,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             専従者控除前所得金額：<br/>です
           </div>
         </div>
@@ -572,17 +364,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             専従者控除後所得金額：<br/>です
           </div>
         </div>
@@ -690,17 +472,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             区分：<br/>本アプリは<br/>「日々の取引を簡易な方法で<br/>記帳している場合」<br/>に該当します。<br/>第一表の区分欄には 4 <br/>を記入してください。
           </div>
         </div>
@@ -714,17 +486,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           />
 
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             所得金額：<br/>売上 − 経費合計 = 所得金額（第一表「ア」）
           </div>
 
@@ -738,17 +500,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
-          <div className="
-              pointer-events-none
-              absolute z-[9999]
-              left-1/2 top-full mt-2 -translate-x-1/2
-              whitespace-nowrap
-              rounded-md bg-black/90 px-3 py-1.5
-              text-xs text-white
-              opacity-0
-              transition-all duration-150
-              group-hover:opacity-100 group-hover:scale-100
-            ">
+          <div className={TOOLTIP_CLASSES}>
             売上：<br/>経費を引く前の売上合計を記入します
           </div>
         </div>

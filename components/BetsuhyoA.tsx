@@ -610,22 +610,66 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <img src="/07-.png" alt="収支内訳書2" className="w-full shadow-lg rounded-lg" />
 
         {/* 所得の内訳 - 収支内訳書2に表示 */}
-        {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) => (
-          <div
-            key={payerName}
-            className="absolute text-xs font-bold text-red-600"
-            style={{
-              top: 100 + (index * 15),
-              left: 80,
-              width: 300
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="flex-1 text-left truncate" title={payerName}>{payerName}</span>
-              <span className="w-24 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
-            </div>
-          </div>
-        ))}
+        {(() => {
+          const incomeBreakdownEntries = Object.entries(data.所得の内訳 || {});
+          const top4Income = incomeBreakdownEntries.slice(0, 4).reduce((sum, [, payerData]) => sum + (payerData.収入金額 || 0), 0);
+          const remainingIncome = incomeBreakdownEntries.slice(4).reduce((sum, [, payerData]) => sum + (payerData.収入金額 || 0), 0);
+          const totalDisplayedIncome = top4Income + remainingIncome;
+
+          return (
+            <>
+              {/* 上位4件の個別表示 */}
+              {incomeBreakdownEntries.slice(0, 4).map(([payerName, payerData], index) => (
+                <div
+                  key={payerName}
+                  className="absolute text-xs font-bold text-red-600"
+                  style={{
+                    top: 100 + (index * 15),
+                    left: 80,
+                    width: 300
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 text-left truncate" title={payerName}>{payerName}</span>
+                    <span className="w-24 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* 5件目以降の合計を「その他」として表示 */}
+              {incomeBreakdownEntries.length > 4 && (
+                <div
+                  className="absolute text-xs font-bold text-red-600"
+                  style={{
+                    top: 100 + (4 * 15),
+                    left: 80,
+                    width: 300
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 text-left"></span>
+                    <span className="w-24 text-right">{remainingIncome.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 6行目に1〜5行目のトータル金額を表示 */}
+              <div
+                className="absolute text-xs font-bold text-red-600"
+                style={{
+                  top: 100 + (5 * 15),
+                  left: 80,
+                  width: 300
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-left"></span>
+                  <span className="w-24 text-right">{totalDisplayedIncome.toLocaleString()}</span>
+                </div>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
 

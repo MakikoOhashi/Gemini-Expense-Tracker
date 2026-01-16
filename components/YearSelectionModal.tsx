@@ -21,9 +21,9 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-indigo-50">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
-            <CalendarDaysIcon className="w-5 h-5 text-indigo-600" />
+            <CalendarDaysIcon className="w-5 h-5 text-slate-900" />
             <h2 className="font-bold text-gray-800">確定申告年度選択</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition">
@@ -45,7 +45,7 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
                 onClick={() => onSelectYear(year)}
                 className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                   year === currentYear
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    ? 'border-slate-900 bg-slate-50 text-slate-900'
                     : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-25 text-gray-700'
                 }`}
               >
@@ -54,7 +54,7 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
                     <div className="font-bold text-lg">
                       {year}年度
                       {year === currentYear && (
-                        <span className="ml-2 text-xs bg-indigo-500 text-white px-2 py-1 rounded-full">
+                        <span className="ml-2 text-xs bg-slate-900 text-white px-2 py-1 rounded-full">
                           当年度
                         </span>
                       )}
@@ -64,7 +64,7 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
                     </div>
                   </div>
                   {year === currentYear && (
-                    <CalendarDaysIcon className="w-6 h-6 text-indigo-500" />
+                    <CalendarDaysIcon className="w-6 h-6 text-slate-700" />
                   )}
                 </div>
               </button>

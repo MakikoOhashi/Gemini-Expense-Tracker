@@ -15,7 +15,7 @@ const Dashboard: React.FC = () => {
       {/* タイトル・説明文 */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-          <EyeIcon className="w-6 h-6 text-indigo-600" />
+          <EyeIcon className="w-6 h-6 text-slate-900" />
           監査予報
         </h2>
         <p className="text-gray-600 text-sm leading-relaxed">

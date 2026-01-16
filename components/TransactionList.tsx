@@ -171,7 +171,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="block w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none shadow-sm cursor-pointer"
+              className="block w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 appearance-none shadow-sm cursor-pointer"
             >
               <option value="all">すべての科目</option>
               {CATEGORIES.map(c => (
@@ -187,7 +187,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="block w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none shadow-sm cursor-pointer"
+              className="block w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 appearance-none shadow-sm cursor-pointer"
             >
               <option value="date">日付順</option>
               <option value="category">科目順</option>
@@ -199,19 +199,19 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
         <div className="flex p-1 bg-gray-100 rounded-xl gap-1">
           <button 
             onClick={() => setProofFilter('all')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             すべて
           </button>
           <button 
             onClick={() => setProofFilter('with')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'with' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'with' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             証憑あり
           </button>
           <button 
             onClick={() => setProofFilter('without')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'without' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'without' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             証憑なし
           </button>
@@ -290,7 +290,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={saveEdit} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg flex items-center justify-center gap-1 font-bold shadow-md hover:bg-indigo-700 active:scale-95 transition">
+                  <button onClick={saveEdit} className="flex-1 bg-slate-900 text-white py-2 rounded-lg flex items-center justify-center gap-1 font-bold shadow-md hover:bg-indigo-700 active:scale-95 transition">
                     <CheckIcon className="w-4 h-4" /> 保存
                   </button>
                   <button onClick={cancelEdit} className="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
@@ -309,26 +309,26 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
               title="ダブルクリックで編集"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className={`p-2 rounded-lg flex-shrink-0 ${t.type === 'income' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'}`}>
+                <div className={`p-2 rounded-lg flex-shrink-0 ${t.type === 'income' ? 'bg-indigo-50 text-slate-900' : 'bg-rose-50 text-rose-600'}`}>
                   {t.type === 'income' ? <ReceiptRefundIcon className="w-5 h-5" /> : <ReceiptRefundIcon className="w-5 h-5" />}
                 </div>
                 <div className="overflow-hidden">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold text-gray-800 truncate">{t.description}</p>
                     {t.receiptUrl ? (
-                      <DocumentCheckIcon className="w-3.5 h-3.5 text-indigo-500" title="証憑あり" />
+                      <DocumentCheckIcon className="w-3.5 h-3.5 text-slate-700" title="証憑あり" />
                     ) : (
                       <DocumentMinusIcon className="w-3.5 h-3.5 text-gray-300" title="証憑なし" />
                     )}
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                    {t.date} • <span className="text-indigo-500 font-bold uppercase">{t.category}</span>
+                    {t.date} • <span className="text-slate-900 font-bold uppercase">{t.category}</span>
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="text-right">
-                  <p className={`font-bold text-sm ${t.type === 'income' ? 'text-indigo-600' : 'text-gray-900'}`}>
+                  <p className={`font-bold text-sm ${t.type === 'income' ? 'text-slate-900' : 'text-gray-900'}`}>
                     {t.type === 'income' ? '+' : '-'}¥{t.amount.toLocaleString()}
                   </p>
                 </div>

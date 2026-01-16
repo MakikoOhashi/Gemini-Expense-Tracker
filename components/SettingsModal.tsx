@@ -81,9 +81,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-indigo-50">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
-            <SparklesIcon className="w-5 h-5 text-indigo-600" />
+            <SparklesIcon className="w-5 h-5 text-slate-900" />
             <h2 className="font-bold text-gray-800">個人ルール設定</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition">
@@ -96,7 +96,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">自動分類ルール</h3>
               {rules.length > 0 && (
-                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                <span className="text-xs font-bold text-slate-900 bg-slate-50 px-2 py-1 rounded-full">
                   {rules.length}件
                 </span>
               )}
@@ -127,7 +127,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
                 {rules.map(rule => (
                   <div key={rule.id} className="flex items-center justify-between bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
                     <div className="overflow-hidden">
-                      <p className="text-xs font-bold text-indigo-600 mb-0.5">キーワード: {rule.keyword}</p>
+                      <p className="text-xs font-bold text-slate-900 mb-0.5">キーワード: {rule.keyword}</p>
                       <p className="text-sm text-gray-800 font-medium">勘定科目: {rule.category}</p>
                     </div>
                     <button
@@ -157,11 +157,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
               <button
                 onClick={handleInitializeSystem}
                 disabled={isInitializing}
-                className="w-full py-3 px-4 bg-indigo-50 text-indigo-600 text-sm font-bold rounded-xl hover:bg-indigo-100 transition text-center disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-slate-50 text-slate-900 text-sm font-bold rounded-xl hover:bg-slate-100 transition text-center disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isInitializing ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
                     セットアップ中...
                   </>
                 ) : (

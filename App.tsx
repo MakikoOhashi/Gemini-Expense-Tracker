@@ -677,7 +677,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      <header className="bg-indigo-600 text-white p-4 shadow-md flex items-center justify-between z-30">
+      <header className="bg-slate-900 text-white p-4 shadow-md flex items-center justify-between z-30">
         <div className="flex items-center gap-2 font-bold">
           <ReceiptPercentIcon className="w-8 h-8" />
           <h1 className="text-xl tracking-tight">Gemini Expense</h1>
@@ -736,7 +736,7 @@ const App: React.FC = () => {
           <div className="p-4 space-y-4 pb-48">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
+                <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${m.role === 'user' ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
                   {m.image && <img src={m.image} className="w-full h-48 object-cover rounded-lg mb-2 border border-black/10 shadow-inner" alt="添付" />}
                   <p className="whitespace-pre-wrap leading-relaxed text-sm font-medium">{m.content}</p>
                 </div>
@@ -745,7 +745,7 @@ const App: React.FC = () => {
 
             {(isProcessing || isConvertingImage) && (
               <div className="flex justify-start">
-                <div className="bg-white border border-indigo-100 p-4 rounded-2xl flex items-center gap-3 text-indigo-500 shadow-sm border-l-4 border-l-indigo-500 animate-pulse">
+                <div className="bg-white border border-indigo-100 p-4 rounded-2xl flex items-center gap-3 text-slate-900 shadow-sm border-l-4 border-l-slate-900 animate-pulse">
                   <ArrowPathIcon className="w-5 h-5 animate-spin" />
                   <span className="text-xs font-bold tracking-widest uppercase">
                     {isConvertingImage ? 'Optimizing Image...' : 'Analyzing Data...'}
@@ -827,7 +827,7 @@ const App: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      <button onClick={() => setIsEditing(false)} className="w-full py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs">編集完了</button>
+                      <button onClick={() => setIsEditing(false)} className="w-full py-2 bg-slate-900 text-white rounded-xl font-bold text-xs">編集完了</button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-4 mb-6">
@@ -875,8 +875,8 @@ const App: React.FC = () => {
                       ) : (
                         <div className="col-span-2 bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
                           <p className="text-sm font-bold text-gray-800 leading-relaxed">
-                            「<span className="text-indigo-600 font-black">{pendingExtraction.data.keyword}</span>」のときは
-                            「<span className="text-indigo-600 font-black">{pendingExtraction.data.category}</span>」に自動分類します。
+                            「<span className="text-slate-900 font-black">{pendingExtraction.data.keyword}</span>」のときは
+                            「<span className="text-slate-900 font-black">{pendingExtraction.data.category}</span>」に自動分類します。
                           </p>
                         </div>
                       )}
@@ -886,14 +886,14 @@ const App: React.FC = () => {
                   <div className="flex gap-3">
                     <button
                       onClick={pendingExtraction.type === 'transaction' ? commitTransaction : commitRule}
-                      className="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition flex items-center justify-center gap-2"
+                      className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-200 hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
                     >
                       <CheckCircleIcon className="w-6 h-6" />
                       この内容で保存
                     </button>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="flex-1 bg-white text-indigo-600 py-4 rounded-2xl font-bold text-sm border-2 border-indigo-100 hover:bg-indigo-50 active:scale-95 transition flex items-center justify-center gap-1"
+                      className="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-bold text-sm border-2 border-indigo-100 hover:bg-indigo-50 active:scale-95 transition flex items-center justify-center gap-1"
                     >
                       <PencilSquareIcon className="w-5 h-5" />
                       修正
@@ -981,7 +981,7 @@ const App: React.FC = () => {
         <div className="bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
           <div className="px-4 pt-3 flex gap-2 overflow-x-auto no-scrollbar">
             {QUICK_ACTIONS.map((action, i) => (
-              <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-indigo-600 text-[11px] font-bold shadow-sm hover:bg-indigo-50 transition active:scale-95">
+              <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-900 text-[11px] font-bold shadow-sm hover:bg-indigo-50 transition active:scale-95">
                 <action.icon className="w-3.5 h-3.5" /> {action.label}
               </button>
             ))}
@@ -1000,16 +1000,16 @@ const App: React.FC = () => {
                 <CameraIcon className="w-6 h-6" />
                 <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
               </button>
-              <textarea 
+              <textarea
                 ref={textareaRef}
-                value={inputText} 
-                onChange={(e) => setInputText(e.target.value)} 
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
                 placeholder="メッセージ..."
-                className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-indigo-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium" 
-                rows={1} 
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }} 
+                className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-indigo-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium"
+                rows={1}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
               />
-              <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage)} className="p-3.5 bg-indigo-600 text-white rounded-2xl shadow-lg hover:bg-indigo-700 active:scale-95 transition">
+              <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage)} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition">
                 <PaperAirplaneIcon className="w-6 h-6" />
               </button>
             </div>
@@ -1018,10 +1018,10 @@ const App: React.FC = () => {
       )}
 
       <nav className="flex justify-around items-center p-3 bg-white border-t border-gray-100 pb-8 sm:pb-3 z-30">
-        <button onClick={() => setActiveTab('chat')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'chat' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('chat')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'chat' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
           <ChatBubbleLeftRightIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">チャット</span>
         </button>
-        <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
           <ListBulletIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">履歴</span>
         </button>
         <button onClick={() => {
@@ -1030,10 +1030,10 @@ const App: React.FC = () => {
           } else {
             setIsYearSelectionModalOpen(true);
           }
-        }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
+        }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
           <ReceiptPercentIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">確定申告</span>
         </button>
-        <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-indigo-600 scale-110' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -1086,7 +1086,7 @@ const App: React.FC = () => {
                 <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-slate-900 font-bold text-sm flex-shrink-0">
                         {index + 1}
                       </div>
                       <div className="min-w-0">
@@ -1121,7 +1121,7 @@ const App: React.FC = () => {
                           console.error('フォルダ選択エラー:', e);
                         }
                       }}
-                      className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 active:scale-95 transition"
+                      className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
                     >
                       このフォルダを使用
                     </button>
@@ -1162,7 +1162,7 @@ const App: React.FC = () => {
                   setActiveTab('history');
                 }
               }}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition flex items-center justify-center gap-2"
+              className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
             >
               <ArrowPathIcon className="w-5 h-5" />
               変更后再読み込み

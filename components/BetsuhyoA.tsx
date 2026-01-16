@@ -73,7 +73,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeSales}>
           <input
             type="number"
-            value={data.売上 || ''}
+            value={data.売上 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0  [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -86,7 +86,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeHouseholdConsumption}>
           <input
             type="number"
-            value={data.家事消費 ||''}
+            value={data.家事消費 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -452,8 +452,6 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
      <div className="relative w-[800px] mx-auto">
         <img src="/01.png" alt="別表A第一表" className="w-full shadow-lg rounded-lg" />
 
-        {/* 以下 px指定の座標部分 は変更してはいけません */}
-
         {/* 経費合計 - 第一表の経費合計欄 
         <div className="group absolute" style={{ top: '245px', left: '520px', width: '100px' }} title="すべての経費の合計金額です">
           <input
@@ -480,7 +478,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.firstTableIncomeAmount}>
           <input
             type="number"
-            value={data.所得金額 || ''}
+            value={data.所得金額 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -495,7 +493,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.firstTableSales}>
           <input
             type="number"
-            value={data.売上 || ''}
+            value={data.売上 || '0'}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />

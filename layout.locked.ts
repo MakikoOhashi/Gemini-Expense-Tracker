@@ -17,6 +17,9 @@ export const POS = {
   // 収支内訳書1 - 収入欄
   incomeSales: { top: 191, left: 148, width: 100 },
   incomeHouseholdConsumption: { top: 208, left: 148, width: 100 },
+  incomeOther: { top: 224, left: 148, width: 100 },
+  incomeTotal: { top: 240, left: 148, width: 100 },
+
 
   // 収支内訳書1 - 経費欄 (左列)
   expenseSalary: { top: 356, left: 148, width: 100 },
@@ -39,6 +42,7 @@ export const POS = {
   expenseSupplies: { top: 290, left: 354, width: 100 },
   expenseWelfare: { top: 306, left: 354, width: 100 },
   expenseMiscellaneous: { top: 406, left: 354, width: 100 },
+  expenseOtherTotal: { top: 420, left: 354, width: 100 },
   expenseTotal: { top: 440, left: 354, width: 100 },
 
   // 専従者控除欄

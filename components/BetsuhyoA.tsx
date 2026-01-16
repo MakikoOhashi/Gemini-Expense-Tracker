@@ -3,19 +3,20 @@ import { POS } from '../layout.locked';
 
 interface BetsuhyoAProps {
   data: {
-    雑費?: string;
-    福利厚生費?: string;
-    修繕費?: string;
-    損害保険料?: string;
-    接待交際費?: string;
-    広告宣伝費?: string;
-    水道光熱費?: string;
-    外注工賃?: string;
-    家事消費?: string;
-    給料?: string;
-    減価償却費?: string;
-    租税公課?: string;
-    荷造運賃?: string;
+    雑費?: number;
+    福利厚生費?: number;
+    修繕費?: number;
+    損害保険料?: number;
+    接待交際費?: number;
+    広告宣伝費?: number;
+    水道光熱費?: number;
+    外注工賃?: number;
+    家事消費?: number;
+    その他の収入?: number;
+    給料?: number;
+    減価償却費?: number;
+    租税公課?: number;
+    荷造運賃?: number;
     売上: number;
     経費合計: number;
     所得金額: number;
@@ -73,7 +74,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeSales}>
           <input
             type="number"
-            value={data.売上 || '0'}
+            value={data.売上 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0  [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -86,7 +87,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeHouseholdConsumption}>
           <input
             type="number"
-            value={data.家事消費 || '0'}
+            value={data.家事消費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -95,11 +96,37 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             家事消費：<br/>該当しない場合は 0 円のままにしてください。<br/>（飲食店・物販など、商品を私用で使う場合のみ記入）
           </div>
         </div>
+        {/* 収入 - その他の収入*/}
+        <div className="group absolute" style={POS.incomeOther}>
+          <input
+            type="number"
+            value={data.その他の収入 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            その他の収入：<br/>該当しない場合は 0 円のままにしてください。
+          </div>
+        </div>
+         {/* 収入 - 収入小計*/}
+         <div className="group absolute" style={POS.incomeTotal}>
+          <input
+            type="number"
+            value={(data.売上 || 0) + (data.家事消費 || 0) + (data.その他の収入 || 0)}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            収入計：<br/>収入金額合計です。
+          </div>
+        </div>
         {/* 経費 - 給料*/}
         <div className="group absolute" style={POS.expenseSalary}>
           <input
             type="number"
-            value={data.給料 || '0'}
+            value={data.給料 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -112,7 +139,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseOutsourcing}>
           <input
             type="number"
-            value={data.外注工賃 || '0'}
+            value={data.外注工賃 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -125,7 +152,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseDepreciation}>
           <input
             type="number"
-            value={data.減価償却費 || '0'}
+            value={data.減価償却費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -138,7 +165,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseBadDebt}>
           <input
             type="number"
-            value={'0'}
+            value={0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -151,7 +178,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseRent}>
           <input
             type="number"
-            value={data.減価償却費 || '0'}
+            value={data.減価償却費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -164,7 +191,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseInterestDiscount}>
           <input
             type="number"
-            value={'0'}
+            value={0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -177,7 +204,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseTaxes}>
           <input
             type="number"
-            value={data.租税公課 || '0'}
+            value={data.租税公課 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -190,7 +217,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseShipping}>
           <input
             type="number"
-            value={data.荷造運賃 || '0'}
+            value={data.荷造運賃 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -203,7 +230,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseUtilities}>
           <input
             type="number"
-            value={data.水道光熱費 || '0'}
+            value={data.水道光熱費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -216,7 +243,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseTravel}>
           <input
             type="number"
-            value={data.旅費交通費 || '0'}
+            value={data.旅費交通費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -229,7 +256,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseCommunication}>
           <input
             type="number"
-            value={data.通信費 || '0'}
+            value={data.通信費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -242,7 +269,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseAdvertising}>
           <input
             type="number"
-            value={data.広告宣伝費 || '0'}
+            value={data.広告宣伝費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -255,7 +282,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseEntertainment}>
           <input
             type="number"
-            value={data.接待交際費 || '0'}
+            value={data.接待交際費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -268,7 +295,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseInsurance}>
           <input
             type="number"
-            value={data.損害保険料 || '0'}
+            value={data.損害保険料 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -281,7 +308,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseRepair}>
           <input
             type="number"
-            value={data.修繕費 || '0'}
+            value={data.修繕費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -294,7 +321,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseSupplies}>
           <input
             type="number"
-            value={data.消耗品費 || '0'}
+            value={data.消耗品費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -307,7 +334,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseWelfare}>
           <input
             type="number"
-            value={data.福利厚生費 || '0'}
+            value={data.福利厚生費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -320,7 +347,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseMiscellaneous}>
           <input
             type="number"
-            value={data.雑費 || '0'}
+            value={data.雑費 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -329,11 +356,37 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             雑費：<br/>雑費カテゴリの合計金額です
           </div>
         </div>
+        {/* 経費 - その他の経費小計欄 */}
+        <div className="group absolute" style={POS.expenseOtherTotal}>
+          <input
+            type="number"
+            value={
+              (data.租税公課 || 0) +
+              (data.荷造運賃 || 0) +
+              (data.水道光熱費 || 0) +
+              (data.旅費交通費 || 0) +
+              (data.通信費 || 0) +
+              (data.広告宣伝費 || 0) +
+              (data.接待交際費 || 0) +
+              (data.損害保険料 || 0) +
+              (data.修繕費 || 0) +
+              (data.消耗品費 || 0) +
+              (data.福利厚生費 || 0) +
+              (data.雑費 || 0)
+            }
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            その他の経費小計：<br/>その他の経費の小計金額です
+          </div>
+        </div>
         {/* 経費 - 経費合計欄 */}
         <div className="group absolute" style={POS.expenseTotal}>
           <input
             type="number"
-            value={data.経費合計 || '0'}
+            value={data.経費合計 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -346,7 +399,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeBeforeDeduction}>
           <input
             type="number"
-            value={data.所得金額 || '0'}
+            value={data.所得金額 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -361,7 +414,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.dependentDeductionBefore}>
           <input
             type="number"
-            value={'0'}
+            value={0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -377,7 +430,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.incomeAfterDeduction}>
           <input
             type="number"
-            value={data.所得金額 || '0'}
+            value={data.所得金額 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -498,7 +551,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.firstTableIncomeAmount}>
           <input
             type="number"
-            value={data.所得金額 || '0'}
+            value={data.所得金額 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
@@ -513,7 +566,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.firstTableSales}>
           <input
             type="number"
-            value={data.売上 || '0'}
+            value={data.売上 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />

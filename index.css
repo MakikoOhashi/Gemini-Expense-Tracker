@@ -12,7 +12,3 @@
   .form-area { font-size: 16px !important; }
 }
 
-/* iOS Safari 対策：描画丸め防止 */
-.form-area * {
-  -webkit-transform: translateZ(0);
-}

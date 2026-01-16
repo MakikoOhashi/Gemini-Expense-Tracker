@@ -68,7 +68,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -91,7 +91,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -114,7 +114,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -137,7 +137,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -160,7 +160,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -183,7 +183,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -206,7 +206,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -229,7 +229,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -252,7 +252,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -275,7 +275,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -298,7 +298,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -321,7 +321,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -344,7 +344,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -367,7 +367,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -390,7 +390,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -413,7 +413,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -436,7 +436,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -459,7 +459,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -482,7 +482,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -505,7 +505,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -528,7 +528,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -551,7 +551,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -574,7 +574,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -586,15 +586,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             専従者控除後所得金額：<br/>です
           </div>
         </div>
-        {/* 旅費交通費 - 第二表の旅費交通費欄
-        <div className="group absolute" style={{ top: '270px', left: '520px', width: '100px' }} title="旅費交通費カテゴリの合計金額です">
-          <input
-            type="number"
-            value={data.旅費交通費 || ''}
-            readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-center"
-          />
-        </div>*/}
+        
         {/* 地代家賃 - 第二表の地代家賃欄
         <div className="group absolute" style={{ top: '150px', left: '520px', width: '100px' }} title="地代家賃カテゴリの合計金額です">
           <input
@@ -700,7 +692,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -724,7 +716,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -748,7 +740,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -779,7 +771,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -803,7 +795,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -827,7 +819,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5
@@ -851,7 +843,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           {/* Tooltip */}
           <div className="
               pointer-events-none
-              absolute z-50
+              absolute z-[9999]
               left-1/2 top-full mt-2 -translate-x-1/2
               whitespace-nowrap
               rounded-md bg-black/90 px-3 py-1.5

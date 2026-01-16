@@ -55,16 +55,15 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
  
 
       {/* 収支内訳書1 */}
-      <div className="relative w-[800px] mx-auto overflow-x-auto">
-        <div className="relative min-w-[800px]">
-          <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
+      <div className="relative w-[800px] mx-auto">
+        <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
         {/* 収入 -売上欄 */}
         <div className="group absolute" style={POS.incomeSales}>
           <input
             type="number"
             value={data.売上 || ''}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0  [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -87,7 +86,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.家事消費 ||''}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -110,7 +109,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.給料 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -133,7 +132,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.外注工賃 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -156,7 +155,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.減価償却費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -179,7 +178,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={'0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -202,7 +201,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.減価償却費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -225,7 +224,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={'0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -248,7 +247,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.租税公課 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -271,7 +270,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.荷造運賃 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -294,7 +293,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.水道光熱費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -317,7 +316,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.旅費交通費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -340,7 +339,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.通信費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -363,7 +362,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.広告宣伝費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -386,7 +385,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.接待交際費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -409,7 +408,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.損害保険料 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -432,7 +431,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.修繕費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -455,7 +454,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.消耗品費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -478,7 +477,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.福利厚生費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -501,7 +500,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.雑費 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -524,7 +523,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.経費合計 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -547,7 +546,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.所得金額 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -570,7 +569,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.所得金額 || '0'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -605,7 +604,6 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             className="w-full border-none bg-transparent font-bold text-red-600 text-center"
           />
         </div>*/}
-        </div>
       </div>
       {/* 収支内訳書2 */}
       <div className="relative w-[800px] mx-auto">
@@ -635,7 +633,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={'4'}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="
@@ -658,7 +656,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.所得金額 || ''}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
 
           {/* Tooltip */}
@@ -683,7 +681,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
             type="number"
             value={data.売上 || ''}
             readOnly
-            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0"
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-xl tracking-[0.36em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />
           {/* Tooltip */}
           <div className="

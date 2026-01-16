@@ -608,6 +608,24 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
       {/* 収支内訳書2 */}
       <div className="relative w-[800px] mx-auto">
         <img src="/07-.png" alt="収支内訳書2" className="w-full shadow-lg rounded-lg" />
+
+        {/* 所得の内訳 - 収支内訳書2に表示 */}
+        {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) => (
+          <div
+            key={payerName}
+            className="absolute text-xs font-bold text-red-600"
+            style={{
+              top: 100 + (index * 15),
+              left: 80,
+              width: 300
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-left truncate" title={payerName}>{payerName}</span>
+              <span className="w-24 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
 

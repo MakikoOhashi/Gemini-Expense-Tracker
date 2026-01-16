@@ -1061,112 +1061,92 @@ const App: React.FC = () => {
       {/* Folder Conflict Modal */}
       {folderConflict && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
+            <div className="flex-shrink-0 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">フォルダ名の重複を検出</h2>
+                  <p className="text-sm text-gray-500">複数の同名フォルダが見つかりました</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">フォルダ名の重複を検出</h2>
-                <p className="text-sm text-gray-500">複数の同名フォルダが見つかりました</p>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                <p className="text-amber-800 text-sm font-medium">
+                  {folderConflict.message}
+                </p>
               </div>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-              <p className="text-amber-800 text-sm font-medium">
-                {folderConflict.message}
-              </p>
-            </div>
+            <div className="flex-1 overflow-y-auto px-6">
+              <div className="mb-6">
+                <p className="text-sm font-bold text-gray-700 mb-3">検出されたフォルダ一覧：</p>
+                <div className="space-y-3">
+                  {folderConflict.duplicateFolders.map((folder, index) => (
+                    <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-700 font-bold text-sm flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-800 truncate">{folder.name}</p>
+                            <p className="text-xs text-gray-500 font-mono truncate">ID: {folder.id}</p>
+                            <p className="text-xs text-gray-400">作成日: {folder.createdTime ? new Date(folder.createdTime).toLocaleString('ja-JP') : '不明'}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await fetch('http://localhost:3001/api/select-folder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId: authStatus?.userId || 'test-user', folderId: folder.id })
+                              });
+                              console.log(`📁 フォルダ ${folder.id} を選択しました`);
 
-            <div className="space-y-3 mb-6">
-              <p className="text-sm font-bold text-gray-700">検出されたフォルダ一覧：</p>
-              {folderConflict.duplicateFolders.map((folder, index) => (
-                <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-700 font-bold text-sm flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-800 truncate">{folder.name}</p>
-                        <p className="text-xs text-gray-500 font-mono truncate">ID: {folder.id}</p>
-                        <p className="text-xs text-gray-400">作成日: {folder.createdTime ? new Date(folder.createdTime).toLocaleString('ja-JP') : '不明'}</p>
+                              // Clear server cache
+                              await fetch('http://localhost:3001/api/clear-folder-cache', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
+                              });
+
+                              // Close modal
+                              setFolderConflict(null);
+
+                              // Reload transactions directly
+                              loadTransactions();
+                            } catch (e) {
+                              console.error('フォルダ選択エラー:', e);
+                            }
+                          }}
+                          className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
+                        >
+                          このフォルダを使用
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await fetch('http://localhost:3001/api/select-folder', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: authStatus?.userId || 'test-user', folderId: folder.id })
-                          });
-                          console.log(`📁 フォルダ ${folder.id} を選択しました`);
-                          
-                          // Clear server cache
-                          await fetch('http://localhost:3001/api/clear-folder-cache', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
-                          });
-                          
-                          // Close modal
-                          setFolderConflict(null);
-                          
-                          // Reload transactions directly
-                          loadTransactions();
-                        } catch (e) {
-                          console.error('フォルダ選択エラー:', e);
-                        }
-                      }}
-                      className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
-                    >
-                      このフォルダを使用
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-              <p className="text-blue-800 text-sm">
-                <span className="font-bold">解決方法：</span>
-                <br />
-                Google Drive で「いらない方」のフォルダ名を変更してください。
-                <br />
-                例：「Gemini Expense Tracker_old」など
-                <br />
-                名前を変更すると、この警告は表示されなくなります。
-              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p className="text-blue-800 text-sm">
+                  <span className="font-bold">解決方法：</span>
+                  <br />
+                  Google Drive で「いらない方」のフォルダ名を変更してください。
+                  <br />
+                  例：「Gemini Expense Tracker_old」など
+                  <br />
+                  名前を変更すると、次回アプリを起動した際にこの警告は表示されなくなります。
+                </p>
+              </div>
             </div>
-
-            <button
-              onClick={async () => {
-                try {
-                  // Clear server cache
-                  await fetch('http://localhost:3001/api/clear-folder-cache', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
-                  });
-                  console.log('🧹 サーバーキャッシュをクリアしました');
-                } catch (e) {
-                  console.warn('キャッシュクリアに失敗しました', e);
-                }
-                
-                setFolderConflict(null);
-                // Reload transactions to check if conflict is resolved
-                if (activeTab === 'history') {
-                  setActiveTab('history');
-                }
-              }}
-              className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
-            >
-              <ArrowPathIcon className="w-5 h-5" />
-              変更後再読み込み
-            </button>
           </div>
         </div>
       )}

@@ -786,3 +786,85 @@ yaml
 **Gemini Expense Tracker** - 提出表は赤字を写すだけ。AIが質問されそうなリスクを予測し、事前対応で税務トラブルを防ぐ。
 Impact: 不安ゼロ、問い合わせ80%削減、社会全体の処理効率も向上。  
 How it works: 赤字データをAIが解析 → 提出表自動生成 → 監査予報で事前対応  
+
+
+
+2026/01/17
+
+## Design Philosophy: Audit Forecast as Reasoning Support
+
+This application does **not** use AI to decide whether a transaction is “OK” or “NG”.
+
+Instead, it uses Gemini 3 to support **explanation responsibility** —  
+helping users understand *what questions are likely to be asked* and *how to structure their own explanations*.
+
+---
+
+## What Gemini 3 Reasons Over (Not Single Transactions)
+
+The core reasoning target is **not a single expense**, but the intersection of:
+
+- Amount (e.g. ¥5,500,000)
+- Expense category (e.g. Rent / Lease)
+- Overall business structure
+- Tax audit perspective (what tax officers tend to question)
+
+In other words, Gemini reasons over:
+
+Amount × Category × Business Model × Tax Perspective
+→ Potential discussion points and risk factors
+
+yaml
+コードをコピーする
+
+This shifts the focus from item-by-item validation  
+to **whether the total business structure can be reasonably explained**.
+
+---
+
+## Output Is Not a Judgment, but a Structured Checklist
+
+Gemini 3 is intentionally **not asked to judge correctness**.
+
+It is used to generate:
+
+- Points that are likely to be checked by the tax office
+- Key aspects the user should organize in advance
+- Typical angles from which explanations are requested
+
+The output is a **thinking scaffold**, not a conclusion.
+
+---
+
+## Human-in-the-Loop Responsibility Model
+
+The responsibility flow is explicitly designed as:
+
+- **AI**: Enumerates and structures potential audit viewpoints  
+- **User**: Applies those viewpoints to their own actual business context  
+- **Result**: A coherent, explainable narrative the user can stand behind
+
+This ensures that:
+- The AI does not replace human accountability
+- The user remains the final decision-maker
+- The system is viable for real-world tax workflows
+
+---
+
+## Why This Matters (Social Implementation)
+
+Most tax-related anxiety does not come from individual transactions,  
+but from the fear of being unable to explain the **overall story** of the business.
+
+This project reframes AI from:
+- “Automating tax filing”
+to
+- **“Supporting explanation readiness”**
+
+By doing so, it improves:
+- User confidence
+- Audit communication quality
+- Overall efficiency of tax administration
+
+This aligns with Gemini 3’s role as a **reasoning engine**,  
+supporting complex human decision-making rather than replacing it.

@@ -54,8 +54,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
   const handleAskQuestion = (prediction: AuditPrediction) => {
     if (!onAuditQuery || !onTabChange) return;
 
-    // デフォルトの質問文を生成
-    const defaultQuestion = `${prediction.accountName} ¥${prediction.amount.toLocaleString()}について、想定される税務上の確認点と、ユーザーが準備すべき説明を教えてください。`;
+    // デフォルトの質問文を生成（課題文プレフィックスを付けて取引登録ではないことを示す）
+    const defaultQuestion = `課題文：${prediction.accountName} ¥${prediction.amount.toLocaleString()}について、想定される税務上の確認点と、ユーザーが準備すべき説明を教えてください。`;
 
     // 監査クエリを設定してチャットタブに遷移
     onAuditQuery(defaultQuestion);

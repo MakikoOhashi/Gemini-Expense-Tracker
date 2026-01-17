@@ -98,7 +98,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
 
       {/* セクションB：監査予報（全体） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">監査予報（全体）</h3>
+        <h3 className="text-sm font-bold text-gray-700 mb-4">
+          今日の監査予報（{new Date().toISOString().split('T')[0]}時点）
+        </h3>
         {auditForecast.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">監査予報データが見つかりませんでした</p>
         ) : (

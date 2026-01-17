@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
-import { Transaction, AuditPrediction } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
+import { auditService } from '../services/auditService';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -10,56 +11,65 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTabChange }) => {
-  // リスク判定ロジック（仮実装）
-  const generateAuditPredictions = (transactions: Transaction[]): AuditPrediction[] => {
-    return transactions
-      .filter(t => t.type === 'expense') // 支出のみを対象
-      .map(transaction => {
-        let riskLevel: 'low' | 'medium' | 'high' = 'low';
-        let comment = '問題なし';
+  const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
+  const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-        // 金額ベースのリスク判定
-        if (transaction.amount >= 100000) {
-          riskLevel = 'high';
-          comment = '高額支出の妥当性を確認してください';
-        } else if (transaction.amount >= 50000) {
-          riskLevel = 'medium';
-          comment = '中額支出です。根拠を確認してください';
-        }
+  // 監査予報データと記帳チェックデータを取得
+  useEffect(() => {
+    const loadAuditData = async () => {
+      if (transactions.length === 0) {
+        setAuditForecast([]);
+        setBookkeepingChecks([]);
+        return;
+      }
 
-        // 科目ベースのリスク判定（既存ロジックを上書き）
-        if (transaction.category === '外注費' || transaction.category === '会議費') {
-          riskLevel = 'medium';
-          comment = '領収書と業務目的の関連性を確認してください';
-        } else if (transaction.category === '消耗品費' && transaction.amount >= 10000) {
-          riskLevel = 'high';
-          comment = '消耗品費が高額です。詳細を確認してください';
-        }
+      setIsLoading(true);
+      try {
+        const [forecastData, checksData] = await Promise.all([
+          auditService.generateAuditForecast(transactions),
+          auditService.generateBookkeepingChecks(transactions)
+        ]);
+        setAuditForecast(forecastData);
+        setBookkeepingChecks(checksData);
+      } catch (error) {
+        console.error('Failed to generate audit data:', error);
+        // エラー時は空の配列を表示
+        setAuditForecast([]);
+        setBookkeepingChecks([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        return {
-          id: `audit_${transaction.id}`,
-          accountName: transaction.category,
-          amount: transaction.amount,
-          riskLevel,
-          comment,
-          transactionId: transaction.id
-        };
-      })
-      .filter(prediction => prediction.riskLevel !== 'low') // 低リスクは表示しない
-      .slice(0, 10); // 最大10件に制限
-  };
+    loadAuditData();
+  }, [transactions]);
 
-  const predictions = generateAuditPredictions(transactions);
-
-  const handleAskQuestion = (prediction: AuditPrediction) => {
+  const handleAskQuestion = (forecastItem: AuditForecastItem) => {
     if (!onAuditQuery || !onTabChange) return;
 
     // デフォルトの質問文を生成（課題文プレフィックスを付けて取引登録ではないことを示す）
-    const defaultQuestion = `課題文：${prediction.accountName} ¥${prediction.amount.toLocaleString()}について、想定される税務上の確認点と、ユーザーが準備すべき説明を教えてください。`;
+    const defaultQuestion = `課題文：${forecastItem.accountName} ¥${forecastItem.totalAmount.toLocaleString()}について、想定される税務上の確認点と、ユーザーが準備すべき説明を教えてください。`;
 
     // 監査クエリを設定してチャットタブに遷移
     onAuditQuery(defaultQuestion);
     onTabChange('chat');
+  };
+
+  const getCheckTypeIcon = (type: '不足' | '確認' | '推奨') => {
+    switch (type) {
+      case '不足': return <XCircleIcon className="w-4 h-4 text-red-500" />;
+      case '確認': return <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />;
+      case '推奨': return <CheckCircleIcon className="w-4 h-4 text-blue-500" />;
+    }
+  };
+
+  const getCheckTypeColor = (type: '不足' | '確認' | '推奨') => {
+    switch (type) {
+      case '不足': return 'text-red-700 bg-red-50 border-red-200';
+      case '確認': return 'text-amber-700 bg-amber-50 border-amber-200';
+      case '推奨': return 'text-blue-700 bg-blue-50 border-blue-200';
+    }
   };
 
   const getRiskEmoji = (level: 'low' | 'medium' | 'high') => {
@@ -87,37 +97,44 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
           監査予報
         </h2>
         <p className="text-gray-600 text-sm leading-relaxed">
-          ここに入力データから<br />
-          問題になりやすい項目の予測と推奨対応を表示します<br />
-          Gemini 3 による推論は次段階で連携予定。
+          スプシのデータから、<br />
+          数値の構成から推測される事業の特徴を踏まえ、<br />
+          税務署が確認しやすい観点とユーザーが説明として整理すべきポイントを列挙します。<br />
+          Gemini によるAI推論で監査リスクを予測します。
         </p>
       </div>
 
-      {/* 予測スコア用テーブル */}
+      {/* セクションB：監査予報（全体） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">予測スコア</h3>
-        {predictions.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">リスク項目が見つかりませんでした</p>
+        <h3 className="text-sm font-bold text-gray-700 mb-4">監査予報（全体）</h3>
+        {auditForecast.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-4">監査予報データが見つかりませんでした</p>
         ) : (
           <div className="space-y-3">
-            {predictions.map((prediction) => (
-              <div key={prediction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">{prediction.accountName}</p>
-                  <p className="text-xs text-gray-500">¥{prediction.amount.toLocaleString()}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-sm font-bold">{getRiskEmoji(prediction.riskLevel)} {getRiskText(prediction.riskLevel)}</p>
-                    <p className="text-xs text-gray-600">{prediction.comment}</p>
+            {auditForecast.map((item) => (
+              <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">{item.accountName}</p>
+                    <p className="text-xs text-gray-500">
+                      ¥{item.totalAmount.toLocaleString()} ({item.ratio.toFixed(1)}%)
+                    </p>
                   </div>
-                  <button
-                    onClick={() => handleAskQuestion(prediction)}
-                    className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition flex items-center gap-1"
-                  >
-                    <ChatBubbleLeftRightIcon className="w-3 h-3" />
-                    質問する
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-bold">{getRiskEmoji(item.riskLevel)} {getRiskText(item.riskLevel)}</p>
+                    <button
+                      onClick={() => handleAskQuestion(item)}
+                      className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition flex items-center gap-1"
+                    >
+                      <ChatBubbleLeftRightIcon className="w-3 h-3" />
+                      質問する
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {item.issues.map((issue, index) => (
+                    <p key={index} className="text-xs text-gray-600">• {issue}</p>
+                  ))}
                 </div>
               </div>
             ))}
@@ -125,51 +142,29 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
         )}
       </div>
 
-      {/* 予想質問・回答例エリア */}
+      {/* セクションA：記帳チェック（個別） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">予想質問・回答例</h3>
-        {predictions.filter(p => p.riskLevel === 'high' || p.riskLevel === 'medium').length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">該当する項目がありません</p>
+        <h3 className="text-sm font-bold text-gray-700 mb-4">記帳チェック（個別）</h3>
+        {bookkeepingChecks.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-4">チェック項目が見つかりませんでした</p>
         ) : (
-          <div className="space-y-4">
-            {predictions
-              .filter(p => p.riskLevel === 'high' || p.riskLevel === 'medium')
-              .slice(0, 5) // 最大5件
-              .map((prediction, index) => {
-                const isHighRisk = prediction.riskLevel === 'high';
-                const bgColor = isHighRisk ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200';
-                const textColor = isHighRisk ? 'text-red-800' : 'text-amber-800';
-                const answerColor = isHighRisk ? 'text-red-700' : 'text-amber-700';
-
-                // テンプレートベースのQ&A生成
-                const qaTemplates = {
-                  '外注費': {
-                    q: `${prediction.accountName} ¥${prediction.amount.toLocaleString()}は事業に必要な支出ですか？`,
-                    a: '業務委託契約書・請求書・作業内容を確認済み。事業運営に不可欠なサービスです。'
-                  },
-                  '会議費': {
-                    q: `${prediction.accountName} ¥${prediction.amount.toLocaleString()}の領収書は適切ですか？`,
-                    a: '会議参加者名簿・議事録・領収書を揃えて保管。業務上の正当な支出です。'
-                  },
-                  '消耗品費': {
-                    q: `${prediction.accountName} ¥${prediction.amount.toLocaleString()}は少額すぎませんか？`,
-                    a: '事業用消耗品として使用。レシート・使用目的を記録しています。'
-                  },
-                  'default': {
-                    q: `この${prediction.accountName} ¥${prediction.amount.toLocaleString()}の支出は妥当ですか？`,
-                    a: '領収書・契約書・使用目的を明確に記録。税務調査時に説明できる準備ができています。'
-                  }
-                };
-
-                const template = qaTemplates[prediction.accountName as keyof typeof qaTemplates] || qaTemplates.default;
-
-                return (
-                  <div key={prediction.id} className={`p-4 ${bgColor} border rounded-lg`}>
-                    <p className={`text-sm font-medium ${textColor} mb-2`}>Q: {template.q}</p>
-                    <p className={`text-sm ${answerColor}`}>A: {template.a}</p>
+          <div className="space-y-3">
+            {bookkeepingChecks.slice(0, 10).map((check) => (
+              <div key={check.id} className={`p-3 border rounded-lg ${getCheckTypeColor(check.type)}`}>
+                <div className="flex items-start gap-3">
+                  {getCheckTypeIcon(check.type)}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-1">{check.title}</p>
+                    <p className="text-xs opacity-80">{check.description}</p>
+                    {check.actionable && (
+                      <button className="mt-2 px-2 py-1 bg-white text-xs rounded border hover:bg-gray-50 transition">
+                        修正する
+                      </button>
+                    )}
                   </div>
-                );
-              })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

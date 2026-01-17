@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { XMarkIcon, PaperAirplaneIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { AuditChatContext } from '../types';
+import { auditService } from '../services/auditService';
 
 interface AuditChatProps {
   context: AuditChatContext;
@@ -24,30 +25,7 @@ const AuditChat: React.FC<AuditChatProps> = ({ context, onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ダミーの回答生成
-  const generateDummyResponse = (userQuestion: string, context: AuditChatContext): string => {
-    const templates = {
-      '外注費': [
-        '外注費の場合、税務署は業務委託契約書の存在と業務内容の妥当性を確認します。準備すべきものは：\n\n1. 業務委託契約書（契約金額・期間・業務内容）\n2. 請求書・領収書\n3. 作業成果物の確認書類\n4. 支払い記録\n\nこれらを整理して保管しておきましょう。',
-        '外注費の税務上のポイントは「事業に必要な支出かどうか」です。クラウドサービスのような場合は、事業での利用実績を示す資料を準備してください。'
-      ],
-      '会議費': [
-        '会議費の場合、参加者名簿と会議の目的・内容が重要です。準備すべきものは：\n\n1. 会議参加者名簿\n2. 会議議事録\n3. 領収書\n4. 会議資料\n\n参加者が社外者の場合は、会議の必要性を説明できる資料も必要です。',
-        '会議費の税務調査では「実在の会議だったか」「参加者は誰か」が確認されます。議事録と参加者署名のある資料を準備しましょう。'
-      ],
-      '消耗品費': [
-        '消耗品費の場合、事業用であることの立証が重要です。準備すべきものは：\n\n1. 購入時の領収書\n2. 使用目的の記録\n3. 在庫管理表（該当する場合）\n\n高額の場合は使用実績を示す資料も有効です。',
-        '消耗品費の税務ポイントは「事業用の使用割合」です。購入品が事業で使用されたことを示す記録を残しておきましょう。'
-      ],
-      'default': [
-        `${context.accountName}に関する税務上の確認点として、支出の「必要性」と「適正性」が問われます。\n\n準備すべき基本資料：\n1. 領収書・請求書\n2. 契約書（該当する場合）\n3. 使用目的の記録\n4. 支払い記録\n\nこれらを整理して税務調査に備えましょう。`,
-        `この${context.accountName}について、税務署は「事業に必要な正当な支出かどうか」を確認します。支出の目的と金額の妥当性を説明できる資料を準備してください。`
-      ]
-    };
 
-    const categoryTemplates = templates[context.accountName as keyof typeof templates] || templates.default;
-    return categoryTemplates[Math.floor(Math.random() * categoryTemplates.length)];
-  };
 
   const handleSendMessage = async () => {
     const currentInput = inputText.trim();
@@ -66,19 +44,35 @@ const AuditChat: React.FC<AuditChatProps> = ({ context, onClose }) => {
 
     setMessages(prev => [...prev, userMessage]);
 
-    // ダミーレスポンスを生成（1-2秒の遅延をシミュレート）
-    setTimeout(() => {
-      const response = generateDummyResponse(currentInput, context);
+    try {
+      // 監査予報分析を実行
+      const auditResponse = await auditService.analyzeAuditForecast([{
+        category: context.accountName,
+        amount: context.amount,
+        description: context.comment,
+        date: new Date().toISOString().split('T')[0]
+      }]);
+
       const assistantMessage = {
         id: crypto.randomUUID(),
         role: 'assistant' as const,
-        content: response,
+        content: auditResponse.reply,
         timestamp: Date.now()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error: any) {
+      console.error('Audit analysis error:', error);
+      const errorMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant' as const,
+        content: `申し訳ありません。監査予報の分析中にエラーが発生しました：${error.message}`,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsProcessing(false);
-    }, 1000 + Math.random() * 1000); // 1-2秒のランダム遅延
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -30,8 +30,14 @@ export interface ChatMessage {
 }
 
 export interface AIAction {
-  type: 'ADD_TRANSACTION' | 'SUGGEST_CONFIRMATION' | 'SHOW_REPORT' | 'CREATE_RULE' | 'NONE';
-  data?: Partial<Transaction> & Partial<TransactionRule>;
+  type: 'ADD_TRANSACTION' | 'SUGGEST_CONFIRMATION' | 'SHOW_REPORT' | 'CREATE_RULE' | 'AUDIT_RISK' | 'NONE';
+  data?: Partial<Transaction> & Partial<TransactionRule> & {
+    category?: string;
+    riskLevel?: 'high' | 'medium' | 'low';
+    taxAuthorityConcerns?: string[];
+    userPreparationPoints?: string[];
+    recommendations?: string[];
+  };
 }
 
 export interface AIResponse {
@@ -46,6 +52,26 @@ export interface AuditPrediction {
   riskLevel: 'low' | 'medium' | 'high'; // リスクレベル
   comment: string; // 指摘コメント
   transactionId: string; // 元の取引ID
+}
+
+// 監査予報（全体）- 勘定科目合計・比率ベースの論点
+export interface AuditForecastItem {
+  id: string;
+  accountName: string; // 勘定科目名
+  totalAmount: number; // 合計金額
+  ratio: number; // 全体に対する比率（%）
+  riskLevel: 'low' | 'medium' | 'high'; // リスクレベル
+  issues: string[]; // 論点リスト
+}
+
+// 記帳チェック（個別）- 個別のチェック項目
+export interface BookkeepingCheckItem {
+  id: string;
+  type: '不足' | '確認' | '推奨'; // チェックタイプ
+  title: string; // チェック項目名
+  description: string; // 詳細説明
+  actionable: boolean; // その場で修正可能か
+  transactionId?: string; // 関連する取引ID（任意）
 }
 
 export interface AuditChatContext {

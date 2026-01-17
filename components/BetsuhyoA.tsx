@@ -477,7 +477,13 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex-1 text-left truncate" title={payerName}>{payerName}</span>
+                    <div className="group flex-1 text-left truncate relative overflow-visible">
+                      <span className="truncate block">{payerName}</span>
+                      {/* Tooltip */}
+                      <div className={TOOLTIP_CLASSES}>
+                        支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
+                      </div>
+                    </div>
                     <span className="w-24 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
                   </div>
                 </div>
@@ -598,7 +604,13 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
               <div className="flex items-center gap-2">
                 <span className="w-8 text-left">事業</span>
                 <span className="w-12 text-center">営業等</span>
-                <span className="flex-1 text-center truncate" title={payerName}>{payerName}</span>
+                    <div className="group flex-1 text-center truncate relative overflow-visible">
+                      <span className="truncate block">{payerName}</span>
+                      {/* Tooltip */}
+                      <div className={TOOLTIP_CLASSES}>
+                        支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
+                      </div>
+                    </div>
                 <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
                 <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
               </div>
@@ -627,7 +639,13 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
                 <div className="flex items-center gap-2">
                   <span className="w-8 text-left">事業</span>
                   <span className="w-16 text-center">営業等</span>
-                  <span className="w-40 text-center truncate" title={payerName}>{payerName}</span>
+                  <div className="group w-40 text-center truncate relative overflow-visible">
+                    <span className="truncate block">{payerName}</span>
+                    {/* Tooltip */}
+                    <div className={TOOLTIP_CLASSES}>
+                      支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
+                    </div>
+                  </div>
                   <span className="w-4 text-center"></span>
                   <span className="w-28 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
                   <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>

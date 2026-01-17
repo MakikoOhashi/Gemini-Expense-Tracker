@@ -56,19 +56,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
     onTabChange('chat');
   };
 
-  const getCheckTypeIcon = (type: '不足' | '確認' | '推奨') => {
+  const getCheckTypeLabel = (type: '不足' | '確認' | '推奨') => {
     switch (type) {
-      case '不足': return <XCircleIcon className="w-4 h-4 text-red-500" />;
-      case '確認': return <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />;
-      case '推奨': return <CheckCircleIcon className="w-4 h-4 text-blue-500" />;
-    }
-  };
-
-  const getCheckTypeColor = (type: '不足' | '確認' | '推奨') => {
-    switch (type) {
-      case '不足': return 'text-red-700 bg-red-50 border-red-200';
-      case '確認': return 'text-amber-700 bg-amber-50 border-amber-200';
-      case '推奨': return 'text-blue-700 bg-blue-50 border-blue-200';
+      case '不足': return '領収書の添付が必要';
+      case '確認': return '高額支出の確認';
+      case '推奨': return '説明の充実を推奨';
     }
   };
 
@@ -144,25 +136,20 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
 
       {/* セクションA：記帳チェック（個別） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">記帳チェック（個別）</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-gray-700">記帳チェック（個別）</h3>
+          <button className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition">
+            スプレッドシートで修正する
+          </button>
+        </div>
         {bookkeepingChecks.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">チェック項目が見つかりませんでした</p>
         ) : (
           <div className="space-y-3">
             {bookkeepingChecks.slice(0, 10).map((check) => (
-              <div key={check.id} className={`p-3 border rounded-lg ${getCheckTypeColor(check.type)}`}>
-                <div className="flex items-start gap-3">
-                  {getCheckTypeIcon(check.type)}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium mb-1">{check.title}</p>
-                    <p className="text-xs opacity-80">{check.description}</p>
-                    {check.actionable && (
-                      <button className="mt-2 px-2 py-1 bg-white text-xs rounded border hover:bg-gray-50 transition">
-                        修正する
-                      </button>
-                    )}
-                  </div>
-                </div>
+              <div key={check.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm font-medium text-gray-800 mb-1">{check.title}</p>
+                <p className="text-xs text-gray-600">{check.description}</p>
               </div>
             ))}
           </div>

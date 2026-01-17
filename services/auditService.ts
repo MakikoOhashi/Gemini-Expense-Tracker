@@ -322,6 +322,11 @@ ${JSON.stringify(transactionSummary, null, 2)}
   async generateBookkeepingChecks(transactions: any[]): Promise<BookkeepingCheckItem[]> {
     const checks: BookkeepingCheckItem[] = [];
 
+    // 領収書がない取引を集計
+    const missingReceipts: Record<string, { count: number; transactions: any[] }> = {};
+    const highAmountTransactions: any[] = [];
+    const shortDescriptionTransactions: any[] = [];
+
     // 取引ごとのチェック
     transactions.forEach((transaction) => {
       const amount = transaction.amount as number;
@@ -329,44 +334,74 @@ ${JSON.stringify(transactionSummary, null, 2)}
       const description = transaction.description as string;
       const id = transaction.id as string;
       const receiptUrl = transaction.receiptUrl as string;
-      const date = transaction.date as string;
 
-      // 高額取引のチェック
+      // 高額取引のチェック（個別表示）
       if (amount >= 100000) {
-        checks.push({
-          id: `check_high_amount_${id}`,
-          type: '確認',
-          title: `高額支出の確認: ${category} (${date})`,
-          description: `${description}の支出が10万円を超えています。事業との関連性と根拠資料を確認してください。`,
-          actionable: false,
-          transactionId: id
-        });
+        highAmountTransactions.push(transaction);
       }
 
-      // 領収書がない取引のチェック
+      // 領収書がない取引を集計
       if (!receiptUrl) {
-        checks.push({
-          id: `check_receipt_${id}`,
-          type: '不足',
-          title: `領収書の添付が必要: ${category} (${date})`,
-          description: `${description}に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。`,
-          actionable: true,
-          transactionId: id
-        });
+        if (!missingReceipts[category]) {
+          missingReceipts[category] = { count: 0, transactions: [] };
+        }
+        missingReceipts[category].count += 1;
+        missingReceipts[category].transactions.push(transaction);
       }
 
-      // 説明が不十分な取引のチェック
+      // 説明が不十分な取引を集計
       if (!description || description.length < 5) {
-        checks.push({
-          id: `check_description_${id}`,
-          type: '推奨',
-          title: `説明の充実を推奨: ${category} (${date})`,
-          description: `取引の説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。`,
-          actionable: true,
-          transactionId: id
-        });
+        shortDescriptionTransactions.push(transaction);
       }
     });
+
+    // 領収書がない取引のチェックをカテゴリごとにまとめて表示
+    Object.entries(missingReceipts).forEach(([category, data]) => {
+      checks.push({
+        id: `check_receipt_${category}`,
+        type: '不足',
+        title: `領収書の添付が必要: ${category} (${data.count}件)`,
+        description: `${category}カテゴリで${data.count}件の取引に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。`,
+        actionable: true
+      });
+    });
+
+    // 高額取引のチェック（個別表示）
+    highAmountTransactions.forEach((transaction) => {
+      const amount = transaction.amount as number;
+      const category = (transaction.category as string) || 'その他';
+      const description = transaction.description as string;
+      const date = transaction.date as string;
+      const id = transaction.id as string;
+
+      checks.push({
+        id: `check_high_amount_${id}`,
+        type: '確認',
+        title: `高額支出の確認: ${category} ¥${amount.toLocaleString()} (${date})`,
+        description: `${description}の支出が10万円を超えています。事業との関連性と根拠資料を確認してください。`,
+        actionable: false,
+        transactionId: id
+      });
+    });
+
+    // 説明が不十分な取引を集計してまとめて表示
+    if (shortDescriptionTransactions.length > 0) {
+      const descriptionByCategory: Record<string, number> = {};
+      shortDescriptionTransactions.forEach((transaction) => {
+        const category = (transaction.category as string) || 'その他';
+        descriptionByCategory[category] = (descriptionByCategory[category] || 0) + 1;
+      });
+
+      Object.entries(descriptionByCategory).forEach(([category, count]) => {
+        checks.push({
+          id: `check_description_${category}`,
+          type: '推奨',
+          title: `説明の充実を推奨: ${category} (${count}件)`,
+          description: `${category}カテゴリで${count}件の取引説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。`,
+          actionable: true
+        });
+      });
+    }
 
     // カテゴリごとのチェック
     const categoryCount: Record<string, number> = transactions.reduce((acc, t) => {

@@ -765,7 +765,7 @@ const App: React.FC = () => {
 
             {(isProcessing || isConvertingImage) && (
               <div className="flex justify-start">
-                <div className="bg-white border border-indigo-100 p-4 rounded-2xl flex items-center gap-3 text-slate-900 shadow-sm border-l-4 border-l-slate-900 animate-pulse">
+                <div className="bg-white border border-slate-100 p-4 rounded-2xl flex items-center gap-3 text-slate-900 shadow-sm border-l-4 border-l-slate-900 animate-pulse">
                   <ArrowPathIcon className="w-5 h-5 animate-spin" />
                   <span className="text-xs font-bold tracking-widest uppercase">
                     {isConvertingImage ? 'Optimizing Image...' : 'Analyzing Data...'}
@@ -776,9 +776,9 @@ const App: React.FC = () => {
 
             {pendingExtraction && (
               <div className="flex justify-start animate-in slide-in-from-bottom-8 duration-500">
-                <div className="w-full max-w-[95%] bg-white border-2 border-indigo-200 rounded-3xl p-5 shadow-2xl ring-4 ring-indigo-50/50">
-                  <div className="flex items-center justify-between mb-4 border-b border-indigo-50 pb-3">
-                    <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                <div className="w-full max-w-[95%] bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-2xl ring-4 ring-slate-50/50">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-2 text-slate-700 font-bold">
                       <SparklesIcon className="w-6 h-6 animate-pulse" />
                       <span className="text-sm font-bold">抽出内容の確認</span>
                     </div>
@@ -797,19 +797,19 @@ const App: React.FC = () => {
                               type="date"
                               value={pendingExtraction.data.date || new Date().toISOString().split('T')[0]}
                               onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, date: e.target.value}})}
-                              className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none"
+                              className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-[10px] text-gray-400 font-bold mb-1 block">金額</label>
-                              <input type="number" value={pendingExtraction.data.amount} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, amount: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" />
+                              <input type="number" value={pendingExtraction.data.amount} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, amount: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none" />
                             </div>
                             {/* 収入データの場合は種別を表示せず、支出データの場合のみ科目を表示 */}
                             {pendingExtraction.data.type !== 'income' && (
                               <div>
                                 <label className="text-[10px] text-gray-400 font-bold mb-1 block">科目</label>
-                                <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none">
+                                <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none">
                                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                               </div>
@@ -817,7 +817,7 @@ const App: React.FC = () => {
                           </div>
                           <div>
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">内容</label>
-                            <input type="text" value={pendingExtraction.data.description} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, description: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" />
+                            <input type="text" value={pendingExtraction.data.description} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, description: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none" />
                           </div>
                           {/* 収入データの場合のみ支払者名と源泉徴収税額を編集可能 */}
                           {pendingExtraction.data.type === 'income' && (
@@ -837,11 +837,11 @@ const App: React.FC = () => {
                         <div className="space-y-3">
                           <div>
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">キーワード</label>
-                            <input type="text" value={pendingExtraction.data.keyword} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, keyword: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none" />
+                            <input type="text" value={pendingExtraction.data.keyword} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, keyword: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none" />
                           </div>
                           <div>
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">分類科目</label>
-                            <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-indigo-200 text-sm font-bold outline-none">
+                            <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none">
                               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                           </div>
@@ -853,9 +853,9 @@ const App: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       {pendingExtraction.type === 'transaction' ? (
                         <>
-                          <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
-                            <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">日付</p>
-                            <p className="text-lg font-black text-indigo-700">
+                          <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">日付</p>
+                            <p className="text-lg font-black text-slate-700">
                               {(() => {
                                 const displayDate = pendingExtraction.data.date || new Date().toISOString().split('T')[0];
                                 console.log('🗓️ UI表示日付:', displayDate);
@@ -863,14 +863,14 @@ const App: React.FC = () => {
                               })()}
                             </p>
                           </div>
-                          <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
-                            <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">金額</p>
-                            <p className="text-2xl font-black text-indigo-700">¥{Number(pendingExtraction.data.amount || 0).toLocaleString()}</p>
+                          <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">金額</p>
+                            <p className="text-2xl font-black text-slate-700">¥{Number(pendingExtraction.data.amount || 0).toLocaleString()}</p>
                           </div>
                           {/* 収入データの場合は種別を表示せず、支出データの場合のみ勘定科目を表示 */}
                           {pendingExtraction.data.type !== 'income' && (
-                            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50">
-                              <p className="text-[10px] text-indigo-400 font-bold uppercase mb-1">勘定科目</p>
+                            <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
+                              <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">勘定科目</p>
                               <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category || '未設定'}</p>
                             </div>
                           )}
@@ -893,7 +893,7 @@ const App: React.FC = () => {
                           )}
                         </>
                       ) : (
-                        <div className="col-span-2 bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                        <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                           <p className="text-sm font-bold text-gray-800 leading-relaxed">
                             「<span className="text-slate-900 font-black">{pendingExtraction.data.keyword}</span>」のときは
                             「<span className="text-slate-900 font-black">{pendingExtraction.data.category}</span>」に自動分類します。
@@ -906,14 +906,14 @@ const App: React.FC = () => {
                   <div className="flex gap-3">
                     <button
                       onClick={pendingExtraction.type === 'transaction' ? commitTransaction : commitRule}
-                      className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-indigo-200 hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
+                      className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
                     >
                       <CheckCircleIcon className="w-6 h-6" />
                       この内容で保存
                     </button>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-bold text-sm border-2 border-indigo-100 hover:bg-indigo-50 active:scale-95 transition flex items-center justify-center gap-1"
+                      className="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-bold text-sm border-2 border-slate-100 hover:bg-slate-50 active:scale-95 transition flex items-center justify-center gap-1"
                     >
                       <PencilSquareIcon className="w-5 h-5" />
                       修正
@@ -1005,7 +1005,7 @@ const App: React.FC = () => {
         <div className="bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
           <div className="px-4 pt-3 flex gap-2 overflow-x-auto no-scrollbar">
             {QUICK_ACTIONS.map((action, i) => (
-              <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-900 text-[11px] font-bold shadow-sm hover:bg-indigo-50 transition active:scale-95">
+              <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-900 text-[11px] font-bold shadow-sm hover:bg-slate-50 transition active:scale-95">
                 <action.icon className="w-3.5 h-3.5" /> {action.label}
               </button>
             ))}
@@ -1013,7 +1013,7 @@ const App: React.FC = () => {
           <div className="p-4">
             {selectedImage && (
               <div className="mb-3 relative inline-block animate-in zoom-in-50 duration-200">
-                <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-2 border-indigo-200 shadow-md" alt="添付" />
+                <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-md" alt="添付" />
                 <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg active:scale-90 transition">
                   <XMarkIcon className="w-4 h-4" />
                 </button>
@@ -1029,7 +1029,7 @@ const App: React.FC = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="メッセージ..."
-                className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-indigo-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium"
+                className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium"
                 rows={1}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
               />

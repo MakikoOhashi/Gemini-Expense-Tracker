@@ -231,52 +231,52 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
 
           if (isEditing) {
             return (
-              <div key={t.id} className="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm animate-in zoom-in-95 duration-200 mb-4">
+              <div key={t.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm animate-in zoom-in-95 duration-200 mb-4">
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <div className="col-span-2">
-                    <label className="text-[10px] text-indigo-400 font-bold uppercase">メモ</label>
-                    <input 
-                      type="text" 
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">メモ</label>
+                    <input
+                      type="text"
                       name="description"
-                      value={editValues.description} 
+                      value={editValues.description}
                       onChange={handleInputChange}
-                      className="w-full text-sm font-bold p-2 bg-white rounded border border-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full text-sm font-bold p-2 bg-white rounded border border-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-indigo-400 font-bold uppercase">金額</label>
-                    <input 
-                      type="number" 
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">金額</label>
+                    <input
+                      type="number"
                       name="amount"
-                      value={editValues.amount} 
+                      value={editValues.amount}
                       onChange={handleInputChange}
-                      className="w-full text-sm font-bold p-2 bg-white rounded border border-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full text-sm font-bold p-2 bg-white rounded border border-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-indigo-400 font-bold uppercase">勘定科目</label>
-                    <select 
+                    <label className="text-[10px] text-slate-400 font-bold uppercase">勘定科目</label>
+                    <select
                       name="category"
-                      value={editValues.category} 
+                      value={editValues.category}
                       onChange={handleInputChange}
-                      className="w-full text-sm font-bold p-2 bg-white rounded border border-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full text-sm font-bold p-2 bg-white rounded border border-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
                     >
                       {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="col-span-2 mt-2">
-                    <label className="text-[10px] text-indigo-400 font-bold uppercase mb-1 block">証憑</label>
+                    <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">証憑</label>
                     {editValues.receiptUrl && editValues.receiptUrl.trim() ? (
                       <div className="flex items-center gap-2">
-                        <a 
-                          href={editValues.receiptUrl} 
-                          target="_blank" 
+                        <a
+                          href={editValues.receiptUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-800 underline text-sm break-all"
+                          className="text-slate-600 hover:text-slate-800 underline text-sm break-all"
                         >
                           📄 レシートを確認
                         </a>
-                        <button 
+                        <button
                           onClick={() => setEditValues(prev => ({...prev, receiptUrl: undefined}))}
                           className="text-gray-400 hover:text-rose-500 transition"
                           title="証憑を削除"
@@ -290,7 +290,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={saveEdit} className="flex-1 bg-slate-900 text-white py-2 rounded-lg flex items-center justify-center gap-1 font-bold shadow-md hover:bg-indigo-700 active:scale-95 transition">
+                  <button onClick={saveEdit} className="flex-1 bg-slate-900 text-white py-2 rounded-lg flex items-center justify-center gap-1 font-bold shadow-md hover:bg-slate-700 active:scale-95 transition">
                     <CheckIcon className="w-4 h-4" /> 保存
                   </button>
                   <button onClick={cancelEdit} className="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
@@ -309,7 +309,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
               title="ダブルクリックで編集"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className={`p-2 rounded-lg flex-shrink-0 ${t.type === 'income' ? 'bg-indigo-50 text-slate-900' : 'bg-rose-50 text-rose-600'}`}>
+                <div className={`p-2 rounded-lg flex-shrink-0 ${t.type === 'income' ? 'bg-slate-50 text-slate-900' : 'bg-rose-50 text-rose-600'}`}>
                   {t.type === 'income' ? <ReceiptRefundIcon className="w-5 h-5" /> : <ReceiptRefundIcon className="w-5 h-5" />}
                 </div>
                 <div className="overflow-hidden">

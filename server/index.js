@@ -1332,7 +1332,7 @@ app.post('/api/update-transaction', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
     const { id, date, amount, category, memo, receiptUrl, type } = req.body;
-    console.log('ID:', id); 
+    console.log('ID:', id);
 
     if (!id || !date || !amount || !category) {
       return res.status(400).json({ error: '必須フィールドが不足しています' });
@@ -1341,14 +1341,21 @@ app.post('/api/update-transaction', async (req, res) => {
     // Determine sheet based on type
     const sheetType = type === 'income' ? 'Income' : 'Expenses';
     const currentYear = new Date(date).getFullYear();
-    
+
     const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // IDから行番号を抽出（例: "exp_3" → 3）
-    const rowNumber = parseInt(id.split('_')[1]);
-    console.log('Row Number:', rowNumber);  // ← ここに追加
+    // IDから行番号を抽出（新しい形式 "2026inc-5" または古い形式 "inc_5" に対応）
+    let rowNumber;
+    if (id.includes('-')) {
+      // 新しい形式: "2026inc-5" → "5"
+      rowNumber = parseInt(id.split('-')[1]);
+    } else {
+      // 古い形式: "inc_5" → "5"
+      rowNumber = parseInt(id.split('_')[1]);
+    }
+    console.log('Row Number:', rowNumber);
     if (isNaN(rowNumber)) {
       return res.status(400).json({ error: '無効なIDです' });
     }

@@ -65,6 +65,7 @@ const App: React.FC = () => {
   }]);
 
   const [inputText, setInputText] = useState('');
+  const [auditQuery, setAuditQuery] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConvertingImage, setIsConvertingImage] = useState(false);
@@ -215,6 +216,18 @@ const App: React.FC = () => {
       setShowAuthModal(false);
     }
   }, [authStatus]);
+
+  // 監査予報からの質問をチャットタブにセット
+  useEffect(() => {
+    if (auditQuery && activeTab === 'chat') {
+      setInputText(auditQuery);
+      setAuditQuery(null); // リセット
+      // 少し待ってから自動送信
+      setTimeout(() => {
+        handleSendMessage();
+      }, 100);
+    }
+  }, [auditQuery, activeTab]);
 
   useEffect(() => {
     if (activeTab === 'chat') {
@@ -912,7 +925,11 @@ const App: React.FC = () => {
             <div ref={chatEndRef} className="h-4" />
           </div>
         ) : activeTab === 'dashboard' ? (
-          <Dashboard transactions={transactions} />
+          <Dashboard
+            transactions={transactions}
+            onAuditQuery={setAuditQuery}
+            onTabChange={setActiveTab}
+          />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();
           return (

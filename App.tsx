@@ -99,22 +99,29 @@ const App: React.FC = () => {
             continue; // 競合時はスキップ
           }
 
-          // Transaction型に変換（IDを必ずユニークに再生成）
-          const mappedTransactions: Transaction[] = response.map((t: any, index: number) => ({
-            id: t.type === 'income' ? `tx_inc_${year}_${index}` : `tx_exp_${year}_${index}`,
-            date: t.date,
-            amount: t.amount,
-            description: t.memo || '',
-            category: t.category,
-            type: t.type,
-            receiptUrl: t.receipt_url || '',
-            createdAt: new Date(t.date).getTime(),
-            // 収入データの場合のみ支払者名と源泉徴収税額を追加
-            ...(t.type === 'income' && {
-              payerName: t.payerName || '',
-              withholdingTax: t.withholdingTax || 0
-            })
-          }));
+          // Transaction型に変換（年度情報を含めたユニークなIDを生成）
+          const mappedTransactions: Transaction[] = response.map((t: any, index: number) => {
+            // サーバーID (例: "exp_2", "inc_3") から行番号を抽出し、年度プレフィックスを付けてユニーク化
+            const rowNumber = t.id.split('_')[1]; // "exp_2" → "2"
+            const typePrefix = t.type === 'income' ? 'inc' : 'exp'; // "income" → "inc", "expense" → "exp"
+            const uniqueId = `${year}${typePrefix}-${rowNumber}`; // 例: "2026inc-2"
+
+            return {
+              id: uniqueId,
+              date: t.date,
+              amount: t.amount,
+              description: t.memo || '',
+              category: t.category,
+              type: t.type,
+              receiptUrl: t.receipt_url || '',
+              createdAt: new Date(t.date).getTime(),
+              // 収入データの場合のみ支払者名と源泉徴収税額を追加
+              ...(t.type === 'income' && {
+                payerName: t.payerName || '',
+                withholdingTax: t.withholdingTax || 0
+              })
+            };
+          });
 
           allTransactions = [...allTransactions, ...mappedTransactions];
           console.log(`✅ ${year}年度: ${mappedTransactions.length}件の取引データを取得しました`);
@@ -218,9 +225,9 @@ const App: React.FC = () => {
     }
   }, [messages, activeTab, pendingExtraction, isEditing, isProcessing]);
 
-  // 取引履歴ページまたは確定申告ページ開いたらGoogle Sheetsからデータを取得
+  // 取引履歴ページ、確定申告ページ、または監査予報ページ開いたらGoogle Sheetsからデータを取得
   useEffect(() => {
-    if (activeTab === 'history' || activeTab === 'tax') {
+    if (activeTab === 'history' || activeTab === 'tax' || activeTab === 'dashboard') {
       loadTransactions();
     }
   }, [activeTab, loadTransactions]);
@@ -905,7 +912,7 @@ const App: React.FC = () => {
             <div ref={chatEndRef} className="h-4" />
           </div>
         ) : activeTab === 'dashboard' ? (
-          <Dashboard />
+          <Dashboard transactions={transactions} />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();
           return (

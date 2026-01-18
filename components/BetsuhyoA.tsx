@@ -458,7 +458,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
 
         {/* 所得の内訳 - 収支内訳書2に表示 */}
         {(() => {
-          const incomeBreakdownEntries = Object.entries(data.所得の内訳 || {});
+          const incomeBreakdownEntries = Object.entries(data.所得の内訳 || {}) as [string, { 種目: string; 収入金額: number; 源泉徴収税額: number }][];
           const top4Income = incomeBreakdownEntries.slice(0, 4).reduce((sum, [, payerData]) => sum + (payerData.収入金額 || 0), 0);
           const remainingIncome = incomeBreakdownEntries.slice(4).reduce((sum, [, payerData]) => sum + (payerData.収入金額 || 0), 0);
           const totalDisplayedIncome = top4Income + remainingIncome;
@@ -590,7 +590,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <img src="/02.png" alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
 
         {/* 所得の内訳 - 第二表の1件目〜4件目のみ表示 */}
-        {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) =>
+        {(Object.entries(data.所得の内訳 || {}) as [string, { 種目: string; 収入金額: number; 源泉徴収税額: number }][]).map(([payerName, payerData], index) =>
           index < 4 && (  // 1件目〜4件目のみ表示（0-indexedなのでindex < 4）
             <div
               key={payerName}
@@ -625,7 +625,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
           <img src="/09.png" alt="所得の内訳書" className="w-full shadow-lg rounded-lg" />
 
           {/* 所得の内訳 - 支払者5件目以降のみ縦方向に表示 */}
-          {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) =>
+          {(Object.entries(data.所得の内訳 || {}) as [string, { 種目: string; 収入金額: number; 源泉徴収税額: number }][]).map(([payerName, payerData], index) =>
             index >= 4 && (  // 5件目以降のみ表示（0-indexedなのでindex >= 4）
               <div
                 key={payerName}

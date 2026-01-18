@@ -1709,6 +1709,20 @@ app.get('/auth/google/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     userTokens[userId] = tokens;
 
+    // Firebase Auth に裏でサインイン
+    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+    const { auth } = await import('../src/lib/firebase.js');
+
+    const credential = GoogleAuthProvider.credential(
+      tokens.id_token,
+      tokens.access_token
+    );
+
+    const result = await signInWithCredential(auth, credential);
+
+    console.log('Firebase UID:', result.user.uid);
+    console.log('Email:', result.user.email);
+
     // ユーザーログイン時にキャッシュクリア
     spreadsheetCache.clear();
     console.log(`🧹 User ${userId} login: cache cleared`);

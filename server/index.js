@@ -8,6 +8,8 @@ import { google } from 'googleapis';
 import vision from '@google-cloud/vision';
 import { Readable } from 'stream';
 import Busboy from 'busboy';
+import jwt from 'jsonwebtoken';
+import { userService } from '../services/userService.js';
 
 dotenv.config();
 
@@ -25,8 +27,11 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT_URI
 );
 
-// Scopes for Google Sheets and Drive access
+// Scopes for Google OAuth and API access
 const SCOPES = [
+  'openid',  // OpenID Connect
+  'profile', // User profile information
+  'email',   // User email address
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/drive.file'
@@ -1705,20 +1710,71 @@ app.get('/auth/google/callback', async (req, res) => {
   const { code, state } = req.query;
   const userId = state || 'test-user'; // In production, get from session
 
+  console.log('🔐 OAuth callback started');
+  console.log('📋 Code received:', code ? 'YES' : 'NO');
+  console.log('📋 State received:', state || 'NONE');
+
   try {
+    console.log('🔄 Exchanging code for tokens...');
     const { tokens } = await oauth2Client.getToken(code);
+
+    console.log('📋 Tokens received:');
+    console.log('  - Access token:', tokens.access_token ? 'YES' : 'NO');
+    console.log('  - Refresh token:', tokens.refresh_token ? 'YES' : 'NO');
+    console.log('  - ID token:', tokens.id_token ? 'YES' : 'NO');
+    console.log('  - Expiry date:', tokens.expiry_date || 'NONE');
+
     userTokens[userId] = tokens;
+
+    // IDトークンからGoogle ID (sub) を取得してユーザードキュメントを作成
+    if (tokens.id_token) {
+      console.log('🔍 ID token found, attempting to decode...');
+      try {
+        const decoded = jwt.decode(tokens.id_token, { complete: true });
+        console.log('📋 JWT decoded successfully');
+
+        if (decoded && typeof decoded.payload === 'object') {
+          console.log('📋 Payload keys:', Object.keys(decoded.payload));
+
+          if ('sub' in decoded.payload) {
+            const googleId = decoded.payload.sub;
+            console.log(`🔑 Google ID (sub) extracted: ${googleId}`);
+            console.log('📋 Full payload sub:', decoded.payload.sub);
+
+            // ユーザードキュメントを作成または更新
+            console.log(`💾 Creating/updating user document for Google ID: ${googleId}`);
+            await userService.createOrUpdateUserDocument(googleId, {});
+            console.log(`✅ User document created/updated for Google ID: ${googleId}`);
+
+            // userTokensにGoogle IDを関連付ける
+            userTokens[googleId] = tokens;
+            console.log(`🔗 Associated tokens with Google ID: ${googleId}`);
+          } else {
+            console.warn('⚠️ No "sub" field found in JWT payload');
+            console.log('📋 Available payload fields:', Object.keys(decoded.payload));
+          }
+        } else {
+          console.warn('⚠️ JWT payload is not an object');
+        }
+      } catch (tokenError) {
+        console.error('❌ Failed to extract Google ID from ID token:', tokenError.message);
+        console.error('❌ Token error details:', tokenError);
+      }
+    } else {
+      console.warn('⚠️ No ID token received from Google OAuth');
+    }
 
     // ユーザーログイン時にキャッシュクリア
     spreadsheetCache.clear();
-    console.log(`🧹 User ${userId} login: cache cleared`);
+    console.log(`🧹 Cache cleared for user: ${userId}`);
 
-    console.log(`✅ User ${userId} authenticated successfully`);
+    console.log(`✅ OAuth authentication completed successfully for user: ${userId}`);
 
     // Redirect to frontend with success
     res.redirect('http://localhost:3000?auth=success');
   } catch (error) {
-    console.error('OAuth callback error:', error);
+    console.error('❌ OAuth callback error:', error);
+    console.error('❌ Error details:', error.message);
     res.redirect('http://localhost:3000?auth=error');
   }
 });
@@ -1827,6 +1883,176 @@ app.post('/api/ocr', upload.single('file'), async (req, res) => {
     console.error('Vision API OCR Error:', error);
     res.status(500).json({
       error: 'OCR処理に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// User management endpoints
+
+// Update last access date for audit forecast page
+app.post('/api/user/last-access', async (req, res) => {
+  try {
+    const { googleId, accessDate } = req.body;
+
+    if (!googleId || !accessDate) {
+      return res.status(400).json({ error: 'googleIdとaccessDateは必須です' });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(accessDate)) {
+      return res.status(400).json({ error: 'accessDateはYYYY-MM-DD形式である必要があります' });
+    }
+
+    await userService.updateLastAccessDate(googleId, accessDate);
+
+    console.log(`📅 Updated last access date for user ${googleId}: ${accessDate}`);
+
+    res.json({
+      success: true,
+      message: '最終アクセス日時を更新しました',
+      googleId,
+      lastAccessDate: accessDate
+    });
+
+  } catch (error) {
+    console.error('Update Last Access Date Error:', error);
+    res.status(500).json({
+      error: '最終アクセス日時の更新に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Get last access date
+app.get('/api/user/last-access/:googleId', async (req, res) => {
+  try {
+    const { googleId } = req.params;
+
+    if (!googleId) {
+      return res.status(400).json({ error: 'googleIdは必須です' });
+    }
+
+    const lastAccessDate = await userService.getLastAccessDate(googleId);
+
+    res.json({
+      success: true,
+      googleId,
+      lastAccessDate
+    });
+
+  } catch (error) {
+    console.error('Get Last Access Date Error:', error);
+    res.status(500).json({
+      error: '最終アクセス日時の取得に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Save forecast results
+app.post('/api/user/forecast', async (req, res) => {
+  try {
+    const { googleId, forecastDate, forecastResults } = req.body;
+
+    if (!googleId || !forecastDate || !forecastResults) {
+      return res.status(400).json({ error: 'googleId、forecastDate、forecastResultsは必須です' });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(forecastDate)) {
+      return res.status(400).json({ error: 'forecastDateはYYYY-MM-DD形式である必要があります' });
+    }
+
+    // Validate forecast results structure
+    if (!Array.isArray(forecastResults)) {
+      return res.status(400).json({ error: 'forecastResultsは配列である必要があります' });
+    }
+
+    // Validate each forecast result
+    for (const result of forecastResults) {
+      if (typeof result.id !== 'number' || typeof result.prediction !== 'string' || typeof result.score !== 'number') {
+        return res.status(400).json({ error: 'forecastResultsの各要素は{id: number, prediction: string, score: number}形式である必要があります' });
+      }
+    }
+
+    await userService.saveForecastResult(googleId, forecastDate, forecastResults);
+
+    console.log(`🔮 Saved forecast results for user ${googleId} on ${forecastDate}: ${forecastResults.length} results`);
+
+    res.json({
+      success: true,
+      message: '予報結果を保存しました',
+      googleId,
+      forecastDate,
+      resultCount: forecastResults.length
+    });
+
+  } catch (error) {
+    console.error('Save Forecast Results Error:', error);
+    res.status(500).json({
+      error: '予報結果の保存に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Get forecast results for a specific date
+app.get('/api/user/forecast/:googleId/:forecastDate', async (req, res) => {
+  try {
+    const { googleId, forecastDate } = req.params;
+
+    if (!googleId || !forecastDate) {
+      return res.status(400).json({ error: 'googleIdとforecastDateは必須です' });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(forecastDate)) {
+      return res.status(400).json({ error: 'forecastDateはYYYY-MM-DD形式である必要があります' });
+    }
+
+    const forecastResults = await userService.getForecastResult(googleId, forecastDate);
+
+    res.json({
+      success: true,
+      googleId,
+      forecastDate,
+      forecastResults
+    });
+
+  } catch (error) {
+    console.error('Get Forecast Results Error:', error);
+    res.status(500).json({
+      error: '予報結果の取得に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Get user document
+app.get('/api/user/:googleId', async (req, res) => {
+  try {
+    const { googleId } = req.params;
+
+    if (!googleId) {
+      return res.status(400).json({ error: 'googleIdは必須です' });
+    }
+
+    const userDocument = await userService.getUserDocument(googleId);
+
+    res.json({
+      success: true,
+      googleId,
+      userDocument
+    });
+
+  } catch (error) {
+    console.error('Get User Document Error:', error);
+    res.status(500).json({
+      error: 'ユーザードキュメントの取得に失敗しました',
       details: error.message
     });
   }

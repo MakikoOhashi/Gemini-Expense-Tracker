@@ -45,9 +45,11 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isYearSelectionModalOpen, setIsYearSelectionModalOpen] = useState(false);
   const [selectedTaxYear, setSelectedTaxYear] = useState<number | null>(null);
+  const [selectedAuditYear, setSelectedAuditYear] = useState<number>(2025);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isAuditYearSelectionModalOpen, setIsAuditYearSelectionModalOpen] = useState(false);
   
   // Folder conflict modal state
   const [folderConflict, setFolderConflict] = useState<{
@@ -665,6 +667,10 @@ const App: React.FC = () => {
     setActiveTab('tax');
   };
 
+  const handleAuditYearSelect = (year: number) => {
+    setSelectedAuditYear(year);
+  };
+
   const getAvailableYears = (): number[] => {
     const currentYear = new Date().getFullYear();
     return [currentYear - 1, currentYear, currentYear + 1];
@@ -929,6 +935,10 @@ const App: React.FC = () => {
             transactions={transactions}
             onAuditQuery={setAuditQuery}
             onTabChange={setActiveTab}
+            selectedAuditYear={selectedAuditYear}
+            onAuditYearSelect={handleAuditYearSelect}
+            availableYears={getAvailableYears()}
+            onOpenYearModal={() => setIsAuditYearSelectionModalOpen(true)}
           />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();
@@ -1079,6 +1089,16 @@ const App: React.FC = () => {
         isOpen={isYearSelectionModalOpen}
         onClose={() => setIsYearSelectionModalOpen(false)}
         onSelectYear={handleYearSelect}
+        availableYears={getAvailableYears()}
+      />
+
+      <YearSelectionModal
+        isOpen={isAuditYearSelectionModalOpen}
+        onClose={() => setIsAuditYearSelectionModalOpen(false)}
+        onSelectYear={(year) => {
+          handleAuditYearSelect(year);
+          setIsAuditYearSelectionModalOpen(false);
+        }}
         availableYears={getAvailableYears()}
       />
 

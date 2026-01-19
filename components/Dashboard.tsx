@@ -8,9 +8,21 @@ interface DashboardProps {
   transactions: Transaction[];
   onAuditQuery?: (query: string) => void;
   onTabChange?: (tab: 'chat' | 'dashboard' | 'history' | 'tax') => void;
+  selectedAuditYear: number;
+  onAuditYearSelect: (year: number) => void;
+  availableYears: number[];
+  onOpenYearModal: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTabChange }) => {
+const Dashboard: React.FC<DashboardProps> = ({
+  transactions,
+  onAuditQuery,
+  onTabChange,
+  selectedAuditYear,
+  onAuditYearSelect,
+  availableYears,
+  onOpenYearModal
+}) => {
   const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,11 +36,23 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
         return;
       }
 
+      // 選択された年度の取引データをフィルタリング
+      const filteredTransactions = transactions.filter(t => {
+        const transactionYear = new Date(t.date).getFullYear();
+        return transactionYear === selectedAuditYear;
+      });
+
+      if (filteredTransactions.length === 0) {
+        setAuditForecast([]);
+        setBookkeepingChecks([]);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const [forecastData, checksData] = await Promise.all([
-          auditService.generateAuditForecast(transactions),
-          auditService.generateBookkeepingChecks(transactions)
+          auditService.generateAuditForecast(filteredTransactions),
+          auditService.generateBookkeepingChecks(filteredTransactions)
         ]);
         setAuditForecast(forecastData);
         setBookkeepingChecks(checksData);
@@ -43,7 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
     };
 
     loadAuditData();
-  }, [transactions]);
+  }, [transactions, selectedAuditYear]);
 
   const handleAskQuestion = (forecastItem: AuditForecastItem) => {
     if (!onAuditQuery || !onTabChange) return;
@@ -101,6 +125,22 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions, onAuditQuery, onTab
         <h3 className="text-sm font-bold text-gray-700 mb-4">
           今日の監査予報（{new Date().toISOString().split('T')[0]}時点）
         </h3>
+        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-700">{selectedAuditYear}年度</p>
+              <p className="text-xs text-slate-500">
+                {selectedAuditYear}年1月1日〜{selectedAuditYear}年12月31日の取引データを集計
+              </p>
+            </div>
+            <button
+              onClick={onOpenYearModal}
+              className="px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
+            >
+              年度を変更する
+            </button>
+          </div>
+        </div>
         {auditForecast.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">監査予報データが見つかりませんでした</p>
         ) : (

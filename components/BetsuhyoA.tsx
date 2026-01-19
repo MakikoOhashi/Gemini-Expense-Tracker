@@ -459,8 +459,8 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         {/* 所得の内訳 - 収支内訳書2に表示 */}
         {(() => {
           const incomeBreakdownEntries = Object.entries(data.所得の内訳 || {});
-          const top4Income = incomeBreakdownEntries.slice(0, 4).reduce((sum, [, payerData]) => sum + (payerData.収入金額 || 0), 0);
-          const remainingIncome = incomeBreakdownEntries.slice(4).reduce((sum, [, payerData]) => sum + (payerData.収入金額 || 0), 0);
+          const top4Income = incomeBreakdownEntries.slice(0, 4).reduce((sum, [, payerData]) => sum + ((payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額 || 0), 0);
+          const remainingIncome = incomeBreakdownEntries.slice(4).reduce((sum, [, payerData]) => sum + ((payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額 || 0), 0);
           const totalDisplayedIncome = top4Income + remainingIncome;
 
           return (
@@ -484,7 +484,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
                         支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
                       </div>
                     </div>
-                    <span className="w-24 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
+                    <span className="w-24 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額?.toLocaleString() || '0'}</span>
                   </div>
                 </div>
               ))}
@@ -611,8 +611,8 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
                         支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
                       </div>
                     </div>
-                <span className="w-16 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
-                <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+                <span className="w-16 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額?.toLocaleString() || '0'}</span>
+                <span className="w-16 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).源泉徴収税額?.toLocaleString() || '0'}</span>
               </div>
             </div>
           )
@@ -647,8 +647,8 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
                     </div>
                   </div>
                   <span className="w-4 text-center"></span>
-                  <span className="w-28 text-right">{payerData.収入金額?.toLocaleString() || '0'}</span>
-                  <span className="w-16 text-right">{payerData.源泉徴収税額?.toLocaleString() || '0'}</span>
+                  <span className="w-28 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額?.toLocaleString() || '0'}</span>
+                  <span className="w-16 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).源泉徴収税額?.toLocaleString() || '0'}</span>
                   <span className="w-4 text-center"></span>
                 </div>
               </div>

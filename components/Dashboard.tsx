@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
 
@@ -26,8 +26,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
 
-  // 監査予報データと記帳チェックデータを取得
+  // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
     const loadAuditData = async () => {
       if (transactions.length === 0) {
@@ -49,20 +50,134 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
 
       setIsLoading(true);
+
       try {
-        const [forecastData, checksData] = await Promise.all([
-          auditService.generateAuditForecast(filteredTransactions),
-          auditService.generateBookkeepingChecks(filteredTransactions)
-        ]);
-        setAuditForecast(forecastData);
+        // キャッシュチェック用のパラメータを取得
+        const googleId = '117675493044504889175'; // 固定値
+        const year = selectedAuditYear.toString();
+        const today = new Date().toISOString().split('T')[0];
+
+        try {
+          // 最終アクセス日を確認（サーバーAPI経由）
+          const lastAccessResponse = await fetch(`http://localhost:3001/api/user/last-access/${googleId}?year=${year}`);
+          const lastAccessData = await lastAccessResponse.json();
+
+          if (!lastAccessResponse.ok) {
+            throw new Error(lastAccessData.details || '最終アクセス日の取得に失敗しました');
+          }
+
+          const lastAccessDate = lastAccessData.lastAccessDate?.[year];
+
+          // キャッシュヒット判定（同日・同年度）
+          const isCacheHit = lastAccessDate === today;
+
+          if (isCacheHit) {
+            console.log('🔄 キャッシュヒット: サーバーから監査予報を取得します');
+            setLoadingMessage('保存された予報を読み込み中...');
+            // キャッシュから取得（サーバーAPI経由）
+            const forecastResponse = await fetch(`http://localhost:3001/api/user/forecast/${googleId}/${year}/${today}`);
+            const forecastData = await forecastResponse.json();
+
+            if (forecastResponse.ok && forecastData.forecastResults) {
+              setAuditForecast(forecastData.forecastResults);
+              console.log('✅ キャッシュから監査予報データを読み込みました');
+            } else {
+              // キャッシュが存在しない場合は新規生成
+              console.log('⚠️ キャッシュが見つからないため、新規生成します');
+              await generateAndCacheForecast(filteredTransactions, googleId, year, today);
+            }
+          } else {
+            console.log('🆕 キャッシュミスまたは初回アクセス: 監査予報を新規生成します');
+            setLoadingMessage('監査予報を生成中...');
+            // キャッシュミス時は既存処理を実行
+            await generateAndCacheForecast(filteredTransactions, googleId, year, today);
+          }
+        } catch (cacheError) {
+          console.error('❌ キャッシュチェックエラー:', cacheError);
+          // キャッシュエラーの場合は新規生成
+          console.log('🔄 キャッシュエラー: 新規生成にフォールバックします');
+          setLoadingMessage('監査予報を生成中...');
+          await generateAndCacheForecast(filteredTransactions, googleId, year, today);
+        }
+
+        // 記帳チェックデータは常に新規生成（キャッシュ不要）
+        const checksData = await auditService.generateBookkeepingChecks(filteredTransactions);
         setBookkeepingChecks(checksData);
+
       } catch (error) {
-        console.error('Failed to generate audit data:', error);
-        // エラー時は空の配列を表示
-        setAuditForecast([]);
-        setBookkeepingChecks([]);
+        console.error('❌ 監査データ取得エラー:', error);
+        // Firestore接続エラー時は既存処理にフォールバック
+        try {
+          console.log('🔄 Firestoreエラー: 既存処理にフォールバックします');
+          const [forecastData, checksData] = await Promise.all([
+            auditService.generateAuditForecast(filteredTransactions),
+            auditService.generateBookkeepingChecks(filteredTransactions)
+          ]);
+          setAuditForecast(forecastData);
+          setBookkeepingChecks(checksData);
+        } catch (fallbackError) {
+          console.error('❌ フォールバック処理も失敗:', fallbackError);
+          setAuditForecast([]);
+          setBookkeepingChecks([]);
+        }
       } finally {
         setIsLoading(false);
+      }
+    };
+
+    // 監査予報生成・保存処理
+    const generateAndCacheForecast = async (
+      filteredTransactions: Transaction[],
+      googleId: string,
+      year: string,
+      today: string
+    ) => {
+      try {
+        // 監査予報を生成
+        const forecastData = await auditService.generateAuditForecast(filteredTransactions);
+        setAuditForecast(forecastData);
+
+        // 生成した予報をサーバーAPI経由でFirestoreに保存
+        const saveResponse = await fetch('http://localhost:3001/api/user/forecast', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            googleId,
+            year,
+            date: today,
+            forecastResults: forecastData
+          }),
+        });
+
+        if (!saveResponse.ok) {
+          const saveData = await saveResponse.json();
+          throw new Error(saveData.details || '予報データの保存に失敗しました');
+        }
+
+        // 最終アクセス日をサーバーAPI経由で更新
+        const accessResponse = await fetch('http://localhost:3001/api/user/last-access', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            googleId,
+            year,
+            accessDate: today
+          }),
+        });
+
+        if (!accessResponse.ok) {
+          const accessData = await accessResponse.json();
+          throw new Error(accessData.details || '最終アクセス日の更新に失敗しました');
+        }
+
+        console.log('💾 監査予報データをFirestoreに保存しました');
+      } catch (error) {
+        console.error('❌ 監査予報生成・保存エラー:', error);
+        throw error;
       }
     };
 
@@ -141,7 +256,14 @@ const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
         </div>
-        {auditForecast.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-3 text-slate-600">
+              <ArrowPathIcon className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">{loadingMessage}</span>
+            </div>
+          </div>
+        ) : auditForecast.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">監査予報データが見つかりませんでした</p>
         ) : (
           <div className="space-y-3">

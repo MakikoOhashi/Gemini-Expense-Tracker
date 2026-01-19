@@ -1893,10 +1893,10 @@ app.post('/api/ocr', upload.single('file'), async (req, res) => {
 // Update last access date for audit forecast page
 app.post('/api/user/last-access', async (req, res) => {
   try {
-    const { googleId, accessDate } = req.body;
+    const { googleId, year, accessDate } = req.body;
 
-    if (!googleId || !accessDate) {
-      return res.status(400).json({ error: 'googleIdとaccessDateは必須です' });
+    if (!googleId || !year || !accessDate) {
+      return res.status(400).json({ error: 'googleId、year、accessDateは必須です' });
     }
 
     // Validate date format (YYYY-MM-DD)
@@ -1905,14 +1905,15 @@ app.post('/api/user/last-access', async (req, res) => {
       return res.status(400).json({ error: 'accessDateはYYYY-MM-DD形式である必要があります' });
     }
 
-    await userService.updateLastAccessDate(googleId, accessDate);
+    await userService.updateLastAccessDate(googleId, year, accessDate);
 
-    console.log(`📅 Updated last access date for user ${googleId}: ${accessDate}`);
+    console.log(`📅 Updated last access date for user ${googleId}, year ${year}: ${accessDate}`);
 
     res.json({
       success: true,
       message: '最終アクセス日時を更新しました',
       googleId,
+      year,
       lastAccessDate: accessDate
     });
 
@@ -1929,17 +1930,23 @@ app.post('/api/user/last-access', async (req, res) => {
 app.get('/api/user/last-access/:googleId', async (req, res) => {
   try {
     const { googleId } = req.params;
+    const { year } = req.query;
 
     if (!googleId) {
       return res.status(400).json({ error: 'googleIdは必須です' });
     }
 
-    const lastAccessDate = await userService.getLastAccessDate(googleId);
+    if (!year) {
+      return res.status(400).json({ error: 'yearは必須です' });
+    }
+
+    const lastAccessDate = await userService.getLastAccessDate(googleId, year);
 
     res.json({
       success: true,
       googleId,
-      lastAccessDate
+      year,
+      lastAccessDate: { [year]: lastAccessDate }
     });
 
   } catch (error) {
@@ -1954,16 +1961,16 @@ app.get('/api/user/last-access/:googleId', async (req, res) => {
 // Save forecast results
 app.post('/api/user/forecast', async (req, res) => {
   try {
-    const { googleId, forecastDate, forecastResults } = req.body;
+    const { googleId, year, date, forecastResults } = req.body;
 
-    if (!googleId || !forecastDate || !forecastResults) {
-      return res.status(400).json({ error: 'googleId、forecastDate、forecastResultsは必須です' });
+    if (!googleId || !year || !date || !forecastResults) {
+      return res.status(400).json({ error: 'googleId、year、date、forecastResultsは必須です' });
     }
 
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(forecastDate)) {
-      return res.status(400).json({ error: 'forecastDateはYYYY-MM-DD形式である必要があります' });
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({ error: 'dateはYYYY-MM-DD形式である必要があります' });
     }
 
     // Validate forecast results structure
@@ -1971,22 +1978,23 @@ app.post('/api/user/forecast', async (req, res) => {
       return res.status(400).json({ error: 'forecastResultsは配列である必要があります' });
     }
 
-    // Validate each forecast result
+    // Validate each forecast result (AuditForecastItem structure)
     for (const result of forecastResults) {
-      if (typeof result.id !== 'number' || typeof result.prediction !== 'string' || typeof result.score !== 'number') {
-        return res.status(400).json({ error: 'forecastResultsの各要素は{id: number, prediction: string, score: number}形式である必要があります' });
+      if (typeof result.id !== 'string' || typeof result.accountName !== 'string' || typeof result.totalAmount !== 'number') {
+        return res.status(400).json({ error: 'forecastResultsの各要素はAuditForecastItem形式である必要があります' });
       }
     }
 
-    await userService.saveForecastResult(googleId, forecastDate, forecastResults);
+    await userService.saveForecast(googleId, year, date, forecastResults);
 
-    console.log(`🔮 Saved forecast results for user ${googleId} on ${forecastDate}: ${forecastResults.length} results`);
+    console.log(`🔮 Saved forecast results for user ${googleId}, year ${year}, date ${date}: ${forecastResults.length} results`);
 
     res.json({
       success: true,
       message: '予報結果を保存しました',
       googleId,
-      forecastDate,
+      year,
+      date,
       resultCount: forecastResults.length
     });
 
@@ -1999,27 +2007,28 @@ app.post('/api/user/forecast', async (req, res) => {
   }
 });
 
-// Get forecast results for a specific date
-app.get('/api/user/forecast/:googleId/:forecastDate', async (req, res) => {
+// Get forecast results for a specific year and date
+app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
   try {
-    const { googleId, forecastDate } = req.params;
+    const { googleId, year, date } = req.params;
 
-    if (!googleId || !forecastDate) {
-      return res.status(400).json({ error: 'googleIdとforecastDateは必須です' });
+    if (!googleId || !year || !date) {
+      return res.status(400).json({ error: 'googleId、year、dateは必須です' });
     }
 
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(forecastDate)) {
-      return res.status(400).json({ error: 'forecastDateはYYYY-MM-DD形式である必要があります' });
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({ error: 'dateはYYYY-MM-DD形式である必要があります' });
     }
 
-    const forecastResults = await userService.getForecastResult(googleId, forecastDate);
+    const forecastResults = await userService.getForecast(googleId, year, date);
 
     res.json({
       success: true,
       googleId,
-      forecastDate,
+      year,
+      date,
       forecastResults
     });
 

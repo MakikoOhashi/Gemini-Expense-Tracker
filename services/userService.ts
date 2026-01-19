@@ -1,9 +1,10 @@
 import { db } from '../lib/firebase.js';
 import jwt from 'jsonwebtoken';
+import { AuditForecastItem } from '../types';
 
 export interface UserDocument {
-  last_access_date: string; // YYYY-MM-DD format
-  last_forecast: { [date: string]: Array<{ id: number; prediction: string; score: number }> };
+  last_access: { [year: string]: string }; // { "2025": "2026-01-19", "2026": "2026-01-18" }
+  forecasts: { [year: string]: { [date: string]: AuditForecastItem[] } }; // { "2025": { "2026-01-19": [...] } }
 }
 
 export interface ForecastResult {
@@ -60,13 +61,31 @@ export class UserService {
   }
 
   /**
-   * 監査予報ページアクセス時の処理
-   * last_access_dateを更新
+   * 指定された年度の最終アクセス日を取得
    */
-  async updateLastAccessDate(googleId: string, accessDate: string): Promise<void> {
+  async getLastAccessDate(googleId: string, year: string): Promise<string | null> {
     try {
+      const userDoc = await this.getUserDocument(googleId);
+      return userDoc?.last_access?.[year] || null;
+    } catch (error) {
+      console.error('Error getting last access date:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 指定された年度の最終アクセス日を更新
+   */
+  async updateLastAccessDate(googleId: string, year: string, accessDate: string): Promise<void> {
+    try {
+      const userDoc = await this.getUserDocument(googleId);
+      const lastAccess = userDoc?.last_access || {};
+
+      // 指定された年度のアクセス日を更新
+      lastAccess[year] = accessDate;
+
       await this.createOrUpdateUserDocument(googleId, {
-        last_access_date: accessDate
+        last_access: lastAccess
       });
     } catch (error) {
       console.error('Error updating last access date:', error);
@@ -75,54 +94,47 @@ export class UserService {
   }
 
   /**
-   * 予報結果を保存
+   * 指定された年度・日付の監査予報を取得
    */
-  async saveForecastResult(
-    googleId: string,
-    forecastDate: string,
-    forecastResults: ForecastResult[]
-  ): Promise<void> {
+  async getForecast(googleId: string, year: string, date: string): Promise<AuditForecastItem[] | null> {
     try {
       const userDoc = await this.getUserDocument(googleId);
-      const lastForecast = userDoc?.last_forecast || {};
-
-      // 指定された日付の予報結果を更新
-      lastForecast[forecastDate] = forecastResults;
-
-      await this.createOrUpdateUserDocument(googleId, {
-        last_forecast: lastForecast
-      });
-    } catch (error) {
-      console.error('Error saving forecast result:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 指定された日付の予報結果を取得
-   */
-  async getForecastResult(googleId: string, forecastDate: string): Promise<ForecastResult[] | null> {
-    try {
-      const userDoc = await this.getUserDocument(googleId);
-      if (userDoc?.last_forecast && userDoc.last_forecast[forecastDate]) {
-        return userDoc.last_forecast[forecastDate];
+      if (userDoc?.forecasts?.[year]?.[date]) {
+        return userDoc.forecasts[year][date];
       }
       return null;
     } catch (error) {
-      console.error('Error getting forecast result:', error);
+      console.error('Error getting forecast:', error);
       throw error;
     }
   }
 
   /**
-   * ユーザーの最終アクセス日を取得
+   * 監査予報結果を保存
    */
-  async getLastAccessDate(googleId: string): Promise<string | null> {
+  async saveForecast(
+    googleId: string,
+    year: string,
+    date: string,
+    forecastResults: AuditForecastItem[]
+  ): Promise<void> {
     try {
       const userDoc = await this.getUserDocument(googleId);
-      return userDoc?.last_access_date || null;
+      const forecasts = userDoc?.forecasts || {};
+
+      // 指定された年度の予報データを初期化
+      if (!forecasts[year]) {
+        forecasts[year] = {};
+      }
+
+      // 指定された日付の予報結果を保存
+      forecasts[year][date] = forecastResults;
+
+      await this.createOrUpdateUserDocument(googleId, {
+        forecasts: forecasts
+      });
     } catch (error) {
-      console.error('Error getting last access date:', error);
+      console.error('Error saving forecast:', error);
       throw error;
     }
   }

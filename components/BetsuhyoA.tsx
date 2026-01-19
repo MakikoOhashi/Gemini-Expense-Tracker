@@ -58,9 +58,9 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         </p>
       </div>
      {/* 凡例 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
-        <h3 className="font-bold text-blue-800 mb-2">入力欄について</h3>
-        <p className="text-sm text-blue-700">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 className="font-bold text-slate-800 mb-2">入力欄について</h3>
+        <p className="text-sm text-slate-700">
           赤字で表示されている金額は、Google Sheetsから取得した取引データを集計したものです。
           マウスをホバーすると、各項目の説明が表示されます。
         </p>

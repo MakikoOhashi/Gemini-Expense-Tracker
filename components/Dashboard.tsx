@@ -235,27 +235,27 @@ const Dashboard: React.FC<DashboardProps> = ({
         </p>
       </div>
 
+      {/* セクションA：年度選択ブロック */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-slate-800">📅 選択された年度</h3>
+          <button
+            onClick={onOpenYearModal}
+            className="px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
+          >
+            年度変更
+          </button>
+        </div>
+        <p className="text-sm text-slate-700">
+          {selectedAuditYear}年度（{selectedAuditYear}年1月1日〜{selectedAuditYear}年12月31日）の取引データを集計しています。
+        </p>
+      </div>
+
       {/* セクションB：監査予報（全体） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-700 mb-4">
           今日の監査予報（{new Date().toISOString().split('T')[0]}時点）
         </h3>
-        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-700">{selectedAuditYear}年度</p>
-              <p className="text-xs text-slate-500">
-                {selectedAuditYear}年1月1日〜{selectedAuditYear}年12月31日の取引データを集計
-              </p>
-            </div>
-            <button
-              onClick={onOpenYearModal}
-              className="px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
-            >
-              年度を変更する
-            </button>
-          </div>
-        </div>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="flex items-center gap-3 text-slate-600">

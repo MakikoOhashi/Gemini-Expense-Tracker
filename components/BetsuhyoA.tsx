@@ -178,7 +178,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         <div className="group absolute" style={POS.expenseRent}>
           <input
             type="number"
-            value={data.減価償却費 || 0}
+            value={data.地代家賃 || 0}
             readOnly
             className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
           />

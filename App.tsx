@@ -968,7 +968,10 @@ const App: React.FC = () => {
             selectedAuditYear={selectedAuditYear}
             onAuditYearSelect={handleAuditYearSelect}
             availableYears={getAvailableYears()}
-            onOpenYearModal={() => setIsAuditYearSelectionModalOpen(true)}
+            onOpenYearModal={() => {
+              setSelectedAuditYear(null);
+              setIsAuditYearSelectionModalOpen(true);
+            }}
           />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon, LightBulbIcon } from '@heroicons/react/24/outline';
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
+import AuditReasoningModal from './AuditReasoningModal';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -27,6 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
+  const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
 
   // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
@@ -184,15 +186,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     loadAuditData();
   }, [transactions, selectedAuditYear]);
 
-  const handleAskQuestion = (forecastItem: AuditForecastItem) => {
-    if (!onAuditQuery || !onTabChange) return;
-
-    // デフォルトの質問文を生成（課題文プレフィックスを付けて取引登録ではないことを示す）
-    const defaultQuestion = `課題文：${forecastItem.accountName} ¥${forecastItem.totalAmount.toLocaleString()}について、想定される税務上の確認点と、ユーザーが準備すべき説明を教えてください。`;
-
-    // 監査クエリを設定してチャットタブに遷移
-    onAuditQuery(defaultQuestion);
-    onTabChange('chat');
+  const handleViewReasoning = () => {
+    setIsReasoningModalOpen(true);
   };
 
   const getCheckTypeLabel = (type: '不足' | '確認' | '推奨') => {
@@ -298,7 +293,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <div className="flex items-center gap-3">
                     <p className="text-sm font-bold">{getRiskEmoji(item.riskLevel)} {getRiskText(item.riskLevel)}</p>
                     <button
-                      onClick={() => handleAskQuestion(item)}
+                      onClick={handleViewReasoning}
                       className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition flex items-center gap-1"
                     >
                       <LightBulbIcon className="w-3 h-3" />
@@ -349,6 +344,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* AI Audit Reasoning Modal */}
+      <AuditReasoningModal
+        isOpen={isReasoningModalOpen}
+        onClose={() => setIsReasoningModalOpen(false)}
+      />
     </div>
   );
 };

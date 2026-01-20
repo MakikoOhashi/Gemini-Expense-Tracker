@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon, LightBulbIcon } from '@heroicons/react/24/outline';
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
 
@@ -256,6 +256,25 @@ const Dashboard: React.FC<DashboardProps> = ({
         <h3 className="text-sm font-bold text-gray-700 mb-4">
           今日の監査予報（{new Date().toISOString().split('T')[0]}時点）
         </h3>
+
+        {/* Gemini AI Audit Risk Summary */}
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">🧠</span>
+            <h4 className="font-bold text-blue-800">Gemini AI Audit Risk Summary</h4>
+          </div>
+          <p className="text-sm text-blue-700">
+            今年、最も調査対象になりやすい項目は 「{(() => {
+              // リスクレベルでソート（high -> medium -> low）
+              const sortedByRisk = [...auditForecast].sort((a, b) => {
+                const riskOrder = { high: 3, medium: 2, low: 1 };
+                return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
+              });
+              return sortedByRisk[0]?.accountName || 'なし';
+            })()}」 です
+          </p>
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="flex items-center gap-3 text-slate-600">
@@ -282,8 +301,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                       onClick={() => handleAskQuestion(item)}
                       className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition flex items-center gap-1"
                     >
-                      <ChatBubbleLeftRightIcon className="w-3 h-3" />
-                      質問する
+                      <LightBulbIcon className="w-3 h-3" />
+                      推論を見る
                     </button>
                   </div>
                 </div>

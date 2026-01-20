@@ -685,7 +685,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto bg-white shadow-xl overflow-hidden relative">
+    <div className="flex flex-col h-screen bg-white overflow-hidden relative lg:mx-8 xl:mx-16 2xl:mx-24">
       {/* Authentication Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -759,7 +759,7 @@ const App: React.FC = () => {
       {/* min-h-0 を追加してグラフ描画時のサイズ計算を安定化 */}
       <main className={`flex-1 overflow-y-auto bg-slate-50 relative min-h-0 ${showAuthModal ? 'pointer-events-none opacity-50' : ''}`}>
         {activeTab === 'chat' ? (
-          <div className="p-4 space-y-4 pb-48">
+          <div className="p-4 space-y-4 pb-48 lg:p-6 xl:p-8">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${m.role === 'user' ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>

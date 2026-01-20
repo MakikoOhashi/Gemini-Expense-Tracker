@@ -215,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="p-4 pb-24 space-y-6 overflow-x-hidden">
+    <div className="p-4 pb-24 space-y-6 overflow-x-hidden lg:p-6 xl:p-8">
       {/* タイトル・説明文 */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">

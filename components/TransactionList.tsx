@@ -153,7 +153,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
   };
 
   return (
-    <div className="p-4 space-y-3 pb-24">
+    <div className="p-4 space-y-3 pb-24 lg:p-6 xl:p-8">
       <div className="flex flex-col gap-3 mb-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-700">取引履歴</h2>
@@ -163,7 +163,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
         </div>
 
         {/* Filters and Sorting Controls */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FunnelIcon className="h-4 w-4 text-gray-400" />

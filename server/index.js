@@ -1543,11 +1543,14 @@ app.post('/api/update-transaction', async (req, res) => {
       return res.status(400).json({ error: '必須フィールドが不足しています' });
     }
 
-    // Determine sheet based on type
-    const sheetType = type === 'income' ? 'Income' : 'Expenses';
+    // Determine tab based on type and year
     const currentYear = new Date(date).getFullYear();
+    const tabName = type === 'income' ? `${currentYear}_Income` : `${currentYear}_Expenses`;
 
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    // Get the base Gemini_Expenses spreadsheet
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, currentYear, userId);
+
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
@@ -1565,12 +1568,19 @@ app.post('/api/update-transaction', async (req, res) => {
       return res.status(400).json({ error: '無効なIDです' });
     }
 
-    const range = `${sheetType}!A${rowNumber}:E${rowNumber}`;
-    
-    // 更新する値
-    const values = [[date, amount, category, memo || '', receiptUrl || '']];
+    const range = `${tabName}!A${rowNumber}:${type === 'income' ? 'F' : 'E'}${rowNumber}`;
 
-    console.log(`🔄 トランザクション更新: ${sheetType}!${range}`, values);
+    // 更新する値
+    let values;
+    if (type === 'income') {
+      // Income tab: A: date, B: amount, C: payerName, D: withholdingTax, E: memo, F: receipt_url
+      values = [[date, amount, '', 0, memo || '', receiptUrl || '']]; // payerName and withholdingTax not handled in update
+    } else {
+      // Expenses tab: A: date, B: amount, C: category, D: memo, E: receipt_url
+      values = [[date, amount, category, memo || '', receiptUrl || '']];
+    }
+
+    console.log(`🔄 トランザクション更新: ${tabName}!${range}`, values);
 
     await sheets.spreadsheets.values.update({
       spreadsheetId,
@@ -1607,32 +1617,33 @@ app.post('/api/expenses', async (req, res) => {
       return res.status(400).json({ error: '必須フィールドが不足しています' });
     }
 
-    // Determine sheet based on type
-    const sheetType = type === 'income' ? 'Income' : 'Expenses';
+    // Determine tab based on type and year
+    const transactionYear = new Date(date).getFullYear();
+    const tabName = type === 'income' ? `${transactionYear}_Income` : `${transactionYear}_Expenses`;
     const message = type === 'income' ? '収入データが保存されました' : '支出データが保存されました';
 
-    // Ensure spreadsheet exists for the year of the transaction date
-    const transactionYear = new Date(date).getFullYear();
+    // Get the base Gemini_Expenses spreadsheet and ensure year-specific tabs exist
     console.log(`💾 データを保存しようとしています: 年=${transactionYear}, type=${type}, category=${category}`);
-    const spreadsheetId = await ensureSpreadsheet(transactionYear, userId);
-    console.log(`💾 スプレッドシートID取得: ${spreadsheetId}`);
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, transactionYear, userId);
+    console.log(`💾 スプレッドシートID取得: ${spreadsheetId}, タブ: ${tabName}`);
 
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Append data to appropriate sheet
+    // Append data to appropriate year-specific tab
     let values, range;
     if (type === 'income') {
-      // Income sheet: A: date, B: amount, C: payerName, D: withholdingTax, E: memo, F: receipt_url
+      // Income tab: A: date, B: amount, C: payerName, D: withholdingTax, E: memo, F: receipt_url
       values = [[date, amount, payerName || '', withholdingTax || 0, memo || '', receipt_url || '']];
-      range = `${sheetType}!A:F`;
+      range = `${tabName}!A:F`;
     } else {
-      // Expenses sheet: A: date, B: amount, C: category, D: memo, E: receipt_url
+      // Expenses tab: A: date, B: amount, C: category, D: memo, E: receipt_url
       values = [[date, amount, category, memo || '', receipt_url || '']];
-      range = `${sheetType}!A:E`;
+      range = `${tabName}!A:E`;
     }
 
-    console.log(`💾 シート"${sheetType}"にデータを追加: ${JSON.stringify(values)}`);
+    console.log(`💾 タブ"${tabName}"にデータを追加: ${JSON.stringify(values)}`);
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
@@ -1645,7 +1656,7 @@ app.post('/api/expenses', async (req, res) => {
     const updatedRange = response.data.updates?.updatedRange;
     let rowNumber = null;
     if (updatedRange) {
-      // Extract row number from range like "Expenses!A123:E123" or "Income!A123:F123"
+      // Extract row number from range like "2026_Expenses!A123:E123" or "2026_Income!A123:F123"
       const match = updatedRange.match(/!A(\d+):[EF]\d+/);
       if (match) {
         rowNumber = parseInt(match[1]);
@@ -1654,9 +1665,9 @@ app.post('/api/expenses', async (req, res) => {
 
     console.log(`💾 ${type === 'income' ? '収入' : '支出'}データを保存: ${category} - ¥${amount} (${rowNumber ? `行${rowNumber}` : ''})`);
 
-    // Generate proper ID format (exp_5 or inc_5)
+    // Generate proper ID format (2026exp-5 or 2026inc-5)
     const idPrefix = type === 'income' ? 'inc' : 'exp';
-    const generatedId = rowNumber ? `${idPrefix}_${rowNumber}` : null;
+    const generatedId = rowNumber ? `${transactionYear}${idPrefix}-${rowNumber}` : null;
 
     console.log(`💾 Generated ID: ${generatedId}`);
 

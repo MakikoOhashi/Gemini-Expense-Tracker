@@ -530,26 +530,35 @@ const App: React.FC = () => {
         console.log('⚠️ No actions in response, trying manual extraction from reply');
 
         const reply = response.reply || '';
-        const amountMatch = reply.match(/(\d{1,3}(?:,\d{3})*|\d+)円/);
-        const categoryMatch = reply.match(/(売上|経費|支出|収入|食費|交通費|消耗品費|通信費|外注費|食事代|ソフトウェア・サブスク費|事務所家賃|地代家賃|光熱費|雑費)/);
 
-        if (amountMatch && categoryMatch) {
-          const amount = parseInt(amountMatch[1].replace(/,/g, ''));
-          const category = categoryMatch[1];
-          const description = reply.replace(/.*?(?:として|の)/, '').replace(/\d+円.*$/, '').trim();
-
-          extractedAction = {
-            type: 'ADD_TRANSACTION',
-            data: {
-              amount: amount,
-              category: category,
-              description: description || '内容なし'
-            }
-          };
-
-          console.log('🔧 Manual extraction successful:', extractedAction);
+        // 保存完了メッセージの場合 → 何もしない（既に保存されている）
+        if (reply.includes('保存完了') || reply.includes('保存しました')) {
+          console.log('ℹ️ Save confirmation detected - transaction already saved');
+          // 既に保存されているので何もしない
+          extractedAction = null;
         } else {
-          console.log('❌ Manual extraction failed');
+          // 通常の取引データ抽出
+          const amountMatch = reply.match(/(\d{1,3}(?:,\d{3})*|\d+)円/);
+          const categoryMatch = reply.match(/(売上|経費|支出|収入|食費|交通費|消耗品費|通信費|外注費|食事代|ソフトウェア・サブスク費|事務所家賃|地代家賃|光熱費|雑費)/);
+
+          if (amountMatch && categoryMatch) {
+            const amount = parseInt(amountMatch[1].replace(/,/g, ''));
+            const category = categoryMatch[1];
+            const description = reply.replace(/.*?(?:として|の)/, '').replace(/\d+円.*$/, '').trim();
+
+            extractedAction = {
+              type: 'ADD_TRANSACTION',
+              data: {
+                amount: amount,
+                category: category,
+                description: description || '内容なし'
+              }
+            };
+
+            console.log('🔧 Manual extraction successful:', extractedAction);
+          } else {
+            console.log('❌ Manual extraction failed - no recognizable patterns found');
+          }
         }
       }
 

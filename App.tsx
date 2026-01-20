@@ -45,7 +45,7 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isYearSelectionModalOpen, setIsYearSelectionModalOpen] = useState(false);
   const [selectedTaxYear, setSelectedTaxYear] = useState<number | null>(null);
-  const [selectedAuditYear, setSelectedAuditYear] = useState<number>(2025);
+  const [selectedAuditYear, setSelectedAuditYear] = useState<number | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -691,6 +691,8 @@ const App: React.FC = () => {
 
   const handleAuditYearSelect = (year: number) => {
     setSelectedAuditYear(year);
+    setIsAuditYearSelectionModalOpen(false);
+    setActiveTab('dashboard');
   };
 
   const getAvailableYears = (): number[] => {
@@ -1100,7 +1102,13 @@ const App: React.FC = () => {
             }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
               <ReceiptPercentIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">確定申告</span>
             </button>
-            <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
+            <button onClick={() => {
+              if (selectedAuditYear === null) {
+                setIsAuditYearSelectionModalOpen(true);
+              } else {
+                setActiveTab('dashboard');
+              }
+            }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'dashboard' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -1135,6 +1143,7 @@ const App: React.FC = () => {
           setIsAuditYearSelectionModalOpen(false);
         }}
         availableYears={getAvailableYears()}
+        type="audit"
       />
 
       {/* Folder Conflict Modal */}

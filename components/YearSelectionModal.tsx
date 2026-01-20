@@ -6,17 +6,20 @@ interface YearSelectionModalProps {
   onClose: () => void;
   onSelectYear: (year: number) => void;
   availableYears: number[];
+  type?: 'tax' | 'audit';
 }
 
 const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
   isOpen,
   onClose,
   onSelectYear,
-  availableYears
+  availableYears,
+  type = 'tax'
 }) => {
   if (!isOpen) return null;
 
   const currentYear = new Date().getFullYear();
+  const isAudit = type === 'audit';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -24,7 +27,9 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
             <CalendarDaysIcon className="w-5 h-5 text-slate-900" />
-            <h2 className="font-bold text-gray-800">確定申告年度選択</h2>
+            <h2 className="font-bold text-gray-800">
+              {isAudit ? '監査予報年度選択' : '確定申告年度選択'}
+            </h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition">
             <XMarkIcon className="w-6 h-6 text-gray-500" />
@@ -34,7 +39,10 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
         <div className="flex-1 overflow-y-auto p-4">
           <div className="text-center mb-6">
             <p className="text-sm text-gray-600">
-              確定申告に使用する年度のデータを選択してください
+              {isAudit
+                ? '監査予報に使用する年度のデータを選択してください'
+                : '確定申告に使用する年度のデータを選択してください'
+              }
             </p>
           </div>
 
@@ -74,8 +82,10 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-sm text-amber-800">
               <span className="font-bold">注意：</span>
-              選択した年度の取引データのみが確定申告書に反映されます。
-              他の年度のデータは除外されます。
+              {isAudit
+                ? '選択した年度の取引データのみが監査予報に使用されます。他の年度のデータは除外されます。'
+                : '選択した年度の取引データのみが確定申告書に反映されます。他の年度のデータは除外されます。'
+              }
             </p>
           </div>
         </div>

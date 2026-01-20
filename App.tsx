@@ -685,7 +685,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden relative lg:mx-8 xl:mx-16 2xl:mx-24">
+    <div className="flex flex-col h-screen bg-white overflow-hidden relative">
       {/* Authentication Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -758,7 +758,9 @@ const App: React.FC = () => {
 
       {/* min-h-0 を追加してグラフ描画時のサイズ計算を安定化 */}
       <main className={`flex-1 overflow-y-auto bg-slate-50 relative min-h-0 ${showAuthModal ? 'pointer-events-none opacity-50' : ''}`}>
-        {activeTab === 'chat' ? (
+        {/* Responsive container - full width on mobile, constrained on desktop */}
+        <div className="w-full lg:max-w-6xl lg:mx-auto lg:px-4">
+          {activeTab === 'chat' ? (
           <div className="p-4 space-y-4 pb-48 lg:p-6 xl:p-8">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -1009,6 +1011,7 @@ const App: React.FC = () => {
             onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))}
           />
         )}
+        </div>
       </main>
 
       {activeTab === 'chat' && (

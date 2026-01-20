@@ -1020,39 +1020,41 @@ const App: React.FC = () => {
 
       {activeTab === 'chat' && (
         <div className="bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
-          <div className="px-4 pt-3 flex gap-2 overflow-x-auto no-scrollbar">
-            {QUICK_ACTIONS.map((action, i) => (
-              <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-900 text-[11px] font-bold shadow-sm hover:bg-slate-50 transition active:scale-95">
-                <action.icon className="w-3.5 h-3.5" /> {action.label}
-              </button>
-            ))}
-          </div>
-          <div className="p-4">
-            {selectedImage && (
-              <div className="mb-3 relative inline-block animate-in zoom-in-50 duration-200">
-                <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-md" alt="添付" />
-                <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg active:scale-90 transition">
-                  <XMarkIcon className="w-4 h-4" />
+          <div className="w-full lg:max-w-5xl lg:mx-auto lg:px-6 px-4">
+            <div className="pt-3 flex gap-2 overflow-x-auto no-scrollbar">
+              {QUICK_ACTIONS.map((action, i) => (
+                <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-900 text-[11px] font-bold shadow-sm hover:bg-slate-50 transition active:scale-95">
+                  <action.icon className="w-3.5 h-3.5" /> {action.label}
+                </button>
+              ))}
+            </div>
+            <div className="p-4">
+              {selectedImage && (
+                <div className="mb-3 relative inline-block animate-in zoom-in-50 duration-200">
+                  <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-md" alt="添付" />
+                  <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg active:scale-90 transition">
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-end gap-2">
+                <button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 transition active:scale-95">
+                  <CameraIcon className="w-6 h-6" />
+                  <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
+                </button>
+                <textarea
+                  ref={textareaRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="メッセージ..."
+                  className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium"
+                  rows={1}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
+                />
+                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage)} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 active:scale-90 transition">
+                  <PaperAirplaneIcon className="w-6 h-6" />
                 </button>
               </div>
-            )}
-            <div className="flex items-end gap-2">
-              <button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 transition active:scale-95">
-                <CameraIcon className="w-6 h-6" />
-                <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
-              </button>
-              <textarea
-                ref={textareaRef}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="メッセージ..."
-                className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium"
-                rows={1}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
-              />
-              <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage)} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition">
-                <PaperAirplaneIcon className="w-6 h-6" />
-              </button>
             </div>
           </div>
         </div>

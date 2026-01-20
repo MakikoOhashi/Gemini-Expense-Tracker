@@ -104,10 +104,23 @@ const App: React.FC = () => {
 
           // Transaction型に変換（年度情報を含めたユニークなIDを生成）
           const mappedTransactions: Transaction[] = response.map((t: any, index: number) => {
-            // サーバーID (例: "exp_2", "inc_3") から行番号を抽出し、年度プレフィックスを付けてユニーク化
-            const rowNumber = t.id.split('_')[1]; // "exp_2" → "2"
-            const typePrefix = t.type === 'income' ? 'inc' : 'exp'; // "income" → "inc", "expense" → "exp"
-            const uniqueId = `${year}${typePrefix}-${rowNumber}`; // 例: "2026inc-2"
+            // サーバーIDから行番号を抽出（新しい形式 "2026exp-5" または古い形式 "exp_5" に対応）
+            let rowNumber;
+            if (t.id.includes('-')) {
+              // 新しい形式: "2026exp-5" → "5"
+              rowNumber = t.id.split('-')[1];
+            } else {
+              // 古い形式: "exp_5" → "5"
+              rowNumber = t.id.split('_')[1];
+            }
+
+            // rowNumber が undefined の場合はフォールバック（ユニークなIDを生成）
+            if (!rowNumber || rowNumber === 'undefined') {
+              rowNumber = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+
+            const typePrefix = t.type === 'income' ? 'inc' : 'exp';
+            const uniqueId = `${year}${typePrefix}-${rowNumber}`;
 
             return {
               id: uniqueId,

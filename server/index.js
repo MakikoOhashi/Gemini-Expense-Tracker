@@ -1666,8 +1666,11 @@ app.post('/api/expenses', async (req, res) => {
     console.log(`💾 ${type === 'income' ? '収入' : '支出'}データを保存: ${category} - ¥${amount} (${rowNumber ? `行${rowNumber}` : ''})`);
 
     // Generate proper ID format (2026exp-5 or 2026inc-5)
+    // If row number extraction fails, use timestamp as fallback to ensure uniqueness
     const idPrefix = type === 'income' ? 'inc' : 'exp';
-    const generatedId = rowNumber ? `${transactionYear}${idPrefix}-${rowNumber}` : null;
+    const generatedId = rowNumber
+      ? `${transactionYear}${idPrefix}-${rowNumber}`
+      : `${transactionYear}${idPrefix}-${Date.now()}`;
 
     console.log(`💾 Generated ID: ${generatedId}`);
 

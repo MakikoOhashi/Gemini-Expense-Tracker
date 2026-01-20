@@ -81,6 +81,9 @@ function getAuthenticatedClient(userId) {
 // Global cache for spreadsheet IDs by year
 const spreadsheetCache = new Map();
 
+// Cache for base Gemini_Expenses spreadsheet creation (to prevent duplicate initialization)
+const baseSpreadsheetCache = new Map();
+
 // Folder cache for folder IDs (to avoid repeated Drive API calls)
 const folderCache = new Map();
 
@@ -650,84 +653,274 @@ async function searchOrCreateFolder(folderName, parentFolderId, userId) {
   }
 }
 
-// Helper function to create spreadsheet in specific folder
-async function createSpreadsheet(name, parentFolderId, userId) {
+// Global initialization lock to prevent concurrent spreadsheet creation
+let initializationLock = null;
+
+// Helper function to create or update spreadsheet with year-specific tabs
+async function createOrUpdateSpreadsheetWithYearTabs(parentFolderId, year, userId) {
+  const baseSpreadsheetName = 'Gemini_Expenses';
+  const cacheKey = `${userId}_${parentFolderId}`;
+
+  // Check cache first - if we have a cached result, use it
+  if (baseSpreadsheetCache.has(cacheKey)) {
+    const cached = baseSpreadsheetCache.get(cacheKey);
+    console.log(`📋 キャッシュから${baseSpreadsheetName}スプレッドシートを取得: ${cached.spreadsheetId}`);
+
+    // Ensure year-specific tabs exist even if cached
+    await addYearSpecificTabs(cached.spreadsheetId, year, userId);
+
+    return cached;
+  }
+
+  // Check if initialization is already in progress
+  if (initializationLock === cacheKey) {
+    console.log(`⏳ 初期化が進行中です、完了を待っています: ${cacheKey}`);
+
+    // Wait for the lock to be released (simple polling)
+    while (initializationLock === cacheKey) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Now check cache again
+    if (baseSpreadsheetCache.has(cacheKey)) {
+      const cached = baseSpreadsheetCache.get(cacheKey);
+
+      // Ensure year-specific tabs exist even if cached
+      await addYearSpecificTabs(cached.spreadsheetId, year, userId);
+
+      return cached;
+    }
+  }
+
+  // Acquire lock
+  initializationLock = cacheKey;
+
+  try {
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+    const drive = google.drive({ version: 'v3', auth: client });
+
+    // Step 1: 既存の "Gemini_Expenses" スプレッドシートを検索
+    const searchQuery = `name='${baseSpreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and '${parentFolderId}' in parents and trashed=false`;
+    console.log(`🔍 既存スプレッドシート検索: ${searchQuery}`);
+
+    const searchResponse = await drive.files.list({
+      q: searchQuery,
+      fields: 'files(id, name)',
+    });
+
+    let spreadsheetId;
+    let isNew = false;
+
+    if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+      // 既存スプレッドシートが見つかった場合
+      spreadsheetId = searchResponse.data.files[0].id;
+      console.log(`📊 ✅ 既存の${baseSpreadsheetName}スプレッドシートを見つけました: ${spreadsheetId}`);
+
+      // 年別タブを追加
+      await addYearSpecificTabs(spreadsheetId, year, userId);
+    } else {
+      // 新規スプレッドシート作成
+      console.log(`📊 ⚠️ ${baseSpreadsheetName}スプレッドシートが見つからないため新規作成します`);
+
+      const createResponse = await sheets.spreadsheets.create({
+        requestBody: {
+          properties: {
+            title: baseSpreadsheetName,
+          },
+          sheets: [
+            {
+              properties: {
+                title: 'Rules',
+                sheetType: 'GRID',
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: 4,
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      spreadsheetId = createResponse.data.spreadsheetId;
+      isNew = true;
+      console.log(`📊 🆕 新しい${baseSpreadsheetName}スプレッドシートを作成しました: ${spreadsheetId}`);
+
+      // 作成したスプレッドシートをルートフォルダに移動
+      await moveFileToParent(spreadsheetId, parentFolderId, userId);
+      console.log(`📁 スプレッドシートをルートフォルダに移動しました: ${parentFolderId}`);
+
+      // Rules シート初期化
+      await initializeRulesSheet(spreadsheetId, userId);
+
+      // 年別タブを追加
+      await addYearSpecificTabs(spreadsheetId, year, userId);
+    }
+
+    const result = {
+      spreadsheetId,
+      spreadsheetName: baseSpreadsheetName,
+      isNew
+    };
+
+    // Cache the result
+    baseSpreadsheetCache.set(cacheKey, result);
+
+    return result;
+
+  } catch (error) {
+    console.error('スプレッドシート作成/更新エラー:', error);
+    throw error;
+  } finally {
+    // Release lock
+    if (initializationLock === cacheKey) {
+      initializationLock = null;
+    }
+  }
+}
+
+// Helper function to add year-specific tabs to existing spreadsheet
+async function addYearSpecificTabs(spreadsheetId, year, userId) {
   const client = await getAuthenticatedClient(userId);
   const sheets = google.sheets({ version: 'v4', auth: client });
 
   try {
-    const currentYear = new Date().getFullYear();
-
-    // Create spreadsheet
-    const createResponse = await sheets.spreadsheets.create({
-      requestBody: {
-        properties: {
-          title: name,
-        },
-        sheets: [
-          {
-            properties: {
-              title: 'Expenses',
-              sheetType: 'GRID',
-              gridProperties: {
-                rowCount: 10000,
-                columnCount: 5,
-              },
-            },
-          },
-          {
-            properties: {
-              title: 'Income',
-              sheetType: 'GRID',
-              gridProperties: {
-                rowCount: 10000,
-                columnCount: 5,
-              },
-            },
-          },
-          {
-            properties: {
-              title: 'Summary',
-              sheetType: 'GRID',
-              gridProperties: {
-                rowCount: 150,
-                columnCount: 12,
-              },
-            },
-          },
-          {
-            properties: {
-              title: 'Rules',
-              sheetType: 'GRID',
-              gridProperties: {
-                rowCount: 1000,
-                columnCount: 4,
-              },
-            },
-          },
-        ],
-      },
+    // 現在のシート構成を確認
+    const spreadsheetResponse = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties'
     });
 
-    const spreadsheetId = createResponse.data.spreadsheetId;
-    console.log(`📊 スプレッドシート作成しました: ${name} (${spreadsheetId})`);
+    const existingSheets = spreadsheetResponse.data.sheets || [];
+    const existingSheetTitles = existingSheets.map(s => s.properties?.title);
 
-    // Move to parent folder
-    await moveFileToParent(spreadsheetId, parentFolderId, userId);
-    console.log(`📁 スプレッドシートをフォルダに移動しました: ${parentFolderId}`);
+    console.log(`📊 既存シート確認: ${existingSheetTitles.join(', ')}`);
 
-    // Initialize sheets
-    await initializeSheets(spreadsheetId, currentYear, userId);
-    console.log(`📊 スプレッドシート初期化完了: ${currentYear}年度`);
+    const yearExpenseTabName = `${year}_Expenses`;
+    const yearIncomeTabName = `${year}_Income`;
 
-    return {
+    // 追加が必要なタブをチェック
+    const tabsToAdd = [];
+
+    if (!existingSheetTitles.includes(yearExpenseTabName)) {
+      tabsToAdd.push({
+        properties: {
+          title: yearExpenseTabName,
+          sheetType: 'GRID',
+          gridProperties: {
+            rowCount: 10000,
+            columnCount: 5,
+          },
+        },
+      });
+    }
+
+    if (!existingSheetTitles.includes(yearIncomeTabName)) {
+      tabsToAdd.push({
+        properties: {
+          title: yearIncomeTabName,
+          sheetType: 'GRID',
+          gridProperties: {
+            rowCount: 10000,
+            columnCount: 6,
+          },
+        },
+      });
+    }
+
+    if (tabsToAdd.length === 0) {
+      console.log(`✅ ${year}年度のタブは既に存在します`);
+      return;
+    }
+
+    // 新しいタブを追加
+    const addSheetRequests = tabsToAdd.map(tab => ({
+      addSheet: {
+        properties: tab.properties
+      }
+    }));
+
+    await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
-      spreadsheetName: name,
-      isNew: true
-    };
+      resource: { requests: addSheetRequests }
+    });
+
+    console.log(`✅ ${year}年度のタブを追加しました: ${tabsToAdd.map(t => t.properties.title).join(', ')}`);
+
+    // 年別タブの初期化
+    await initializeYearSpecificSheets(spreadsheetId, year, userId);
 
   } catch (error) {
-    console.error('スプレッドシート作成エラー:', error);
+    console.error('年別タブ追加エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to initialize Rules sheet only
+async function initializeRulesSheet(spreadsheetId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  try {
+    // Initialize Rules sheet with headers and sample data
+    const rulesHeaders = [['Keyword', 'Category', 'Confidence', 'Notes']];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Rules!A1:D1',
+      valueInputOption: 'RAW',
+      resource: { values: rulesHeaders },
+    });
+
+    // Rules data - minimal example
+    const sampleRules = [
+      ['Amazon', '消耗品費', 75, 'オンラインショッピング'],
+      ['Slack', '通信費', 90, 'サブスクリプション'],
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Rules!A2:D3',
+      valueInputOption: 'RAW',
+      resource: { values: sampleRules },
+    });
+
+    console.log(`📊 Rulesシート初期化完了`);
+  } catch (error) {
+    console.error('Rulesシート初期化エラー:', error);
+    throw error;
+  }
+}
+
+// Helper function to initialize year-specific sheets
+async function initializeYearSpecificSheets(spreadsheetId, year, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  try {
+    const yearExpenseTabName = `${year}_Expenses`;
+    const yearIncomeTabName = `${year}_Income`;
+
+    // Initialize year-specific Expenses sheet with headers
+    const expensesHeaders = [['日付', '金額', 'カテゴリ', 'メモ', 'レシートURL']];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${yearExpenseTabName}!A1:E1`,
+      valueInputOption: 'RAW',
+      resource: { values: expensesHeaders },
+    });
+
+    // Initialize year-specific Income sheet with headers
+    const incomeHeaders = [['日付', '金額', '支払者名', '源泉徴収税額', 'メモ', 'レシートURL']];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${yearIncomeTabName}!A1:F1`,
+      valueInputOption: 'RAW',
+      resource: { values: incomeHeaders },
+    });
+
+    console.log(`📊 ${year}年度のExpenses & Incomeタブ初期化完了`);
+  } catch (error) {
+    console.error('年別タブ初期化エラー:', error);
     throw error;
   }
 }
@@ -894,9 +1087,9 @@ app.post('/api/initialize', async (req, res) => {
     const rootFolder = await searchOrCreateFolder('Gemini Expense Tracker', null, userId);
     console.log(`✅ Step 1 完了: rootFolderId = ${rootFolder.id}`);
 
-    // Step 2: createSpreadsheet('2026_Expenses', rootFolderId) → スプレッドシート作成 & シート初期化
-    console.log('2️⃣ Step 2: スプレッドシート作成');
-    const spreadsheetResult = await createSpreadsheet(spreadsheetName, rootFolder.id, userId);
+    // Step 2: createOrUpdateSpreadsheetWithYearTabs(rootFolderId, currentYear) → スプレッドシート作成/更新 & 年別タブ追加
+    console.log('2️⃣ Step 2: スプレッドシート作成/更新');
+    const spreadsheetResult = await createOrUpdateSpreadsheetWithYearTabs(rootFolder.id, currentYear, userId);
     console.log(`✅ Step 2 完了: spreadsheetId = ${spreadsheetResult.spreadsheetId}`);
 
     // Step 3: createFolder('Receipts', rootFolderId) → Receipts フォルダ作成 & 月別フォルダ生成
@@ -968,17 +1161,20 @@ app.get('/api/rules', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
     const year = parseInt(req.query.year) || new Date().getFullYear();
-    
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+
+    // Get the base Gemini_Expenses spreadsheet (rules are shared across all years)
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
+
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
-    
+
     // Rules シートから全ルールを取得
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: 'Rules!A2:E',
     });
-    
+
     const rows = response.data.values || [];
     const rules = rows.map((row, index) => ({
       id: `rule_${index + 2}`,
@@ -987,17 +1183,17 @@ app.get('/api/rules', async (req, res) => {
       confidence: parseInt(row[2]) || 0,
       notes: row[3] || '',
     }));
-    
-    res.json({ 
+
+    res.json({
       success: true,
       rules,
       count: rules.length
     });
   } catch (error) {
     console.error('Get Rules Error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -1134,10 +1330,10 @@ app.get('/api/expenses', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
-    
+
     // Check for folder conflicts first
     const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
-    
+
     // Check if result is a conflict info object
     if (typeof folderResult === 'object' && folderResult.isFolderAmbiguous === true) {
       console.log('📁 フォルダ競合を検出 - 早期リターン');
@@ -1147,31 +1343,33 @@ app.get('/api/expenses', async (req, res) => {
         folderConflict: folderResult.folderConflict
       });
     }
-    
+
     // folderResult is a folder ID (string)
     const rootFolderId = folderResult;
     console.log(`🔍 ルートフォルダID: ${rootFolderId}`);
 
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    // Get or create the base Gemini_Expenses spreadsheet with year-specific tabs
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Get all data from Expenses sheet
+    // Get all data from year-specific Expenses tab
+    const yearExpenseTabName = `${year}_Expenses`;
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Expenses!A2:E',
+      range: `${yearExpenseTabName}!A2:E`,
     });
 
     const rows = response.data.values || [];
-    console.log('📊 /api/expenses 取得データ:');
+    console.log(`📊 /api/expenses ${year}年度 ${yearExpenseTabName} 取得データ:`);
     console.log('  行数:', rows.length);
     if (rows.length > 0) {
       console.log('  1行目:', rows[0]);
       console.log('  receiptUrl (row[4]):', rows[0]?.[4] || '(なし)');
     }
-    
+
     const expenses = rows.map((row, index) => {
-      const id = `exp_${index + 2}`;
+      const id = `${year}exp-${index + 2}`;
       console.log(`Generated expense ID: ${id} | date: ${row[0]}`);
       return {
         id,
@@ -1193,7 +1391,7 @@ app.get('/api/expenses', async (req, res) => {
     });
 
     console.log('Sample IDs:', expenses.slice(0, 3).map(e => e.id));
-    res.json({ 
+    res.json({
       expenses,
       isFolderAmbiguous: false,
       folderConflict: null
@@ -1201,7 +1399,7 @@ app.get('/api/expenses', async (req, res) => {
 
   } catch (error) {
     console.error('Get Expenses Error:', error);
-    // Check if it's a folder conflict error from getOrCreateSpreadsheetForYear
+    // Check if it's a folder conflict error
     if (error.isFolderAmbiguous) {
       return res.json({
         expenses: [],
@@ -1221,10 +1419,10 @@ app.get('/api/income', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
-    
+
     // Check for folder conflicts first
     const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
-    
+
     // Check if result is a conflict info object
     if (typeof folderResult === 'object' && folderResult.isFolderAmbiguous === true) {
       console.log('📁 フォルダ競合を検出 - 早期リターン');
@@ -1234,23 +1432,25 @@ app.get('/api/income', async (req, res) => {
         folderConflict: folderResult.folderConflict
       });
     }
-    
+
     // folderResult is a folder ID (string)
     const rootFolderId = folderResult;
     console.log(`🔍 ルートフォルダID: ${rootFolderId}`);
 
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    // Get or create the base Gemini_Expenses spreadsheet with year-specific tabs
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Get all data from Income sheet
+    // Get all data from year-specific Income tab
+    const yearIncomeTabName = `${year}_Income`;
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Income!A2:F',
+      range: `${yearIncomeTabName}!A2:F`,
     });
 
     const rows = response.data.values || [];
-    console.log('📊 /api/income 取得データ:');
+    console.log(`📊 /api/income ${year}年度 ${yearIncomeTabName} 取得データ:`);
     console.log('  行数:', rows.length);
     if (rows.length > 0) {
       console.log('  1行目:', rows[0]);
@@ -1288,7 +1488,7 @@ app.get('/api/income', async (req, res) => {
       if (!payerName) payerName = '未設定';
 
       return {
-        id: `inc_${index + 2}`,
+        id: `${year}inc-${index + 2}`,
         date: row.date,
         amount: row.amount,
         payerName: payerName,
@@ -1317,7 +1517,7 @@ app.get('/api/income', async (req, res) => {
 
   } catch (error) {
     console.error('Get Income Error:', error);
-    // Check if it's a folder conflict error from getOrCreateSpreadsheetForYear
+    // Check if it's a folder conflict error
     if (error.isFolderAmbiguous) {
       return res.json({
         income: [],

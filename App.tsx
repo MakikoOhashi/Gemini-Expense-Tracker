@@ -87,9 +87,9 @@ const App: React.FC = () => {
   const loadTransactions = useCallback(async () => {
     try {
       console.log('📊 Google Sheetsから取引データを取得中...');
-      // 現在の年度だけでなく、複数年度のデータを取得するように変更
+      // 当年度のみのデータを取得
       const currentYear = new Date().getFullYear();
-      const yearsToLoad = [currentYear - 1, currentYear, currentYear + 1]; // 前年度、当年度、次年度
+      const yearsToLoad = [currentYear]; // 当年度のみ
 
       let allTransactions: Transaction[] = [];
 

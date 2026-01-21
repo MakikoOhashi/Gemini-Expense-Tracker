@@ -2414,6 +2414,129 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
   }
 });
 
+// Generate summary endpoint
+app.post('/api/generate-summary', async (req, res) => {
+  try {
+    const { userId, year } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userIdは必須です' });
+    }
+
+    const currentYear = year || new Date().getFullYear();
+
+    console.log(`📊 Starting summary generation for user ${userId}, year ${currentYear}`);
+
+    // 1. ユーザー認証確認（トークンチェック）
+    if (!userTokens[userId]) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    // 2. lastSummaryGeneratedAt をJSTでチェック
+    const hasGeneratedToday = await userService.hasGeneratedSummaryToday(userId);
+    if (hasGeneratedToday) {
+      return res.status(429).json({
+        error: '本日の集計はすでに生成されています。明日再実行してください。'
+      });
+    }
+
+    // 3. Spreadsheet更新処理
+    console.log('📊 Generating summary for spreadsheet...');
+
+    // スプレッドシートを取得または作成
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // Summaryタブが存在するか確認、なければ作成
+    const spreadsheetResponse = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties'
+    });
+
+    const existingSheets = spreadsheetResponse.data.sheets || [];
+    const existingSheetTitles = existingSheets.map(s => s.properties?.title);
+    const hasSummarySheet = existingSheetTitles.includes('Summary');
+
+    if (!hasSummarySheet) {
+      // Summaryタブを作成
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        resource: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: 'Summary',
+                sheetType: 'GRID',
+                gridProperties: {
+                  rowCount: 150,
+                  columnCount: 12,
+                },
+              }
+            }
+          }]
+        }
+      });
+      console.log('📊 Created Summary sheet');
+    }
+
+    // Summaryタブの内容をクリア（全削除して再生成）
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: 'Summary!A:Z', // 広めにクリア
+    });
+
+    // JSTで現在日時を取得
+    const now = new Date();
+    const jstDate = new Date(now.getTime() + (now.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+    const generatedAt = jstDate.toISOString().replace('T', ' ').slice(0, 19) + ' JST';
+
+    // ダミーデータを書き込み（今後Step1計算式をここに入れる）
+    const summaryData = [
+      ['横断集計サマリー'],
+      [`Generated at: ${generatedAt}`],
+      [''], // 空行
+      ['※ 今後Step1計算式の実装予定']
+    ];
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary!A1',
+      valueInputOption: 'RAW',
+      resource: { values: summaryData },
+    });
+
+    console.log('📊 Summary data written to spreadsheet');
+
+    // 4. lastSummaryGeneratedAtを更新（JSTベース）
+    const todayJSTString = jstDate.toISOString().split('T')[0];
+    await userService.updateLastSummaryGeneratedAt(userId, todayJSTString);
+
+    console.log(`✅ Summary generation completed for user ${userId}`);
+
+    res.json({
+      success: true,
+      message: '横断集計を生成しました',
+      generatedAt: todayJSTString
+    });
+
+  } catch (error) {
+    console.error('Generate Summary Error:', error);
+
+    // 特定のエラーメッセージの場合
+    if (error.message?.includes('フォルダ名の重複') || error.message?.includes('Folder ambiguous')) {
+      return res.status(400).json({
+        error: 'フォルダ名の重複が検出されました。フォルダ設定を確認してください。'
+      });
+    }
+
+    res.status(500).json({
+      error: '集計生成に失敗しました',
+      details: error.message
+    });
+  }
+});
+
 // Get user document
 app.get('/api/user/:googleId', async (req, res) => {
   try {

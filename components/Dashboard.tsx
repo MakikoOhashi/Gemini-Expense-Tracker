@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon, LightBulbIcon } from '@heroicons/react/24/outline';
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
+import { sheetsService } from '../services/sheetsService';
 import AuditReasoningModal from './AuditReasoningModal';
 import { getTodayJSTString } from '../lib/dateUtils';
 
@@ -30,6 +31,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
@@ -199,6 +202,37 @@ const Dashboard: React.FC<DashboardProps> = ({
     setIsReasoningModalOpen(true);
   };
 
+  const handleGenerateSummary = async () => {
+    if (isGeneratingSummary) return;
+
+    setIsGeneratingSummary(true);
+    setSummaryError(null);
+
+    try {
+      const result = await sheetsService.generateSummary(selectedAuditYear);
+
+      if (result.success) {
+        console.log('✅ Summary generated successfully');
+        // 成功時はエラーメッセージをクリア（成功メッセージは表示しない）
+      } else {
+        setSummaryError('集計生成に失敗しました');
+      }
+    } catch (error: any) {
+      console.error('❌ Summary generation error:', error);
+
+      // エラーメッセージの処理
+      if (error.message?.includes('429') || error.message?.includes('明日再実行')) {
+        setSummaryError('本日の集計はすでに生成されています。明日再実行してください。');
+      } else if (error.message?.includes('認証')) {
+        setSummaryError('認証が必要です。再度ログインしてください。');
+      } else {
+        setSummaryError(error.message || '集計生成中にエラーが発生しました');
+      }
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   const getCheckTypeLabel = (type: '不足' | '確認' | '推奨') => {
     switch (type) {
       case '不足': return '領収書の添付が必要';
@@ -239,7 +273,50 @@ const Dashboard: React.FC<DashboardProps> = ({
         </p>
       </div>
 
-      {/* セクションA：年度選択ブロック */}
+      {/* セクションA：監査用横断集計を更新 */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            📊
+            監査用横断集計を更新
+          </h3>
+
+          {/* ボタン */}
+          <button
+            onClick={handleGenerateSummary}
+            disabled={isGeneratingSummary}
+            className={`px-6 py-2 text-white font-semibold rounded-lg transition flex items-center gap-2 text-sm ${
+              isGeneratingSummary
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-slate-900 hover:bg-slate-800 shadow-md hover:shadow-lg'
+            }`}
+          >
+            {isGeneratingSummary ? (
+              <>
+                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                更新中...
+              </>
+            ) : (
+              <>
+                <ArrowPathIcon className="w-4 h-4" />
+                更新
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* 説明文 */}
+        <p className="text-sm text-gray-600 leading-relaxed mb-3">
+          複数年度の取引データを横断集計し、監査用Summaryをスプレッドシートに作成します。<br />
+          本集計データをもとに、下記の監査予報を生成します。
+        </p>
+
+        {summaryError && (
+          <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3">{summaryError}</p>
+        )}
+      </div>
+
+      {/* セクションB：年度選択ブロック */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-bold text-slate-800">📅 選択された年度</h3>

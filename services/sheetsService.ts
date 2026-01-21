@@ -273,6 +273,30 @@ export class SheetsService {
       return false;
     }
   }
+
+  async generateSummary(year?: number): Promise<{ success: boolean; message: string }> {
+    try {
+      const currentYear = year || new Date().getFullYear();
+      const response = await fetch(`${this.baseUrl}/generate-summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: this.userId, year: currentYear }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '集計生成に失敗しました');
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('Generate Summary Error:', error);
+      throw new Error(error.message || 'ネットワークエラーが発生しました');
+    }
+  }
 }
 
 export const sheetsService = new SheetsService();

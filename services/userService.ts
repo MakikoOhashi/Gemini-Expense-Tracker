@@ -6,6 +6,7 @@ import { AuditForecastItem } from '../types';
 export interface UserDocument {
   last_access: { [year: string]: string }; // { "2025": "2026-01-19", "2026": "2026-01-18" }
   forecasts: { [year: string]: { date: string; results: AuditForecastItem[]; updatedAt: admin.firestore.FieldValue } }; // NORMALIZED FORMAT ONLY: { "2025": { date: "2026-01-19", results: [...], updatedAt: Timestamp } }
+  lastSummaryGeneratedAt?: string; // JST date string (YYYY-MM-DD) for daily limit
 }
 
 export interface ForecastResult {
@@ -339,6 +340,56 @@ export class UserService {
       console.log(`✅ Forecast saved successfully in normalized format for ${googleId}, year: ${year}, date: ${date}`);
     } catch (error) {
       console.error('Error saving forecast:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 最後の集計生成日時を取得（JSTベース）
+   */
+  async getLastSummaryGeneratedAt(googleId: string): Promise<string | null> {
+    try {
+      const userDoc = await this.getUserDocument(googleId);
+      return userDoc?.lastSummaryGeneratedAt || null;
+    } catch (error) {
+      console.error('Error getting last summary generated date:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 最後の集計生成日時を更新（JSTベース）
+   */
+  async updateLastSummaryGeneratedAt(googleId: string, generatedAt: string): Promise<void> {
+    try {
+      await this.createOrUpdateUserDocument(googleId, {
+        lastSummaryGeneratedAt: generatedAt
+      });
+      console.log(`📅 Updated last summary generated date for user ${googleId}: ${generatedAt}`);
+    } catch (error) {
+      console.error('Error updating last summary generated date:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 当日(JST)が集計生成済みかどうかをチェック
+   */
+  async hasGeneratedSummaryToday(googleId: string): Promise<boolean> {
+    try {
+      const lastGeneratedAt = await this.getLastSummaryGeneratedAt(googleId);
+      if (!lastGeneratedAt) {
+        return false;
+      }
+
+      // JSTで今日の日付を取得
+      const todayJST = new Date();
+      todayJST.setTime(todayJST.getTime() + (todayJST.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+      const todayString = todayJST.toISOString().split('T')[0];
+
+      return lastGeneratedAt === todayString;
+    } catch (error) {
+      console.error('Error checking daily summary generation limit:', error);
       throw error;
     }
   }

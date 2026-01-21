@@ -4,6 +4,7 @@ import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleI
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
 import { sheetsService } from '../services/sheetsService';
+import { authService } from '../services/authService';
 import AuditReasoningModal from './AuditReasoningModal';
 import { getTodayJSTString } from '../lib/dateUtils';
 
@@ -60,8 +61,20 @@ const Dashboard: React.FC<DashboardProps> = ({
       setIsLoading(true);
 
       try {
-        // キャッシュチェック用のパラメータを取得
-        const googleId = '117675493044504889175'; // 固定値
+        // Get real Google ID from authentication
+        const idToken = await authService.getIdToken();
+        if (!idToken) {
+          throw new Error('認証されていません');
+        }
+
+        // Extract Google ID from ID token via server API
+        const googleIdResponse = await fetch(`http://localhost:3001/api/user/last-summary-generated/${encodeURIComponent(idToken)}`);
+        const googleIdData = await googleIdResponse.json();
+        if (!googleIdResponse.ok) {
+          throw new Error(googleIdData.details || 'Google IDの取得に失敗しました');
+        }
+        const googleId = googleIdData.googleId;
+
         const year = selectedAuditYear.toString();
         const today = getTodayJSTString(); // "2026-01-21" 形式
 

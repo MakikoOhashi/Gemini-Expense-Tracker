@@ -312,7 +312,20 @@ export class SheetsService {
   async getSummaryMeta(year?: number): Promise<{ hasSummary: boolean; lastUpdated: string | null; message?: string }> {
     try {
       const currentYear = year || new Date().getFullYear();
-      const response = await fetch(`${this.baseUrl}/sheet/summary/meta?userId=${this.userId}&year=${currentYear}`);
+
+      // Get ID token from auth service to get real Google ID
+      const idToken = await authService.getIdToken();
+      if (!idToken) {
+        throw new Error('認証されていません');
+      }
+
+      // Get last summary generated date from Firestore via server API
+      const response = await fetch(`${this.baseUrl}/user/last-summary-generated/${encodeURIComponent(idToken)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       const result = await response.json();
 
@@ -320,10 +333,26 @@ export class SheetsService {
         throw new Error(result.error || '集計メタデータの取得に失敗しました');
       }
 
+      const lastUpdated = result.lastSummaryGeneratedAt;
+      const hasSummary = !!lastUpdated;
+
+      // Format for display: "YYYY-MM-DD HH:mm JST"
+      let formattedLastUpdated = null;
+      if (lastUpdated) {
+        // Handle Firestore Timestamp object or string
+        let dateString = lastUpdated;
+        if (typeof lastUpdated === 'object' && lastUpdated.toDate) {
+          // Firestore Timestamp object
+          dateString = lastUpdated.toDate().toISOString().split('T')[0];
+        }
+        // Format as "YYYY-MM-DD 00:00 JST"
+        formattedLastUpdated = `${dateString} 00:00`;
+      }
+
       return {
-        hasSummary: result.hasSummary,
-        lastUpdated: result.lastUpdated,
-        message: result.message
+        hasSummary,
+        lastUpdated: formattedLastUpdated,
+        message: hasSummary ? null : 'まず横断集計を生成してください'
       };
     } catch (error: any) {
       console.error('Get Summary Meta Error:', error);

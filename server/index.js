@@ -543,21 +543,8 @@ async function initializeSheets(spreadsheetId, year, userId) {
 
     console.log(`📊 ${year}年度Expenses & Incomeシート初期化完了`);
 
-    // Initialize Summary sheet with minimal data to avoid API quota limits
-    // Only initialize basic headers for now
-    try {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: 'Summary!A1',
-        valueInputOption: 'RAW',
-        resource: { values: [['年度別集計シート']] },
-      });
-      console.log(`📊 ${year}年度Summaryシート初期化（最小限）完了`);
-    } catch (summaryError) {
-      console.warn(`⚠️ Summaryシート初期化スキップ（API制限のため）:`, summaryError.message);
-    }
-
-    console.log(`📊 ${year}年度Summaryシート初期化完了`);
+    // Summary sheet is no longer initialized - using Firestore as single source of truth
+    console.log(`📊 ${year}年度スプレッドシート初期化完了（Summaryシートは使用せず）`);
 
     // Initialize Rules sheet with headers and sample data
     const rulesHeaders = [['Keyword', 'Category', 'Confidence', 'Notes']];
@@ -2444,111 +2431,16 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
   }
 });
 
-// Get summary metadata endpoint
+// Get summary metadata endpoint (deprecated - now using Firestore as single source of truth)
+/*
 app.get('/api/sheet/summary/meta', async (req, res) => {
-  try {
-    const userId = req.query.userId || 'test-user';
-    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
-
-    console.log(`📊 Getting summary metadata for user ${userId}, year ${year}`);
-
-    // 1. ユーザー認証確認（トークンチェック）
-    if (!userTokens[userId]) {
-      return res.status(401).json({ error: '認証が必要です' });
-    }
-
-    // 2. 統合されたGemini_Expensesスプレッドシートを取得
-    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
-    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
-    const client = await getAuthenticatedClient(userId);
-    const sheets = google.sheets({ version: 'v4', auth: client });
-
-    // 3. Summaryタブが存在するか確認
-    const spreadsheetResponse = await sheets.spreadsheets.get({
-      spreadsheetId,
-      fields: 'sheets.properties'
-    });
-
-    const existingSheets = spreadsheetResponse.data.sheets || [];
-    const existingSheetTitles = existingSheets.map(s => s.properties?.title);
-    const hasSummarySheet = existingSheetTitles.includes('Summary');
-
-    if (!hasSummarySheet) {
-      console.log('📊 Summary sheet does not exist');
-      return res.json({
-        success: true,
-        hasSummary: false,
-        lastUpdated: null,
-        message: 'まず横断集計を生成してください'
-      });
-    }
-
-    // 4. Summary!A1の値を取得
-    try {
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'Summary!A1:A2', // A1とA2を取得（日時情報がA1またはA2にある場合）
-      });
-
-      const values = response.data.values || [];
-      console.log('📊 Summary!A1:A2 values:', values);
-
-      // A1セルから日時情報を抽出（"Updated at: YYYY-MM-DD hh:mm (JST)"形式を想定）
-      let lastUpdated = null;
-      if (values.length > 0 && values[0] && values[0][0]) {
-        const cellValue = values[0][0];
-        console.log('📊 A1 cell value:', cellValue);
-
-        // "Updated at: 2026-01-21 09:42 (JST)"形式から日時を抽出
-        const match = cellValue.match(/Updated at:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*\(JST\)/);
-        if (match) {
-          lastUpdated = match[1];
-          console.log('📊 Extracted timestamp:', lastUpdated);
-        }
-      }
-
-      // A2セルからも確認（念のため）
-      if (!lastUpdated && values.length > 1 && values[1] && values[1][0]) {
-        const cellValue = values[1][0];
-        const match = cellValue.match(/Updated at:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*\(JST\)/);
-        if (match) {
-          lastUpdated = match[1];
-        }
-      }
-
-      res.json({
-        success: true,
-        hasSummary: true,
-        lastUpdated: lastUpdated,
-        message: lastUpdated ? null : 'まず横断集計を生成してください'
-      });
-
-    } catch (cellError) {
-      console.error('📊 Error reading Summary cells:', cellError);
-      res.json({
-        success: true,
-        hasSummary: true,
-        lastUpdated: null,
-        message: 'まず横断集計を生成してください'
-      });
-    }
-
-  } catch (error) {
-    console.error('Get Summary Meta Error:', error);
-
-    // 特定のエラーメッセージの場合
-    if (error.message?.includes('フォルダ名の重複') || error.message?.includes('Folder ambiguous')) {
-      return res.status(400).json({
-        error: 'フォルダ名の重複が検出されました。フォルダ設定を確認してください。'
-      });
-    }
-
-    res.status(500).json({
-      error: '集計メタデータの取得に失敗しました',
-      details: error.message
-    });
-  }
+  // This endpoint is deprecated. Use /api/user/last-summary-generated/:idToken instead
+  res.status(410).json({
+    error: 'このエンドポイントは廃止されました。Firestoreから直接取得してください。',
+    deprecated: true
+  });
 });
+*/
 
 // Generate summary endpoint
 app.post('/api/generate-summary', async (req, res) => {
@@ -2573,33 +2465,79 @@ app.post('/api/generate-summary', async (req, res) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
+    // JSTで今日の日付を取得（YYYY-MM-DD形式）
+    const now = new Date();
+    const todayJST = new Date(now.getTime() + (now.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+    const todayString = todayJST.toISOString().split('T')[0];
+
+    // Firestoreから最終生成日時を取得して1日1回制限をチェック
+    const lastGeneratedAt = await userService.getLastSummaryGeneratedAt(googleId);
+    if (lastGeneratedAt === todayString) {
+      return res.status(429).json({
+        error: '本日すでに横断集計済みです',
+        message: '本日すでに横断集計済みです'
+      });
+    }
+
     const auth = new google.auth.OAuth2();
     auth.setCredentials(tokens);
 
-    const now = new Date();
     const year = now.getFullYear().toString();
 
     // ユーザー設定からフォルダIDを取得
     const userDoc = await userService.getUserDocument(googleId);
     const folderId = userDoc?.settings?.folderId || null;
 
-    console.log('📁 Using folderId:', folderId); // デバッグ用
+    console.log('� Using folderId:', folderId); // デバッグ用
 
     // スプレッドシート作成/更新 (folderIdは文字列またはnull)
     await createOrUpdateSpreadsheetWithYearTabs(folderId, year, googleId);
 
-    // Firestoreに最終生成日時を保存
-    await userService.updateLastSummaryGeneratedAt(googleId, now);
+    // Firestoreに最終生成日時を保存（JSTの日付文字列）
+    await userService.updateLastSummaryGeneratedAt(googleId, todayString);
 
     res.json({
       success: true,
-      lastSummaryGeneratedAt: now.toISOString()
+      message: '横断集計生成が完了しました',
+      lastSummaryGeneratedAt: todayString
     });
   } catch (error) {
     console.error('Generate Summary Error:', error);
     res.status(500).json({
       error: 'Failed to generate summary',
       message: error.message
+    });
+  }
+});
+
+// Get last summary generated date for authenticated user
+app.get('/api/user/last-summary-generated/:idToken', async (req, res) => {
+  try {
+    const { idToken } = req.params;
+
+    if (!idToken) {
+      return res.status(400).json({ error: 'IDトークンは必須です' });
+    }
+
+    // Extract Google ID from ID token
+    const googleId = userService.extractSubFromIdToken(idToken);
+    if (!googleId) {
+      return res.status(401).json({ error: '無効なトークンです' });
+    }
+
+    const lastSummaryGeneratedAt = await userService.getLastSummaryGeneratedAt(googleId);
+
+    res.json({
+      success: true,
+      googleId,
+      lastSummaryGeneratedAt
+    });
+
+  } catch (error) {
+    console.error('Get Last Summary Generated Error:', error);
+    res.status(500).json({
+      error: '最終集計生成日の取得に失敗しました',
+      details: error.message
     });
   }
 });

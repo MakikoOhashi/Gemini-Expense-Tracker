@@ -1,10 +1,12 @@
 export interface AuthStatus {
   authenticated: boolean;
   userId: string;
+  idToken?: string | null;
 }
 
 export class AuthService {
   private baseUrl = 'http://localhost:3001';
+  private idToken: string | null = null;
 
   async checkAuthStatus(userId?: string): Promise<AuthStatus> {
     const params = userId ? `?userId=${userId}` : '';
@@ -40,6 +42,21 @@ export class AuthService {
     }
 
     return auth as 'success' | 'error' | null;
+  }
+
+  // Set ID token after successful authentication
+  setIdToken(token: string): void {
+    this.idToken = token;
+  }
+
+  // Get the current ID token
+  async getIdToken(): Promise<string | null> {
+    return this.idToken;
+  }
+
+  // Clear ID token on logout
+  clearIdToken(): void {
+    this.idToken = null;
   }
 }
 

@@ -166,6 +166,11 @@ const App: React.FC = () => {
         // Set userId in sheetsService
         sheetsService.setUserId(status.userId);
 
+        // Store ID token if available
+        if (status.idToken) {
+          authService.setIdToken(status.idToken);
+        }
+
         // Check for auth result from URL (一度だけ実行)
         const authResult = authService.checkAuthResult();
         if (authResult === 'success' && !messages.some(m => m.content.includes('Google アカウントとの連携が完了しました'))) {
@@ -179,6 +184,11 @@ const App: React.FC = () => {
           const updatedStatus = await authService.checkAuthStatus();
           setAuthStatus(updatedStatus);
           sheetsService.setUserId(updatedStatus.userId);
+
+          // Store updated ID token if available
+          if (updatedStatus.idToken) {
+            authService.setIdToken(updatedStatus.idToken);
+          }
         } else if (authResult === 'error' && !messages.some(m => m.content.includes('Google アカウントとの連携に失敗しました'))) {
           setMessages(prev => [...prev, {
             id: crypto.randomUUID(),
@@ -680,6 +690,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     try {
       await authService.logout();
+      authService.clearIdToken(); // Clear the ID token on logout
       setAuthStatus({ authenticated: false, userId: 'test-user' });
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),

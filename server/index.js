@@ -40,6 +40,15 @@ const SCOPES = [
 // In-memory token storage (in production, use a database)
 let userTokens = {};
 
+// Helper function to get authenticated Google ID
+function getAuthenticatedGoogleId(req) {
+  const userId = req.body.userId || req.query.userId;
+  if (!userId || !userTokens[userId]) {
+    return null; // Not authenticated
+  }
+  return userId; // This should be the Google ID (sub) after OAuth
+}
+
 // Vision API client (uses Application Default Credentials)
 const visionClient = new vision.ImageAnnotatorClient();
 
@@ -583,7 +592,10 @@ async function initializeSheets(spreadsheetId, year, userId) {
 app.post('/api/spreadsheet/:year', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
-    const userId = req.body.userId || 'test-user';
+    const userId = getAuthenticatedGoogleId(req);
+    if (!userId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
     if (isNaN(year) || year < 2000 || year > 2100) {
       return res.status(400).json({ error: '無効な年度です' });
     }
@@ -701,7 +713,13 @@ async function createOrUpdateSpreadsheetWithYearTabs(parentFolderId, year, userI
     const drive = google.drive({ version: 'v3', auth: client });
 
     // Step 1: 既存の "Gemini_Expenses" スプレッドシートを検索
-    const searchQuery = `name='${baseSpreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and '${parentFolderId}' in parents and trashed=false`;
+    // クエリ構築: parentFolderIdがnullの場合は親フォルダ条件を除外
+    let searchQuery = `name='${baseSpreadsheetName}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`;
+
+    if (parentFolderId) {
+      searchQuery += ` and '${parentFolderId}' in parents`;
+    }
+
     console.log(`🔍 既存スプレッドシート検索: ${searchQuery}`);
 
     const searchResponse = await drive.files.list({
@@ -747,9 +765,13 @@ async function createOrUpdateSpreadsheetWithYearTabs(parentFolderId, year, userI
       isNew = true;
       console.log(`📊 🆕 新しい${baseSpreadsheetName}スプレッドシートを作成しました: ${spreadsheetId}`);
 
-      // 作成したスプレッドシートをルートフォルダに移動
-      await moveFileToParent(spreadsheetId, parentFolderId, userId);
-      console.log(`📁 スプレッドシートをルートフォルダに移動しました: ${parentFolderId}`);
+      // 作成したスプレッドシートをルートフォルダに移動（parentFolderIdがあれば）
+      if (parentFolderId) {
+        await moveFileToParent(spreadsheetId, parentFolderId, userId);
+        console.log(`📁 スプレッドシートをルートフォルダに移動しました: ${parentFolderId}`);
+      } else {
+        console.log(`📁 parentFolderIdがnullのため、フォルダ移動をスキップします`);
+      }
 
       // Rules シート初期化
       await initializeRulesSheet(spreadsheetId, userId);
@@ -1074,7 +1096,10 @@ async function createSpreadsheetUnderParent(spreadsheetName, parentFolderId, yea
 
 app.post('/api/initialize', async (req, res) => {
   try {
-    const userId = req.body.userId || 'test-user';
+    const userId = getAuthenticatedGoogleId(req);
+    if (!userId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
     // クエリパラメータで年を指定可能（テスト用）
     const queryYear = req.query.year ? parseInt(req.query.year) : null;
     const currentYear = queryYear && !isNaN(queryYear) ? queryYear : new Date().getFullYear();
@@ -1997,9 +2022,14 @@ app.get('/auth/status', (req, res) => {
   const userId = req.query.userId || 'test-user';
   const isAuthenticated = !!userTokens[userId];
 
+  // Get the ID token for this user if available
+  const tokens = userTokens[userId];
+  const idToken = tokens?.id_token || null;
+
   res.json({
     authenticated: isAuthenticated,
-    userId: userId
+    userId: userId,
+    idToken: idToken
   });
 });
 
@@ -2414,41 +2444,26 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
   }
 });
 
-// Generate summary endpoint
-app.post('/api/generate-summary', async (req, res) => {
+// Get summary metadata endpoint
+app.get('/api/sheet/summary/meta', async (req, res) => {
   try {
-    const { userId, year } = req.body;
+    const userId = req.query.userId || 'test-user';
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
 
-    if (!userId) {
-      return res.status(400).json({ error: 'userIdは必須です' });
-    }
-
-    const currentYear = year || new Date().getFullYear();
-
-    console.log(`📊 Starting summary generation for user ${userId}, year ${currentYear}`);
+    console.log(`📊 Getting summary metadata for user ${userId}, year ${year}`);
 
     // 1. ユーザー認証確認（トークンチェック）
     if (!userTokens[userId]) {
       return res.status(401).json({ error: '認証が必要です' });
     }
 
-    // 2. lastSummaryGeneratedAt をJSTでチェック
-    const hasGeneratedToday = await userService.hasGeneratedSummaryToday(userId);
-    if (hasGeneratedToday) {
-      return res.status(429).json({
-        error: '本日の集計はすでに生成されています。明日再実行してください。'
-      });
-    }
-
-    // 3. Spreadsheet更新処理
-    console.log('📊 Generating summary for spreadsheet...');
-
-    // スプレッドシートを取得または作成
-    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(currentYear, userId);
+    // 2. 統合されたGemini_Expensesスプレッドシートを取得
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Summaryタブが存在するか確認、なければ作成
+    // 3. Summaryタブが存在するか確認
     const spreadsheetResponse = await sheets.spreadsheets.get({
       spreadsheetId,
       fields: 'sheets.properties'
@@ -2459,69 +2474,67 @@ app.post('/api/generate-summary', async (req, res) => {
     const hasSummarySheet = existingSheetTitles.includes('Summary');
 
     if (!hasSummarySheet) {
-      // Summaryタブを作成
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        resource: {
-          requests: [{
-            addSheet: {
-              properties: {
-                title: 'Summary',
-                sheetType: 'GRID',
-                gridProperties: {
-                  rowCount: 150,
-                  columnCount: 12,
-                },
-              }
-            }
-          }]
-        }
+      console.log('📊 Summary sheet does not exist');
+      return res.json({
+        success: true,
+        hasSummary: false,
+        lastUpdated: null,
+        message: 'まず横断集計を生成してください'
       });
-      console.log('📊 Created Summary sheet');
     }
 
-    // Summaryタブの内容をクリア（全削除して再生成）
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId,
-      range: 'Summary!A:Z', // 広めにクリア
-    });
+    // 4. Summary!A1の値を取得
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Summary!A1:A2', // A1とA2を取得（日時情報がA1またはA2にある場合）
+      });
 
-    // JSTで現在日時を取得
-    const now = new Date();
-    const jstDate = new Date(now.getTime() + (now.getTimezoneOffset() + 9 * 60) * 60 * 1000);
-    const generatedAt = jstDate.toISOString().replace('T', ' ').slice(0, 19) + ' JST';
+      const values = response.data.values || [];
+      console.log('📊 Summary!A1:A2 values:', values);
 
-    // ダミーデータを書き込み（今後Step1計算式をここに入れる）
-    const summaryData = [
-      ['横断集計サマリー'],
-      [`Generated at: ${generatedAt}`],
-      [''], // 空行
-      ['※ 今後Step1計算式の実装予定']
-    ];
+      // A1セルから日時情報を抽出（"Updated at: YYYY-MM-DD hh:mm (JST)"形式を想定）
+      let lastUpdated = null;
+      if (values.length > 0 && values[0] && values[0][0]) {
+        const cellValue = values[0][0];
+        console.log('📊 A1 cell value:', cellValue);
 
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: 'Summary!A1',
-      valueInputOption: 'RAW',
-      resource: { values: summaryData },
-    });
+        // "Updated at: 2026-01-21 09:42 (JST)"形式から日時を抽出
+        const match = cellValue.match(/Updated at:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*\(JST\)/);
+        if (match) {
+          lastUpdated = match[1];
+          console.log('📊 Extracted timestamp:', lastUpdated);
+        }
+      }
 
-    console.log('📊 Summary data written to spreadsheet');
+      // A2セルからも確認（念のため）
+      if (!lastUpdated && values.length > 1 && values[1] && values[1][0]) {
+        const cellValue = values[1][0];
+        const match = cellValue.match(/Updated at:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*\(JST\)/);
+        if (match) {
+          lastUpdated = match[1];
+        }
+      }
 
-    // 4. lastSummaryGeneratedAtを更新（JSTベース）
-    const todayJSTString = jstDate.toISOString().split('T')[0];
-    await userService.updateLastSummaryGeneratedAt(userId, todayJSTString);
+      res.json({
+        success: true,
+        hasSummary: true,
+        lastUpdated: lastUpdated,
+        message: lastUpdated ? null : 'まず横断集計を生成してください'
+      });
 
-    console.log(`✅ Summary generation completed for user ${userId}`);
-
-    res.json({
-      success: true,
-      message: '横断集計を生成しました',
-      generatedAt: todayJSTString
-    });
+    } catch (cellError) {
+      console.error('📊 Error reading Summary cells:', cellError);
+      res.json({
+        success: true,
+        hasSummary: true,
+        lastUpdated: null,
+        message: 'まず横断集計を生成してください'
+      });
+    }
 
   } catch (error) {
-    console.error('Generate Summary Error:', error);
+    console.error('Get Summary Meta Error:', error);
 
     // 特定のエラーメッセージの場合
     if (error.message?.includes('フォルダ名の重複') || error.message?.includes('Folder ambiguous')) {
@@ -2531,8 +2544,62 @@ app.post('/api/generate-summary', async (req, res) => {
     }
 
     res.status(500).json({
-      error: '集計生成に失敗しました',
+      error: '集計メタデータの取得に失敗しました',
       details: error.message
+    });
+  }
+});
+
+// Generate summary endpoint
+app.post('/api/generate-summary', async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+
+    if (!authorization?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const idToken = authorization.substring(7);
+    const googleId = userService.extractSubFromIdToken(idToken); // JWT から sub を抽出
+
+    if (!googleId) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = req.body.userId || 'test-user'; // userIdを取得
+    const tokens = userTokens[userId];
+
+    if (!tokens) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials(tokens);
+
+    const now = new Date();
+    const year = now.getFullYear().toString();
+
+    // ユーザー設定からフォルダIDを取得
+    const userDoc = await userService.getUserDocument(googleId);
+    const folderId = userDoc?.settings?.folderId || null;
+
+    console.log('📁 Using folderId:', folderId); // デバッグ用
+
+    // スプレッドシート作成/更新 (folderIdは文字列またはnull)
+    await createOrUpdateSpreadsheetWithYearTabs(folderId, year, googleId);
+
+    // Firestoreに最終生成日時を保存
+    await userService.updateLastSummaryGeneratedAt(googleId, now);
+
+    res.json({
+      success: true,
+      lastSummaryGeneratedAt: now.toISOString()
+    });
+  } catch (error) {
+    console.error('Generate Summary Error:', error);
+    res.status(500).json({
+      error: 'Failed to generate summary',
+      message: error.message
     });
   }
 });

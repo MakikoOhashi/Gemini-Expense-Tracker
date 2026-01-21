@@ -33,6 +33,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [lastSummaryUpdated, setLastSummaryUpdated] = useState<string | null>(null);
+  const [summaryStatusMessage, setSummaryStatusMessage] = useState<string | null>(null);
 
   // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
@@ -198,6 +200,23 @@ const Dashboard: React.FC<DashboardProps> = ({
     loadAuditData();
   }, [transactions, selectedAuditYear]);
 
+  // Summaryメタデータを取得（ページロード時）
+  useEffect(() => {
+    const loadSummaryMeta = async () => {
+      try {
+        const meta = await sheetsService.getSummaryMeta(selectedAuditYear);
+        setLastSummaryUpdated(meta.lastUpdated);
+        setSummaryStatusMessage(meta.message || null);
+      } catch (error) {
+        console.error('❌ Summary meta loading error:', error);
+        setLastSummaryUpdated(null);
+        setSummaryStatusMessage('集計メタデータの取得に失敗しました');
+      }
+    };
+
+    loadSummaryMeta();
+  }, [selectedAuditYear]);
+
   const handleViewReasoning = () => {
     setIsReasoningModalOpen(true);
   };
@@ -213,7 +232,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       if (result.success) {
         console.log('✅ Summary generated successfully');
-        // 成功時はエラーメッセージをクリア（成功メッセージは表示しない）
+        // 成功時は最終更新日時を更新し、ステータスメッセージをクリア
+        if (result.lastUpdated) {
+          setLastSummaryUpdated(result.lastUpdated);
+          setSummaryStatusMessage(null);
+        }
       } else {
         setSummaryError('集計生成に失敗しました');
       }
@@ -310,6 +333,23 @@ const Dashboard: React.FC<DashboardProps> = ({
           複数年度の取引データを横断集計し、監査用Summaryをスプレッドシートに作成します。<br />
           本集計データをもとに、下記の監査予報を生成します。
         </p>
+
+        {/* 最終更新日時表示 */}
+        <div className="mb-3">
+          {lastSummaryUpdated ? (
+            <p className="text-sm text-gray-700 font-medium">
+              最終更新：{lastSummaryUpdated} JST
+            </p>
+          ) : summaryStatusMessage ? (
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              {summaryStatusMessage}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500">
+              集計データを読み込み中...
+            </p>
+          )}
+        </div>
 
         {summaryError && (
           <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3">{summaryError}</p>

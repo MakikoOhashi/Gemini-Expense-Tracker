@@ -1,3 +1,5 @@
+import { authService } from './authService';
+
 export interface ExpenseData {
   date: string;
   amount: number;
@@ -274,15 +276,24 @@ export class SheetsService {
     }
   }
 
-  async generateSummary(year?: number): Promise<{ success: boolean; message: string }> {
+  async generateSummary(year?: number): Promise<{ success: boolean; message: string; lastUpdated?: string }> {
     try {
       const currentYear = year || new Date().getFullYear();
+
+      // Get ID token from auth service
+      const idToken = await authService.getIdToken();
+
+      if (!idToken) {
+        throw new Error('認証されていません');
+      }
+
       const response = await fetch(`${this.baseUrl}/generate-summary`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}` // Using real ID token
         },
-        body: JSON.stringify({ userId: this.userId, year: currentYear }),
+        body: JSON.stringify({ year: currentYear }),
       });
 
       const result = await response.json();
@@ -294,6 +305,28 @@ export class SheetsService {
       return result;
     } catch (error: any) {
       console.error('Generate Summary Error:', error);
+      throw new Error(error.message || 'ネットワークエラーが発生しました');
+    }
+  }
+
+  async getSummaryMeta(year?: number): Promise<{ hasSummary: boolean; lastUpdated: string | null; message?: string }> {
+    try {
+      const currentYear = year || new Date().getFullYear();
+      const response = await fetch(`${this.baseUrl}/sheet/summary/meta?userId=${this.userId}&year=${currentYear}`);
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '集計メタデータの取得に失敗しました');
+      }
+
+      return {
+        hasSummary: result.hasSummary,
+        lastUpdated: result.lastUpdated,
+        message: result.message
+      };
+    } catch (error: any) {
+      console.error('Get Summary Meta Error:', error);
       throw new Error(error.message || 'ネットワークエラーが発生しました');
     }
   }

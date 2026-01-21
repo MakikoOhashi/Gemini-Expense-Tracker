@@ -119,20 +119,33 @@ export class UserService {
     forecastResults: AuditForecastItem[]
   ): Promise<void> {
     try {
-      const userDoc = await this.getUserDocument(googleId);
-      const forecasts = userDoc?.forecasts || {};
+      // ネスト構造の上書きを避けるため、ドット記法で特定のフィールドのみ更新
+      const updatePath = `forecasts.${year}.${date}`;
+      const updateData = {
+        [updatePath]: forecastResults
+      };
 
-      // 指定された年度の予報データを初期化
-      if (!forecasts[year]) {
-        forecasts[year] = {};
+      console.log(`💾 Firestore update path: ${updatePath}`);
+      console.log(`💾 Forecast results count: ${forecastResults.length}`);
+
+      // ログでundefined値がないことを確認
+      const hasUndefined = forecastResults.some(result =>
+        Object.values(result).some(value =>
+          value === undefined ||
+          (Array.isArray(value) && value.some(item => item === undefined))
+        )
+      );
+
+      if (hasUndefined) {
+        console.error('❌ Firestore保存前にundefined値が検出されました');
+        throw new Error('forecastResultsにundefined値が含まれています');
       }
 
-      // 指定された日付の予報結果を保存
-      forecasts[year][date] = forecastResults;
+      console.log(`✅ Firestore保存前にデータ検証完了 - undefined値なし`);
 
-      await this.createOrUpdateUserDocument(googleId, {
-        forecasts: forecasts
-      });
+      await this.createOrUpdateUserDocument(googleId, updateData);
+
+      console.log(`✅ Forecast saved successfully for ${googleId}, ${year}, ${date}`);
     } catch (error) {
       console.error('Error saving forecast:', error);
       throw error;

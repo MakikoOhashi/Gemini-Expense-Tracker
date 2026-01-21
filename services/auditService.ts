@@ -249,7 +249,15 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
   // 監査予報（全体）- 勘定科目合計・比率ベースの論点を生成
   async generateAuditForecast(transactions: any[]): Promise<AuditForecastItem[]> {
-    const totalAmount = transactions.reduce((sum, t) => sum + ((t.amount as number) || 0), 0);
+    // NaN/無効値対策: 安全な数値加算関数
+    const safeAdd = (accumulator: number, transaction: any): number => {
+      const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
+        ? transaction.amount
+        : 0;
+      return accumulator + safeAmount;
+    };
+
+    const totalAmount = transactions.reduce(safeAdd, 0);
 
     // 勘定科目ごとに集計
     const categoryTotals: Record<string, { total: number; count: number }> = transactions.reduce((acc, transaction) => {
@@ -257,7 +265,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
       if (!acc[category]) {
         acc[category] = { total: 0, count: 0 };
       }
-      acc[category].total += (transaction.amount as number) || 0;
+
+      // NaN/無効値対策: 必ず安全な数値を使用
+      const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
+        ? transaction.amount
+        : 0;
+
+      acc[category].total += safeAmount;
       acc[category].count += 1;
       return acc;
     }, {} as Record<string, { total: number; count: number }>);

@@ -58,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         // キャッシュチェック用のパラメータを取得
         const googleId = '117675493044504889175'; // 固定値
         const year = selectedAuditYear.toString();
-        const today = getTodayJSTString();
+        const today = getTodayJSTString(); // "2026-01-21" 形式
 
         try {
           // 最終アクセス日を確認（サーバーAPI経由）
@@ -141,17 +141,32 @@ const Dashboard: React.FC<DashboardProps> = ({
         setAuditForecast(forecastData);
 
         // 生成した予報をサーバーAPI経由でFirestoreに保存
+        const requestBody = {
+          googleId,
+          year,
+          date: today,
+          forecastResults: forecastData
+        };
+
+        // ガード: dateに "/" が含まれていたらエラー
+        if (requestBody.date.includes("/")) {
+          throw new Error(`Invalid date format detected: ${requestBody.date}`);
+        }
+
+        console.log('📤 Sending forecast request:', JSON.stringify(requestBody, null, 2));
+        console.log('📅 Date format check:', requestBody.date, '(should be YYYY-MM-DD)');
+
+        // デバッグ: 各forecastResultのtotalAmountを確認
+        forecastData.forEach((item, index) => {
+          console.log(`📊 Forecast item ${index}: ${item.accountName} = ${item.totalAmount} (${typeof item.totalAmount}, isFinite: ${isFinite(item.totalAmount)})`);
+        });
+
         const saveResponse = await fetch('http://localhost:3001/api/user/forecast', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            googleId,
-            year,
-            date: today,
-            forecastResults: forecastData
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!saveResponse.ok) {

@@ -401,7 +401,15 @@ const App: React.FC = () => {
         })
       };
 
+      // ガード: dateに "/" が含まれていたらエラー
+      if (expenseData.date.includes("/")) {
+        throw new Error(`Invalid date format detected: ${expenseData.date}`);
+      }
+
       // Save to Sheet via API
+      console.log('📤 Sending expense data:', JSON.stringify(expenseData, null, 2));
+      console.log('📅 Date format check:', expenseData.date, '(should be YYYY-MM-DD)');
+
       const response = await fetch('http://localhost:3001/api/expenses', {
         method: 'POST',
         headers: {

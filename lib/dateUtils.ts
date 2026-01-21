@@ -3,12 +3,9 @@
  * @returns string - YYYY-MM-DD形式の日付文字列
  */
 export function getTodayJSTString(): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(new Date());
+  const now = new Date();
+  const jstDate = new Date(now.getTime() + (now.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+  return jstDate.toISOString().split('T')[0];
 }
 
 /**

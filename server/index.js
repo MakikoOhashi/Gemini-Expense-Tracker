@@ -9,7 +9,7 @@ import vision from '@google-cloud/vision';
 import { Readable } from 'stream';
 import Busboy from 'busboy';
 import jwt from 'jsonwebtoken';
-import { userService } from '../services/userService.js';
+import { userService } from '../services/userService.ts';
 
 dotenv.config();
 
@@ -2175,16 +2175,45 @@ app.get('/api/user/last-access/:googleId', async (req, res) => {
 // Save forecast results
 app.post('/api/user/forecast', async (req, res) => {
   try {
+    console.log('📥 Received forecast request body sample:', {
+      googleId: req.body.googleId,
+      year: req.body.year,
+      date: req.body.date,
+      forecastResultsCount: req.body.forecastResults?.length || 0
+    });
+
+    // デバッグ: forecastResultsの中身を確認
+    if (req.body.forecastResults && Array.isArray(req.body.forecastResults)) {
+      console.log('📊 First forecast result sample:', JSON.stringify(req.body.forecastResults[0], null, 2));
+    }
+
     const { googleId, year, date, forecastResults } = req.body;
 
     if (!googleId || !year || !date || !forecastResults) {
+      console.log('❌ Missing required fields:', { googleId: !!googleId, year: !!year, date: !!date, forecastResults: !!forecastResults });
       return res.status(400).json({ error: 'googleId、year、date、forecastResultsは必須です' });
+    }
+
+    // Validate and parse year (accept both string and number)
+    const parsedYear = Number(year);
+    if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+      console.error(`❌ Invalid year: ${year} (parsed: ${parsedYear})`);
+      return res.status(400).json({
+        error: `yearは2000-2100の有効な整数である必要があります`,
+        received: year,
+        parsed: parsedYear
+      });
     }
 
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(date)) {
-      return res.status(400).json({ error: 'dateはYYYY-MM-DD形式である必要があります' });
+      console.error(`❌ Invalid date format: ${date} (expected: YYYY-MM-DD)`);
+      return res.status(400).json({
+        error: 'dateはYYYY-MM-DD形式である必要があります',
+        received: date,
+        expected: 'YYYY-MM-DD'
+      });
     }
 
     // Validate forecast results structure
@@ -2192,14 +2221,107 @@ app.post('/api/user/forecast', async (req, res) => {
       return res.status(400).json({ error: 'forecastResultsは配列である必要があります' });
     }
 
-    // Validate each forecast result (AuditForecastItem structure)
-    for (const result of forecastResults) {
-      if (typeof result.id !== 'string' || typeof result.accountName !== 'string' || typeof result.totalAmount !== 'number') {
-        return res.status(400).json({ error: 'forecastResultsの各要素はAuditForecastItem形式である必要があります' });
-      }
+    // Size check (prevent overly large payloads)
+    const payloadSize = JSON.stringify(forecastResults).length;
+    if (payloadSize > 1024 * 1024) { // 1MB limit
+      return res.status(400).json({
+        error: 'forecastResultsのサイズが大きすぎます（1MBを超えています）',
+        size: payloadSize,
+        maxSize: 1024 * 1024
+      });
     }
 
-    await userService.saveForecast(googleId, year, date, forecastResults);
+    // Validate forecast results count
+    if (forecastResults.length === 0) {
+      return res.status(400).json({ error: 'forecastResultsは空配列であってはいけません' });
+    }
+
+    if (forecastResults.length > 1000) {
+      return res.status(400).json({
+        error: 'forecastResultsの要素数が多すぎます（1000個まで）',
+        count: forecastResults.length,
+        maxCount: 1000
+      });
+    }
+
+    // Validate and normalize each forecast result (AuditForecastItem structure)
+    const normalizedForecastResults = [];
+    for (let i = 0; i < forecastResults.length; i++) {
+      const result = forecastResults[i];
+
+      // Required field validations
+      if (typeof result.id !== 'string' || !result.id.trim()) {
+        console.error(`❌ Invalid forecast result at index ${i}: id is not valid string`, { id: result.id, type: typeof result.id });
+        return res.status(400).json({
+          error: `forecastResults[${i}].id は空でない文字列である必要があります`,
+          invalidItem: result,
+          field: 'id',
+          expected: 'non-empty string',
+          actual: result.id
+        });
+      }
+
+      if (typeof result.accountName !== 'string' || !result.accountName.trim()) {
+        console.error(`❌ Invalid forecast result at index ${i}: accountName is not valid string`, { accountName: result.accountName, type: typeof result.accountName });
+        return res.status(400).json({
+          error: `forecastResults[${i}].accountName は空でない文字列である必要があります`,
+          invalidItem: result,
+          field: 'accountName',
+          expected: 'non-empty string',
+          actual: result.accountName
+        });
+      }
+
+      if (typeof result.totalAmount !== 'number' || !isFinite(result.totalAmount) || result.totalAmount < 0) {
+        console.error(`❌ Invalid forecast result at index ${i}: totalAmount is not valid positive number`, {
+          totalAmount: result.totalAmount,
+          type: typeof result.totalAmount,
+          isFinite: isFinite(result.totalAmount)
+        });
+        return res.status(400).json({
+          error: `forecastResults[${i}].totalAmount は0以上の有効な数値である必要があります (${result.accountName})`,
+          invalidItem: result,
+          field: 'totalAmount',
+          expected: 'finite number >= 0',
+          actual: result.totalAmount,
+          actualType: typeof result.totalAmount
+        });
+      }
+
+      // Normalize and validate optional fields
+      const normalizedResult = {
+        id: result.id.trim(),
+        accountName: result.accountName.trim(),
+        totalAmount: Math.round(result.totalAmount * 100) / 100, // Round to 2 decimal places
+        ratio: typeof result.ratio === 'number' && isFinite(result.ratio) ? Math.round(result.ratio * 100) / 100 : 0,
+        riskLevel: typeof result.riskLevel === 'string' && ['low', 'medium', 'high'].includes(result.riskLevel)
+          ? result.riskLevel
+          : 'unknown',
+        issues: Array.isArray(result.issues)
+          ? result.issues.filter(issue => typeof issue === 'string' && issue.trim()).map(issue => issue.trim())
+          : []
+      };
+
+      // Validate normalized result has no undefined values
+      if (Object.values(normalizedResult).some(value =>
+        value === undefined ||
+        (Array.isArray(value) && value.some(item => item === undefined))
+      )) {
+        console.error(`❌ Normalized result contains undefined values at index ${i}`, normalizedResult);
+        return res.status(400).json({
+          error: `forecastResults[${i}]の正規化で未定義値が含まれています`,
+          normalizedResult,
+          originalResult: result
+        });
+      }
+
+      normalizedForecastResults.push(normalizedResult);
+    }
+
+    console.log(`✅ Validated and normalized ${normalizedForecastResults.length} forecast results`);
+
+    // 正規化されたデータを使用
+    await userService.saveForecast(googleId, parsedYear.toString(), date, normalizedForecastResults);
 
     console.log(`🔮 Saved forecast results for user ${googleId}, year ${year}, date ${date}: ${forecastResults.length} results`);
 
@@ -2230,18 +2352,32 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
       return res.status(400).json({ error: 'googleId、year、dateは必須です' });
     }
 
+    // Validate and parse year (accept both string and number)
+    const parsedYear = Number(year);
+    if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+      return res.status(400).json({
+        error: `yearは2000-2100の有効な整数である必要があります`,
+        received: year,
+        parsed: parsedYear
+      });
+    }
+
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(date)) {
-      return res.status(400).json({ error: 'dateはYYYY-MM-DD形式である必要があります' });
+      return res.status(400).json({
+        error: 'dateはYYYY-MM-DD形式である必要があります',
+        received: date,
+        expected: 'YYYY-MM-DD'
+      });
     }
 
-    const forecastResults = await userService.getForecast(googleId, year, date);
+    const forecastResults = await userService.getForecast(googleId, parsedYear.toString(), date);
 
     res.json({
       success: true,
       googleId,
-      year,
+      year: parsedYear.toString(),
       date,
       forecastResults
     });

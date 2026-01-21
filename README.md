@@ -141,7 +141,7 @@ How it works: 赤字データをAIが解析 → 提出表自動生成 → 監査
 
 ## 🏗️ アーキテクチャ
 
-### ✅ 現在の実装（OAuth 2.0）
+### ✅ 実装（OAuth 2.0）
 
 ```
 Frontend (React) → Google OAuth 2.0 → Backend (Express) → Google Workspace APIs
@@ -190,19 +190,8 @@ POST   /api/upload-receipt      # 領収書アップロード
 GET    /api/config/folders      # フォルダ設定取得
 ```
 
-### 🚧 開発中 / 今後実装予定
 
-#### フロントエンド機能拡張
-- Rules管理UI
-- レシートアップロードUI
-- レポート・グラフ表示
-
-#### バックエンド機能拡張
-- 複数年データ集計
-- エクスポート機能
-- バックアップ機能
-
-## 🚀 クイックスタート（現在の実装）
+## 🚀 クイックスタート
 
 ### 1. Google Cloud プロジェクト設定
 
@@ -387,8 +376,8 @@ curl -X POST "http://localhost:3001/api/initialize?year=2027"
 ### 技術スタック
 - **Frontend**: React 19 + TypeScript + Vite
 - **Backend**: Node.js + Express
-- **AI**: Google Gemini 2.5 Flash Lite・Google Gemini 3
-- **Storage**: Google Sheets + Google Drive +Firebase
+- **AI**: Google Gemini 2.5 Flash Lite + Google Gemini 3
+- **Storage**: Google Sheets + Google Drive + Firebase
 - **Auth**: OAuth 2.0
 
 ### プロジェクト構造
@@ -422,13 +411,20 @@ npm run test:sheets
 
 ## 🎯 本質的強さ
 
-### コア設計思想：「人間の作業負荷が最小になる場所だけ、高知能を当てる」
+### コア設計思想：「AIは「判断」ではなく
+“数値で検出した事実を、人間が説明できる形に翻訳する役割”に限定している」
 
 **競合との差別化：**
-- Freee / マネーフォワード：全処理を同一エンジン
-  → 速いけど賢くない、または賢いけど使いづらい
-- **このアプリ**：タスク複雑度に応じた最適モデル選択
-  → 体感速度 + 知的処理の完璧な両立
+- Freee / マネーフォワード
+- 記帳・集計・申告を「速く・楽に」するツール
+- → 作業効率は高いが
+“なぜその数字が危ないか”までは教えない
+
+- このアプリ
+- AIで監査・リスクをシミュレーション
+- 異常値・構成比・前年差をもとに
+“突っ込まれる理由”を事前に可視化
+- → 申告の正確さではなく、“説明力”を鍛えるプロダクト
 
 ### モデル役割分担（実務AI設計）
 
@@ -436,8 +432,7 @@ npm run test:sheets
 |------|--------|------|
 | レシートOCR / 自然文→JSON | **Flash** | 速い・安い・試行回数制約なし |
 | Sheets 書き込み / 日常入力 | **Flash** | 体感即レスが正義 |
-| 月次集計 / 傾向分析 | **Gemini 3** | 数十件まとめて意味解釈 |
-| 別表A / 確定申告ガイド生成 | **Gemini 3** | 推論・構造化・説明が必要な"知的処理" |
+| 監査予報 / 異常・リスク検知 / パターン逸脱分析 | **Gemini 3** | 推論・文脈理解・「違和感」を読む知的処理 |
 
 ## 📈 実装ロードマップ
 

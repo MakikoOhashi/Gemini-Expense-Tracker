@@ -1,11 +1,12 @@
 // Google Sheets年別管理・Rules連携テストスクリプト
 import { sheetsService } from './services/sheetsService.js';
+import { getCurrentYearJST, getTodayJSTString } from './lib/dateUtils.js';
 
 async function testYearBasedSheets() {
   try {
     console.log('🔄 年別Google Sheets初期化を開始...');
 
-    const currentYear = new Date().getFullYear();
+    const currentYear = getCurrentYearJST();
     console.log(`📅 現在の年度: ${currentYear}`);
 
     // 年別スプレッドシートを初期化
@@ -48,7 +49,7 @@ async function testYearBasedSheets() {
     console.log('');
     console.log('🧪 テストデータ保存...');
     await sheetsService.saveExpense({
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayJSTString(),
       amount: 1000,
       category: '食費',
       memo: 'テストデータ',

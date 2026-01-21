@@ -4,6 +4,7 @@ import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleI
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
 import AuditReasoningModal from './AuditReasoningModal';
+import { getTodayJSTString } from '../lib/dateUtils';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -57,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         // キャッシュチェック用のパラメータを取得
         const googleId = '117675493044504889175'; // 固定値
         const year = selectedAuditYear.toString();
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayJSTString();
 
         try {
           // 最終アクセス日を確認（サーバーAPI経由）
@@ -249,7 +250,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* セクションB：監査予報（全体） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-700 mb-4">
-          今日の監査予報（{new Date().toISOString().split('T')[0]}時点）
+          今日の監査予報（{getTodayJSTString()}時点）
         </h3>
 
         {/* Gemini AI Audit Risk Summary */}

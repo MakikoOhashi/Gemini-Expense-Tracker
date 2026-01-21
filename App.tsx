@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { getTodayJSTString, getCurrentYearJST } from './lib/dateUtils';
 import { 
   ChatBubbleLeftRightIcon, 
   ChartBarIcon, 
@@ -88,7 +89,7 @@ const App: React.FC = () => {
     try {
       console.log('📊 Google Sheetsから取引データを取得中...');
       // 当年度のみのデータを取得
-      const currentYear = new Date().getFullYear();
+      const currentYear = getCurrentYearJST();
       const yearsToLoad = [currentYear]; // 当年度のみ
 
       let allTransactions: Transaction[] = [];
@@ -386,7 +387,7 @@ const App: React.FC = () => {
 
       // Prepare data for API（URLのみを送信）
       const expenseData = {
-        date: data.date || new Date().toISOString().split('T')[0],
+        date: data.date || getTodayJSTString(),
         amount: Number(data.amount) || 0,
         category: data.category || '雑費',
         memo: data.description || '内容なし',
@@ -581,7 +582,7 @@ const App: React.FC = () => {
       if (extractedAction) {
         // パターン1: 画像あり → Geminiが抽出した日付を使用
         // パターン2: 画像なし → 本日の日付を自動設定
-        const todayDate = new Date().toISOString().split('T')[0];
+        const todayDate = getTodayJSTString();
         const extractedDate = extractedAction.data.date;
         
         // 🔍 デバッグ
@@ -696,7 +697,7 @@ const App: React.FC = () => {
   };
 
   const getAvailableYears = (): number[] => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = getCurrentYearJST();
     return [currentYear - 1, currentYear, currentYear + 1];
   };
 
@@ -831,7 +832,7 @@ const App: React.FC = () => {
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">日付</label>
                             <input
                               type="date"
-                              value={pendingExtraction.data.date || new Date().toISOString().split('T')[0]}
+                              value={pendingExtraction.data.date || getTodayJSTString()}
                               onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, date: e.target.value}})}
                               className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none"
                             />
@@ -893,7 +894,7 @@ const App: React.FC = () => {
                             <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">日付</p>
                             <p className="text-lg font-black text-slate-700">
                               {(() => {
-                                const displayDate = pendingExtraction.data.date || new Date().toISOString().split('T')[0];
+                                const displayDate = pendingExtraction.data.date || getTodayJSTString();
                                 console.log('🗓️ UI表示日付:', displayDate);
                                 return displayDate;
                               })()}

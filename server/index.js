@@ -2343,7 +2343,7 @@ app.post('/api/user/forecast', async (req, res) => {
   }
 });
 
-// Get forecast results for a specific year and date
+// Get forecast results for a specific year and date (normalized format only)
 app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
   try {
     const { googleId, year, date } = req.params;
@@ -2372,7 +2372,20 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
       });
     }
 
+    console.log(`🔍 API: Getting forecast for ${googleId}, year: ${parsedYear}, date: ${date}`);
+
     const forecastResults = await userService.getForecast(googleId, parsedYear.toString(), date);
+
+    // Validate response structure (normalized format only)
+    if (forecastResults !== null && !Array.isArray(forecastResults)) {
+      console.error('🚨 API Response validation failed: forecastResults should be array or null');
+      return res.status(500).json({
+        error: '予報結果の形式が正しくありません（正規化されたフォーマットのみサポート）',
+        details: 'forecastResults must be an array in normalized format'
+      });
+    }
+
+    console.log(`✅ API: Forecast retrieved successfully - ${forecastResults ? forecastResults.length : 0} results`);
 
     res.json({
       success: true,
@@ -2384,6 +2397,16 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
 
   } catch (error) {
     console.error('Get Forecast Results Error:', error);
+
+    // Check if it's a validation error (malformed structure detected)
+    if (error.message.includes('Malformed forecast structure detected')) {
+      return res.status(400).json({
+        error: '監査予報データの構造が正しくありません。レガシー形式が検出されました。',
+        details: 'Only normalized forecast format is supported: forecasts[year] = { date, results, updatedAt }',
+        legacyFormatDetected: true
+      });
+    }
+
     res.status(500).json({
       error: '予報結果の取得に失敗しました',
       details: error.message

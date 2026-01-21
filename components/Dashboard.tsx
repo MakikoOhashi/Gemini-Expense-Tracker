@@ -71,28 +71,21 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           const lastAccessDate = lastAccessData.lastAccessDate?.[year];
 
-          // キャッシュヒット判定（同日・同年度）
-          const isCacheHit = lastAccessDate === today;
+          // キャッシュ判定ロジック：forecasts[year]が存在し、dateが今日の日付と一致する場合
+          console.log('🔄 キャッシュ判定: サーバーから監査予報を取得します');
+          setLoadingMessage('保存された予報を読み込み中...');
 
-          if (isCacheHit) {
-            console.log('🔄 キャッシュヒット: サーバーから監査予報を取得します');
-            setLoadingMessage('保存された予報を読み込み中...');
-            // キャッシュから取得（サーバーAPI経由）
-            const forecastResponse = await fetch(`http://localhost:3001/api/user/forecast/${googleId}/${year}/${today}`);
-            const forecastData = await forecastResponse.json();
+          // 直接forecastデータを取得してキャッシュ判定
+          const forecastResponse = await fetch(`http://localhost:3001/api/user/forecast/${googleId}/${year}/${today}`);
+          const forecastData = await forecastResponse.json();
 
-            if (forecastResponse.ok && forecastData.forecastResults) {
-              setAuditForecast(forecastData.forecastResults);
-              console.log('✅ キャッシュから監査予報データを読み込みました');
-            } else {
-              // キャッシュが存在しない場合は新規生成
-              console.log('⚠️ キャッシュが見つからないため、新規生成します');
-              await generateAndCacheForecast(filteredTransactions, googleId, year, today);
-            }
+          if (forecastResponse.ok && forecastData.forecastResults && forecastData.forecastResults.length > 0) {
+            setAuditForecast(forecastData.forecastResults);
+            console.log('✅ キャッシュから監査予報データを読み込みました');
           } else {
+            // キャッシュが存在しない場合は新規生成
             console.log('🆕 キャッシュミスまたは初回アクセス: 監査予報を新規生成します');
             setLoadingMessage('監査予報を生成中...');
-            // キャッシュミス時は既存処理を実行
             await generateAndCacheForecast(filteredTransactions, googleId, year, today);
           }
         } catch (cacheError) {

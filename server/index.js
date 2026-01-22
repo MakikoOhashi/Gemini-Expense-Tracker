@@ -2811,15 +2811,71 @@ app.post('/api/audit-forecast-update', async (req, res) => {
       console.log(`✅ Summary_Year_Total に ${yearTotalRows.length} 年度分の集計関数を入力しました`);
     }
 
-    console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了、Summary_Baseに${summaryRows.length}行の関数を設定`);
+    // **Step 4: Summary_Account_History に「勘定科目×年度×合計金額」の履歴テーブルを構築する**
+    console.log('📊 Summary_Account_History のクロス表構築開始...');
+
+    // Summary_Base から年度一覧を取得（一意）
+    const yearsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Summary_Base!A2:A',
+    });
+    const yearsData = yearsResponse.data.values || [];
+    const years = [...new Set(yearsData.flat().map(year => parseInt(year)).filter(year => !isNaN(year)))].sort();
+
+    // Summary_Base から勘定科目一覧を取得（一意、売上も含む）
+    const accountResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Summary_Base!B2:B',
+    });
+    const accountData = accountResponse.data.values || [];
+    const accountList = [...new Set(accountData.flat().filter(account => account && account.trim()))].sort();
+
+    console.log(`📅 年度一覧: ${years.join(', ')}`);
+    console.log(`📋 勘定科目一覧: ${accountList.join(', ')}`);
+
+    // Summary_Account_History のヘッダー構築
+    const header = ['勘定科目', ...years];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary_Account_History!A1',
+      valueInputOption: 'RAW',
+      resource: {
+        values: [header]
+      }
+    });
+
+    // 勘定科目 × 年度 のクロス表構築
+    const historyRows = accountList.map(account => {
+      const row = [account];
+      for (const year of years) {
+        row.push(`=SUMIFS(Summary_Base!C:C, Summary_Base!A:A, ${year}, Summary_Base!B:B, "${account}")`);
+      }
+      return row;
+    });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary_Account_History!A2',
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: historyRows
+      }
+    });
+
+    console.log(`✅ Summary_Account_History に ${historyRows.length} 勘定科目分の履歴テーブルを作成しました`);
+
+    console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了、Summary_Baseに${summaryRows.length}行、Summary_Account_Historyに${historyRows.length}行の関数を設定`);
 
     res.json({
       success: true,
       sheets: createdSheets,
       summaryBaseRows: summaryRows.length,
+      summaryAccountHistoryRows: historyRows.length,
       availableYears: availableYears,
       expenseCategories: expenseCategories,
-      message: `3 つのSummaryシートが準備完了し、Summary_Baseに${summaryRows.length}行の関数を設定しました`
+      years: years,
+      accountList: accountList,
+      message: `3 つのSummaryシートが準備完了し、Summary_Baseに${summaryRows.length}行、Summary_Account_Historyに${historyRows.length}行の関数を設定しました`
     });
 
   } catch (error) {

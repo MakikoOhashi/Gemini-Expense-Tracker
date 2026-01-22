@@ -2542,6 +2542,75 @@ app.get('/api/user/last-summary-generated/:idToken', async (req, res) => {
   }
 });
 
+// Helper function to get all years that have expense/income sheets
+async function getAllAvailableYears(spreadsheetId, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  try {
+    // Get all sheets in the spreadsheet
+    const spreadsheetResponse = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties'
+    });
+
+    const allSheets = spreadsheetResponse.data.sheets || [];
+    const sheetTitles = allSheets.map(s => s.properties?.title);
+
+    // Extract years from sheet names like "2026_Expenses", "2026_Income", etc.
+    const years = new Set();
+
+    for (const title of sheetTitles) {
+      const expenseMatch = title.match(/^(\d{4})_Expenses$/);
+      const incomeMatch = title.match(/^(\d{4})_Income$/);
+
+      if (expenseMatch || incomeMatch) {
+        const year = parseInt(expenseMatch ? expenseMatch[1] : incomeMatch[1]);
+        if (year >= 2000 && year <= 2100) {
+          years.add(year);
+        }
+      }
+    }
+
+    return Array.from(years).sort();
+  } catch (error) {
+    console.error('Error getting available years:', error);
+    return [];
+  }
+}
+
+// Helper function to get unique categories from all expense sheets
+async function getUniqueExpenseCategories(spreadsheetId, years, userId) {
+  const client = await getAuthenticatedClient(userId);
+  const sheets = google.sheets({ version: 'v4', auth: client });
+
+  const categories = new Set();
+
+  for (const year of years) {
+    try {
+      const sheetName = `${year}_Expenses`;
+      // Get all data from column C (category column, 1-indexed as 3)
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetName}!C:C`,
+      });
+
+      const rows = response.data.values || [];
+      // Skip header row and add unique categories
+      for (let i = 1; i < rows.length; i++) {
+        const category = rows[i][0]?.trim();
+        if (category && category !== 'カテゴリ') {
+          categories.add(category);
+        }
+      }
+    } catch (error) {
+      console.warn(`Warning: Could not read categories from ${year}_Expenses:`, error.message);
+    }
+  }
+
+  return Array.from(categories).sort();
+}
+
 // Audit forecast update endpoint - creates 3 Summary sheets
 app.post('/api/audit-forecast-update', async (req, res) => {
   try {
@@ -2632,12 +2701,73 @@ app.post('/api/audit-forecast-update', async (req, res) => {
       }
     }
 
-    console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了`);
+    // **Step 2: Summary_Base タブに関数を入れる**
+    console.log('📊 Summary_Base に関数を設定開始...');
+
+    // Get all available years and categories
+    const availableYears = await getAllAvailableYears(spreadsheetId, userId);
+    const expenseCategories = await getUniqueExpenseCategories(spreadsheetId, availableYears, userId);
+
+    console.log(`📅 利用可能な年度: ${availableYears.join(', ')}`);
+    console.log(`📋 利用可能な勘定科目: ${expenseCategories.join(', ')}`);
+
+    // Create Summary_Base header row
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: 'Summary_Base!A1:D1',
+      valueInputOption: 'RAW',
+      resource: {
+        values: [['年度', '勘定科目', '合計金額', '件数']]
+      }
+    });
+
+    // Build data rows for Summary_Base
+    const summaryRows = [];
+    for (const year of availableYears) {
+      // Add expense categories for this year
+      for (const category of expenseCategories) {
+        summaryRows.push([
+          year,
+          category,
+          `=SUMIF(${year}_Expenses!C:C, "${category}", ${year}_Expenses!B:B)`,
+          `=COUNTIF(${year}_Expenses!C:C, "${category}")`
+        ]);
+      }
+
+      // Add income (売上) for this year
+      summaryRows.push([
+        year,
+        '売上',
+        `=SUM(${year}_Income!B:B)`,
+        `=COUNTA(${year}_Income!B:B) - 1`  // Subtract 1 for header row
+      ]);
+    }
+
+    // Update Summary_Base with data and formulas
+    if (summaryRows.length > 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: 'Summary_Base!A2',
+        valueInputOption: 'USER_ENTERED',  // Use USER_ENTERED to evaluate formulas
+        resource: {
+          values: summaryRows
+        }
+      });
+
+      console.log(`✅ Summary_Base に ${summaryRows.length} 行のデータを入力しました`);
+    } else {
+      console.log('⚠️ Summary_Base に追加するデータがありませんでした');
+    }
+
+    console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了、Summary_Baseに${summaryRows.length}行の関数を設定`);
 
     res.json({
       success: true,
       sheets: createdSheets,
-      message: '3 つのSummaryシートが準備完了しました'
+      summaryBaseRows: summaryRows.length,
+      availableYears: availableYears,
+      expenseCategories: expenseCategories,
+      message: `3 つのSummaryシートが準備完了し、Summary_Baseに${summaryRows.length}行の関数を設定しました`
     });
 
   } catch (error) {

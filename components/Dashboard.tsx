@@ -344,7 +344,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* 説明文 */}
         <p className="text-sm text-gray-600 leading-relaxed mb-3">
           複数年度の取引データを横断集計し、監査用Summaryをスプレッドシートに作成します。<br />
-          本集計データをもとに、下記の監査予報を生成します。
+          本集計データをもとに、下記の監査予報を生成します。<br />
+          ※ 新しい勘定科目や年度を反映する場合は、必ず更新してください
         </p>
 
         {/* 最終更新日時表示 */}

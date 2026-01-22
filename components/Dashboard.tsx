@@ -421,7 +421,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <p className="text-sm text-gray-500 text-center py-4">監査予報データが見つかりませんでした</p>
         ) : (
           <div className="space-y-3">
-            {auditForecast.map((item) => (
+            {auditForecast.slice(0, 1).map((item) => (
               <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1">

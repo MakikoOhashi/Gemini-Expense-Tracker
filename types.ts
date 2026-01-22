@@ -62,6 +62,12 @@ export interface AuditForecastItem {
   ratio: number; // 全体に対する比率（%）
   riskLevel: 'low' | 'medium' | 'high'; // リスクレベル
   issues: string[]; // 論点リスト
+
+  // 異常検知由来（追加）
+  zScore?: number;          // 標準偏差からの乖離度
+  growthRate?: number;      // 前年比成長率（%）
+  diffRatio?: number;       // 前年との比率差（ポイント）
+  anomalyRisk?: 'low' | 'medium' | 'high';  // 異常検知によるリスク
 }
 
 // 記帳チェック（個別）- 個別のチェック項目

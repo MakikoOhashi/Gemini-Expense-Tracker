@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from "../types";
+import { sheetsService } from "./sheetsService";
 
 export class AuditService {
   async analyzeAuditForecast(transactions: any[], userId?: string): Promise<AIResponse> {
@@ -29,6 +30,18 @@ ${JSON.stringify(transactionSummary, null, 2)}
 2. 税務署が特に確認しそうなポイントを列挙してください
 3. ユーザーが事前に準備すべき説明資料・根拠を整理してください
 4. リスクの高い項目から優先順位を付けて提示してください
+
+## 異常検知データ
+以下の勘定科目について、なぜリスクが高いと判定されたか説明してください。
+
+勘定科目: \${item.accountName}
+金額: \${item.totalAmount}
+支出比率: \${item.ratio}%
+前年比成長率: \${item.growthRate}%
+過去平均との乖離度（Z値）: \${item.zScore}
+
+この数値から、税務署がどのような質問をする可能性があるか、
+事業者はどう説明すべきかを示してください。
 
 ## 出力形式
 以下のJSON形式で回答してください：
@@ -247,8 +260,15 @@ ${JSON.stringify(transactionSummary, null, 2)}
     return `${start} 〜 ${end}`;
   }
 
+  // 異常検知リスク分類関数
+  private classifyAnomalyRisk(z: number, growth: number, ratio: number, diffRatio: number): 'low' | 'medium' | 'high' {
+    if (z >= 3 && ratio >= 60 && growth >= 25) return 'high';
+    if (z >= 2 || growth >= 30 || diffRatio >= 10) return 'medium';
+    return 'low';
+  }
+
   // 監査予報（全体）- 勘定科目合計・比率ベースの論点を生成
-  async generateAuditForecast(transactions: any[]): Promise<AuditForecastItem[]> {
+  async generateAuditForecast(transactions: any[], userId?: string): Promise<AuditForecastItem[]> {
     // NaN/無効値対策: 安全な数値加算関数
     const safeAdd = (accumulator: number, transaction: any): number => {
       const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
@@ -276,35 +296,120 @@ ${JSON.stringify(transactionSummary, null, 2)}
       return acc;
     }, {} as Record<string, { total: number; count: number }>);
 
+    // 現在の年度を特定
+    const currentYear = new Date().getFullYear();
+
+    // 時系列データを取得（過去3年分のデータを取得）
+    const historicalData: Record<string, Record<number, number>> = {};
+    const yearsToFetch = [currentYear - 2, currentYear - 1, currentYear];
+
+    if (userId) {
+      sheetsService.setUserId(userId);
+
+      // 並列で複数年度のデータを取得
+      const yearPromises = yearsToFetch.map(async (year) => {
+        try {
+          const transactions = await sheetsService.getTransactions(year);
+          const yearData: Record<string, number> = {};
+
+          // 支出データのみを集計
+          transactions
+            .filter(t => t.type === 'expense')
+            .forEach(transaction => {
+              const category = transaction.category || 'その他';
+              const amount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
+                ? transaction.amount
+                : 0;
+              yearData[category] = (yearData[category] || 0) + amount;
+            });
+
+          return { year, data: yearData };
+        } catch (error) {
+          console.warn(`Failed to fetch data for year ${year}:`, error);
+          return { year, data: {} };
+        }
+      });
+
+      const yearResults = await Promise.all(yearPromises);
+
+      // データを整理
+      yearResults.forEach(({ year, data }) => {
+        Object.entries(data).forEach(([category, amount]) => {
+          if (!historicalData[category]) {
+            historicalData[category] = {};
+          }
+          historicalData[category][year] = amount;
+        });
+      });
+    }
+
     // 各勘定科目をAuditForecastItemに変換
     const forecastItems: AuditForecastItem[] = Object.entries(categoryTotals)
       .map(([category, data], index) => {
         const ratio = totalAmount > 0 ? (data.total / totalAmount) * 100 : 0;
 
-        // リスクレベルと論点を決定
-        let riskLevel: 'low' | 'medium' | 'high' = 'low';
+        // 異常検知計算
+        let zScore: number | undefined;
+        let growthRate: number | undefined;
+        let diffRatio: number | undefined;
+        let anomalyRisk: 'low' | 'medium' | 'high' = 'low';
+
+        const categoryHistory = historicalData[category] || {};
+        const amounts = yearsToFetch.map(year => categoryHistory[year] || 0).filter(amount => amount > 0);
+
+        if (amounts.length >= 2) {
+          // zScore計算: 過去年度平均との差を標準偏差で割った値
+          const mean = amounts.reduce((sum, val) => sum + val, 0) / amounts.length;
+          const variance = amounts.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / amounts.length;
+          const stdDev = Math.sqrt(variance);
+
+          if (stdDev > 0) {
+            zScore = (data.total - mean) / stdDev;
+          }
+
+          // growthRate計算: 前年比成長率（%）
+          const prevYearAmount = categoryHistory[currentYear - 1] || 0;
+          if (prevYearAmount > 0) {
+            growthRate = ((data.total - prevYearAmount) / prevYearAmount) * 100;
+          }
+
+          // diffRatio計算: 前年との比率差（ポイント）
+          const prevYearRatio = prevYearAmount > 0 ? (prevYearAmount / totalAmount) * 100 : 0;
+          diffRatio = ratio - prevYearRatio;
+
+          // 異常リスク分類
+          anomalyRisk = this.classifyAnomalyRisk(
+            zScore || 0,
+            growthRate || 0,
+            ratio,
+            diffRatio || 0
+          );
+        }
+
+        // 基本リスクレベルと論点を決定
+        let baseRisk: 'low' | 'medium' | 'high' = 'low';
         const issues: string[] = [];
 
         // 高額支出の科目はリスクが高い
         if (data.total >= 500000) {
-          riskLevel = 'high';
+          baseRisk = 'high';
           issues.push(`${category}の支出が総支出の${ratio.toFixed(1)}%を占めています`);
           issues.push('大口支出の事業性と必要性を確認する必要があります');
         } else if (data.total >= 200000) {
-          riskLevel = 'medium';
+          baseRisk = 'medium';
           issues.push(`${category}の支出が総支出の${ratio.toFixed(1)}%を占めています`);
           issues.push('支出内容の妥当性を確認してください');
         }
 
         // 科目別のリスク評価
         if (category === '外注費' && data.total >= 100000) {
-          riskLevel = riskLevel === 'low' ? 'medium' : riskLevel;
+          baseRisk = baseRisk === 'low' ? 'medium' : baseRisk;
           issues.push('外注費の金額と業務委託契約の関連性を確認してください');
         } else if (category === '会議費' && data.total >= 50000) {
-          riskLevel = riskLevel === 'low' ? 'medium' : riskLevel;
+          baseRisk = baseRisk === 'low' ? 'medium' : baseRisk;
           issues.push('会議費の支出目的と参加者情報を整理してください');
         } else if (category === '消耗品費' && data.total >= 30000) {
-          riskLevel = riskLevel === 'low' ? 'medium' : riskLevel;
+          baseRisk = baseRisk === 'low' ? 'medium' : baseRisk;
           issues.push('消耗品費の金額と事業規模のバランスを確認してください');
         }
 
@@ -314,13 +419,33 @@ ${JSON.stringify(transactionSummary, null, 2)}
           issues.push('支出の根拠となる資料を整理してください');
         }
 
+        // 異常検知結果をissuesに統合
+        if (growthRate !== undefined && Math.abs(growthRate) >= 10) {
+          const direction = growthRate > 0 ? '増加' : '減少';
+          issues.push(`前年比 ${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}% と${direction}しています`);
+        }
+
+        if (zScore !== undefined && Math.abs(zScore) >= 2) {
+          issues.push(`過去平均との差のZスコアが ${zScore.toFixed(2)} です`);
+        }
+
+        // 最終的なリスクレベルを決定（異常検知を上書き補正として使う）
+        const finalRisk: 'low' | 'medium' | 'high' =
+          anomalyRisk === 'high' ? 'high'
+          : anomalyRisk === 'medium' && baseRisk !== 'high' ? 'medium'
+          : baseRisk;
+
         return {
           id: `forecast_${Date.now()}_${index}`,
           accountName: category,
           totalAmount: data.total,
           ratio: Math.round(ratio * 10) / 10, // 小数点1桁
-          riskLevel,
-          issues
+          riskLevel: finalRisk,
+          issues,
+          zScore,
+          growthRate,
+          diffRatio,
+          anomalyRisk
         };
       })
       .sort((a, b) => {

@@ -155,24 +155,17 @@ Frontend (React) → Google OAuth 2.0 → Backend (Express) → Google Workspace
 - 特徴: ユーザーがGoogleアカウントでログインし、自身のDrive/Sheetsに直接アクセス
 - セキュリティ: アプリ提供者は一切のユーザーデータにアクセス不可
 
-## 📋 現在の実装範囲
-
-### ✅ 完了済み機能
 
 #### 1. AI経費抽出
 - Gemini AIによる領収書画像解析
 - 自動金額・日付・店舗名抽出
 - リアルタイム分類結果表示
 
-#### 2. 年別ファイル管理
-- 年度ごとにスプレッドシート自動作成（`2026_Expenses.xlsx`）
-- Expenses/ Summary / Rules の3シート構成
-- 月別集計式の自動挿入
+#### 2. 年別タブ管理
+- 年度ごとにスプレッドシートタブ自動作成
 
 #### 3. Rulesベース分類
 - ユーザー定義ルールによる高精度分類
-- 8つの初期サンプルルール
-- 信頼度スコア付き
 
 #### 4. Google Drive自動整理
 - gemini-expense-trackerルートフォルダ自動作成
@@ -253,11 +246,11 @@ npm run test:sheets
 ```
 Google Drive
 └─ gemini-expense-tracker/
-    ├─ 2026_Expenses.xlsx
-    │   ├─ Expenses（支出データ）
-    │   ├─ Summary（集計表）
+    ├─ Gemini_Expenses.xlsx
+    │   ├─ 2026_Expenses（支出データ）
+    │   ├─ 2026_Income（売上データ）
     │   └─ Rules（分類ルール）
-    └─ 2026_Receipts/
+    └─ Receipts/
         ├─ 2026-01/
         ├─ 2026-02/
         └─ ...（月別フォルダ）
@@ -313,8 +306,10 @@ scopes: [
 |------|------|----------|------|-------------|
 | 2024-01-15 | 1200 | 食費 | ランチ | https://drive.google.com/... |
 
-#### Summaryシート（監査予報の「更新」ボタン押下タイミングで作成・集計）
-
+#### Summaryシート３種（監査予報の「更新」ボタン押下タイミングで作成・再集計）
+- Summary_Base → **事実の正規化レイヤー**
+- Summary_Year_Total → **検算と財務視点**
+- Summary_Account_History → **統計・異常検知の素材**
 
 #### Rulesシート（学習データ）
 | Keyword | Category | Confidence | Notes |

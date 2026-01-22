@@ -287,7 +287,7 @@ export class SheetsService {
         throw new Error('認証されていません');
       }
 
-      const response = await fetch(`${this.baseUrl}/generate-summary`, {
+      const response = await fetch(`${this.baseUrl}/audit-forecast-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

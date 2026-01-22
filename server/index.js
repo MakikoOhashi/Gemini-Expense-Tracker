@@ -2542,6 +2542,113 @@ app.get('/api/user/last-summary-generated/:idToken', async (req, res) => {
   }
 });
 
+// Audit forecast update endpoint - creates 3 Summary sheets
+app.post('/api/audit-forecast-update', async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+
+    if (!authorization?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const idToken = authorization.substring(7);
+    const googleId = userService.extractSubFromIdToken(idToken); // JWT から sub を抽出
+
+    if (!googleId) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = req.body.userId || 'test-user'; // userIdを取得
+    const tokens = userTokens[userId];
+
+    if (!tokens) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const year = req.body.year ? parseInt(req.body.year) : new Date().getFullYear();
+    if (isNaN(year) || year < 2000 || year > 2100) {
+      return res.status(400).json({ error: '無効な年度です' });
+    }
+
+    console.log(`🔮 監査予報更新を開始: ユーザー=${userId}, 年=${year}`);
+
+    // Get or create the base Gemini_Expenses spreadsheet
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
+
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // Get current sheets in the spreadsheet
+    const spreadsheetResponse = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties'
+    });
+
+    const existingSheets = spreadsheetResponse.data.sheets || [];
+    const existingSheetTitles = existingSheets.map(s => s.properties?.title);
+
+    console.log(`📊 既存シート確認: ${existingSheetTitles.join(', ')}`);
+
+    // Define the 3 Summary sheets to create
+    const sheetsToCreate = [
+      { name: 'Summary_Base' },
+      { name: 'Summary_Year_Total' },
+      { name: 'Summary_Account_History' }
+    ];
+
+    const createdSheets = [];
+
+    // Check each sheet and create if it doesn't exist
+    for (const sheetConfig of sheetsToCreate) {
+      const existingSheet = existingSheets.find(s => s.properties?.title === sheetConfig.name);
+
+      if (!existingSheet) {
+        // Create new sheet
+        const addSheetRequest = {
+          addSheet: {
+            properties: {
+              title: sheetConfig.name,
+              sheetType: 'GRID',
+              gridProperties: {
+                rowCount: 1000,
+                columnCount: 20,
+              },
+            }
+          }
+        };
+
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          resource: { requests: [addSheetRequest] }
+        });
+
+        console.log(`✅ ${sheetConfig.name} を作成しました`);
+        createdSheets.push(sheetConfig.name);
+      } else {
+        // Sheet already exists - preserve existing content
+        console.log(`📄 ${sheetConfig.name} は既に存在します（スキップ）`);
+        createdSheets.push(sheetConfig.name);
+      }
+    }
+
+    console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了`);
+
+    res.json({
+      success: true,
+      sheets: createdSheets,
+      message: '3 つのSummaryシートが準備完了しました'
+    });
+
+  } catch (error) {
+    console.error('Audit Forecast Update Error:', error);
+    res.status(500).json({
+      error: '監査予報更新に失敗しました',
+      details: error.message
+    });
+  }
+});
+
 // Get user document
 app.get('/api/user/:googleId', async (req, res) => {
   try {

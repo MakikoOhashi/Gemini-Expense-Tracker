@@ -2759,6 +2759,58 @@ app.post('/api/audit-forecast-update', async (req, res) => {
       console.log('⚠️ Summary_Base に追加するデータがありませんでした');
     }
 
+    // **Step 3: Summary_Year_Total タブに年度別集計関数を入れる**
+    console.log('📊 Summary_Year_Total に関数を設定開始...');
+
+    // Summary_Base から年度一覧を取得（一意な年度のみ）
+    const baseYearsResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Summary_Base!A2:A',  // A列から年度を取得（ヘッダー行を除く）
+    });
+
+    const baseYearsData = baseYearsResponse.data.values || [];
+    const uniqueYears = [...new Set(baseYearsData.flat().map(year => parseInt(year)).filter(year => !isNaN(year)))].sort();
+
+    console.log(`📅 Summary_Base から取得した年度一覧: ${uniqueYears.join(', ')}`);
+
+    if (uniqueYears.length === 0) {
+      console.log('⚠️ Summary_Base に年度データが見つからないため、Summary_Year_Total の作成をスキップします');
+    } else {
+      // Summary_Year_Total にヘッダー行を作成
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: 'Summary_Year_Total!A1:E1',
+        valueInputOption: 'RAW',
+        resource: {
+          values: [['年度', '支出合計', '収入合計', '収支', '件数合計']]
+        }
+      });
+
+      // 各年度ごとの集計関数を作成
+      const yearTotalRows = uniqueYears.map((year, idx) => {
+        const rowNum = idx + 2;  // データ行は2行目から開始
+        return [
+          year,
+          `=SUMIFS(Summary_Base!C:C, Summary_Base!A:A, ${year}, Summary_Base!B:B, "<>売上")`,  // 支出合計（売上以外）
+          `=SUMIFS(Summary_Base!C:C, Summary_Base!A:A, ${year}, Summary_Base!B:B, "売上")`,    // 収入合計（売上のみ）
+          `=C${rowNum} - B${rowNum}`,                                                          // 収支（収入-支出）
+          `=SUMIFS(Summary_Base!D:D, Summary_Base!A:A, ${year})`                               // 件数合計
+        ];
+      });
+
+      // Summary_Year_Total に関数を入力
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: 'Summary_Year_Total!A2',
+        valueInputOption: 'USER_ENTERED',  // 関数を評価させるため USER_ENTERED を使用
+        resource: {
+          values: yearTotalRows
+        }
+      });
+
+      console.log(`✅ Summary_Year_Total に ${yearTotalRows.length} 年度分の集計関数を入力しました`);
+    }
+
     console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了、Summary_Baseに${summaryRows.length}行の関数を設定`);
 
     res.json({

@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from "../types";
+import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, AnomalyDetection } from "../types";
 import { sheetsService } from "./sheetsService";
 
 export class AuditService {
@@ -412,12 +412,77 @@ ${JSON.stringify(transactionSummary, null, 2)}
       }
     }
 
-    return auditForecastItems
-      .sort((a, b) => {
-        // リスクレベルでソート（high -> medium -> low）
-        const riskOrder = { high: 3, medium: 2, low: 1 };
-        return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
-      });
+    // ===== 評価軸方式: 4つの評価軸で異常検知 =====
+    const anomalies: AnomalyDetection[] = [];
+
+    // ① 構成比異常チェック
+    for (const item of auditForecastItems) {
+      if (item.ratio > 60) {
+        anomalies.push({
+          dimension: '構成比異常',
+          accountName: item.accountName,
+          value: item.ratio,
+          severity: item.ratio > 80 ? 'high' : 'medium',
+          message: `売上に対して${item.accountName}が${item.ratio.toFixed(1)}%を占めています`
+        });
+      }
+    }
+
+    // ② 急変異常チェック（時系列データがある場合のみ）
+    for (const item of auditForecastItems) {
+      if (Math.abs(item.growthRate || 0) > 50) {
+        anomalies.push({
+          dimension: '急変異常',
+          accountName: item.accountName,
+          value: item.growthRate || 0,
+          severity: Math.abs(item.growthRate || 0) > 100 ? 'high' : 'medium',
+          message: `前年比${item.growthRate! > 0 ? '+' : ''}${item.growthRate!.toFixed(1)}%と急変`
+        });
+      }
+    }
+
+    // ③ 統計的異常チェック（時系列データがある場合のみ）
+    for (const item of auditForecastItems) {
+      if (Math.abs(item.zScore || 0) > 2.0) {
+        anomalies.push({
+          dimension: '統計的異常',
+          accountName: item.accountName,
+          value: item.zScore || 0,
+          severity: Math.abs(item.zScore || 0) > 3 ? 'high' : 'medium',
+          message: `過去平均から${item.zScore!.toFixed(1)}σ乖離`
+        });
+      }
+    }
+
+    // ④ 比率変動異常チェック（時系列データがある場合のみ）
+    for (const item of auditForecastItems) {
+      if (Math.abs(item.diffRatio || 0) > 20) {
+        anomalies.push({
+          dimension: '比率変動異常',
+          accountName: item.accountName,
+          value: item.diffRatio || 0,
+          severity: Math.abs(item.diffRatio || 0) > 40 ? 'high' : 'medium',
+          message: `構成比が${item.diffRatio! > 0 ? '+' : ''}${item.diffRatio!.toFixed(1)}pt変動`
+        });
+      }
+    }
+
+    // 各カテゴリに検知情報を付与
+    for (const item of auditForecastItems) {
+      item.detectedAnomalies = anomalies.filter(a => a.accountName === item.accountName);
+      item.anomalyCount = item.detectedAnomalies.length;
+    }
+
+    // 異常検知数でソート（第1優先）、同点の場合は riskLevel でソート（第2優先）
+    return auditForecastItems.sort((a, b) => {
+      // 第1優先: anomalyCount（検知数が多い順）
+      const countDiff = (b.anomalyCount || 0) - (a.anomalyCount || 0);
+      if (countDiff !== 0) return countDiff;
+
+      // 第2優先: riskLevel（high > medium > low）
+      const riskOrder = { high: 3, medium: 2, low: 1 };
+      return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
+    });
   }
 
   // 記帳チェック（個別）- 個別のチェック項目を生成

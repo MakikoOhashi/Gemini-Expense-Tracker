@@ -151,12 +151,12 @@ const Dashboard: React.FC<DashboardProps> = ({
         const forecastData = await auditService.generateAuditForecast(filteredTransactions);
         setAuditForecast(forecastData);
 
-        // 生成した予報をサーバーAPI経由でFirestoreに保存
+        // 生成した予報をサーバーAPI経由でFirestoreに保存（最重要リスク1件のみ）
         const requestBody = {
           googleId,
           year,
           date: today,
-          forecastResults: forecastData
+          forecastResults: forecastData.length > 0 ? [forecastData[0]] : []
         };
 
         // ガード: dateに "/" が含まれていたらエラー

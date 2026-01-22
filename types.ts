@@ -54,6 +54,15 @@ export interface AuditPrediction {
   transactionId: string; // 元の取引ID
 }
 
+// 異常検知情報
+export interface AnomalyDetection {
+  dimension: '構成比異常' | '急変異常' | '統計的異常' | '比率変動異常';
+  accountName: string;
+  value: number;
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+}
+
 // 監査予報（全体）- 勘定科目合計・比率ベースの論点
 export interface AuditForecastItem {
   id: string;
@@ -68,6 +77,10 @@ export interface AuditForecastItem {
   growthRate?: number;      // 前年比成長率（%）
   diffRatio?: number;       // 前年との比率差（ポイント）
   anomalyRisk?: 'low' | 'medium' | 'high';  // 異常検知によるリスク
+
+  // 評価軸方式（新規追加）
+  detectedAnomalies?: AnomalyDetection[];  // この項目で検知された異常リスト
+  anomalyCount?: number;  // 異常検知数
 }
 
 // 記帳チェック（個別）- 個別のチェック項目

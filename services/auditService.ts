@@ -267,6 +267,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
     return 'low';
   }
 
+  // Summary_Account_History からデータ取得
+  async fetchSummaryAccountHistory(year: number): Promise<any[]> {
+    const response = await fetch(`/api/summary-account-history?year=${year}`);
+    if (!response.ok) throw new Error('Failed to fetch account history');
+    return response.json();
+  }
+
   // 監査予報（全体）- 勘定科目合計・比率ベースの論点を生成
   async generateAuditForecast(transactions: any[], userId?: string): Promise<AuditForecastItem[]> {
     // NaN/無効値対策: 安全な数値加算関数
@@ -299,92 +306,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
     // 現在の年度を特定
     const currentYear = new Date().getFullYear();
 
-    // 時系列データを取得（過去3年分のデータを取得）
-    const historicalData: Record<string, Record<number, number>> = {};
-    const yearsToFetch = [currentYear - 2, currentYear - 1, currentYear];
-
-    if (userId) {
-      sheetsService.setUserId(userId);
-
-      // 並列で複数年度のデータを取得
-      const yearPromises = yearsToFetch.map(async (year) => {
-        try {
-          const transactions = await sheetsService.getTransactions(year);
-          const yearData: Record<string, number> = {};
-
-          // 支出データのみを集計
-          transactions
-            .filter(t => t.type === 'expense')
-            .forEach(transaction => {
-              const category = transaction.category || 'その他';
-              const amount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
-                ? transaction.amount
-                : 0;
-              yearData[category] = (yearData[category] || 0) + amount;
-            });
-
-          return { year, data: yearData };
-        } catch (error) {
-          console.warn(`Failed to fetch data for year ${year}:`, error);
-          return { year, data: {} };
-        }
-      });
-
-      const yearResults = await Promise.all(yearPromises);
-
-      // データを整理
-      yearResults.forEach(({ year, data }) => {
-        Object.entries(data).forEach(([category, amount]) => {
-          if (!historicalData[category]) {
-            historicalData[category] = {};
-          }
-          historicalData[category][year] = amount;
-        });
-      });
-    }
+    // Summary_Account_History からデータ取得
+    const historyData = userId ? await this.fetchSummaryAccountHistory(currentYear) : [];
 
     // 各勘定科目をAuditForecastItemに変換
-    const forecastItems: AuditForecastItem[] = Object.entries(categoryTotals)
+    const auditForecastItems: AuditForecastItem[] = Object.entries(categoryTotals)
       .map(([category, data], index) => {
         const ratio = totalAmount > 0 ? (data.total / totalAmount) * 100 : 0;
-
-        // 異常検知計算
-        let zScore: number | undefined;
-        let growthRate: number | undefined;
-        let diffRatio: number | undefined;
-        let anomalyRisk: 'low' | 'medium' | 'high' = 'low';
-
-        const categoryHistory = historicalData[category] || {};
-        const amounts = yearsToFetch.map(year => categoryHistory[year] || 0).filter(amount => amount > 0);
-
-        if (amounts.length >= 2) {
-          // zScore計算: 過去年度平均との差を標準偏差で割った値
-          const mean = amounts.reduce((sum, val) => sum + val, 0) / amounts.length;
-          const variance = amounts.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / amounts.length;
-          const stdDev = Math.sqrt(variance);
-
-          if (stdDev > 0) {
-            zScore = (data.total - mean) / stdDev;
-          }
-
-          // growthRate計算: 前年比成長率（%）
-          const prevYearAmount = categoryHistory[currentYear - 1] || 0;
-          if (prevYearAmount > 0) {
-            growthRate = ((data.total - prevYearAmount) / prevYearAmount) * 100;
-          }
-
-          // diffRatio計算: 前年との比率差（ポイント）
-          const prevYearRatio = prevYearAmount > 0 ? (prevYearAmount / totalAmount) * 100 : 0;
-          diffRatio = ratio - prevYearRatio;
-
-          // 異常リスク分類
-          anomalyRisk = this.classifyAnomalyRisk(
-            zScore || 0,
-            growthRate || 0,
-            ratio,
-            diffRatio || 0
-          );
-        }
 
         // 基本リスクレベルと論点を決定
         let baseRisk: 'low' | 'medium' | 'high' = 'low';
@@ -419,42 +347,77 @@ ${JSON.stringify(transactionSummary, null, 2)}
           issues.push('支出の根拠となる資料を整理してください');
         }
 
-        // 異常検知結果をissuesに統合
-        if (growthRate !== undefined && Math.abs(growthRate) >= 10) {
-          const direction = growthRate > 0 ? '増加' : '減少';
-          issues.push(`前年比 ${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}% と${direction}しています`);
-        }
-
-        if (zScore !== undefined && Math.abs(zScore) >= 2) {
-          issues.push(`過去平均との差のZスコアが ${zScore.toFixed(2)} です`);
-        }
-
-        // 最終的なリスクレベルを決定（異常検知を上書き補正として使う）
-        const finalRisk: 'low' | 'medium' | 'high' =
-          anomalyRisk === 'high' ? 'high'
-          : anomalyRisk === 'medium' && baseRisk !== 'high' ? 'medium'
-          : baseRisk;
-
         return {
           id: `forecast_${Date.now()}_${index}`,
           accountName: category,
           totalAmount: data.total,
           ratio: Math.round(ratio * 10) / 10, // 小数点1桁
-          riskLevel: finalRisk,
+          riskLevel: baseRisk,
           issues,
-          zScore,
-          growthRate,
-          diffRatio,
-          anomalyRisk
+          zScore: 0, // デフォルト値
+          growthRate: 0, // デフォルト値
+          diffRatio: 0, // デフォルト値
+          anomalyRisk: 'low' // デフォルト値
         };
-      })
+      });
+
+    // Summary_Account_History からデータを取得・計算
+    if (userId && historyData.length > 0) {
+      for (const item of auditForecastItems) {
+        const accountHistory = historyData.filter((h: any) => h.accountName === item.accountName);
+
+        if (accountHistory.length >= 2) {
+          // 現年度と前年度のデータ
+          const currentYearData = accountHistory.find((h: any) => h.year === currentYear);
+          const previousYearData = accountHistory.find((h: any) => h.year === currentYear - 1);
+
+          if (currentYearData && previousYearData) {
+            // 1. growthRate 計算
+            item.growthRate = ((currentYearData.amount - previousYearData.amount) / previousYearData.amount) * 100;
+
+            // 2. diffRatio 計算（支出比率の差）
+            item.diffRatio = currentYearData.ratio - previousYearData.ratio;
+
+            // 3. zScore 計算（過去3年平均との差）
+            const pastAmounts = accountHistory.slice(0, 3).map((h: any) => h.amount);
+            const mean = pastAmounts.reduce((a: number, b: number) => a + b, 0) / pastAmounts.length;
+            const variance = pastAmounts.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / pastAmounts.length;
+            const stdDev = Math.sqrt(variance);
+
+            item.zScore = stdDev > 0 ? (currentYearData.amount - mean) / stdDev : 0;
+
+            // 4. anomalyRisk 分類
+            item.anomalyRisk = this.classifyAnomalyRisk(
+              item.zScore,
+              item.growthRate,
+              item.ratio,
+              item.diffRatio
+            );
+
+            // 5. issues に追加
+            if (item.growthRate > 30) {
+              item.issues.push(`前年比 +${item.growthRate.toFixed(1)}% と急増しています`);
+            }
+            if (item.zScore > 2) {
+              item.issues.push(`過去平均との差のZスコアが ${item.zScore.toFixed(1)} です`);
+            }
+          }
+        }
+
+        // デフォルト値（過去データがない場合）
+        if (item.zScore === undefined) item.zScore = 0;
+        if (item.growthRate === undefined) item.growthRate = 0;
+        if (item.diffRatio === undefined) item.diffRatio = 0;
+        if (item.anomalyRisk === undefined) item.anomalyRisk = 'low';
+      }
+    }
+
+    return auditForecastItems
       .sort((a, b) => {
         // リスクレベルでソート（high -> medium -> low）
         const riskOrder = { high: 3, medium: 2, low: 1 };
         return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
       });
-
-    return forecastItems;
   }
 
   // 記帳チェック（個別）- 個別のチェック項目を生成

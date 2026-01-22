@@ -1,7 +1,7 @@
 import { db } from '../lib/firebase.js';
 import admin from 'firebase-admin';
 import jwt from 'jsonwebtoken';
-import { AuditForecastItem } from '../types';
+import { AuditForecastItem } from '../types.ts';
 
 export interface UserDocument {
   last_access: { [year: string]: string }; // { "2025": "2026-01-19", "2026": "2026-01-18" }

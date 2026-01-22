@@ -2316,17 +2316,24 @@ app.post('/api/user/forecast', async (req, res) => {
           : 'unknown',
         issues: Array.isArray(result.issues)
           ? result.issues.filter(issue => typeof issue === 'string' && issue.trim()).map(issue => issue.trim())
-          : []
+          : [],
+        // 異常検知フィールドを追加
+        zScore: typeof result.zScore === 'number' && isFinite(result.zScore) ? result.zScore : undefined,
+        growthRate: typeof result.growthRate === 'number' && isFinite(result.growthRate) ? result.growthRate : undefined,
+        diffRatio: typeof result.diffRatio === 'number' && isFinite(result.diffRatio) ? result.diffRatio : undefined,
+        anomalyRisk: typeof result.anomalyRisk === 'string' && ['low', 'medium', 'high'].includes(result.anomalyRisk)
+          ? result.anomalyRisk
+          : undefined
       };
 
-      // Validate normalized result has no undefined values
-      if (Object.values(normalizedResult).some(value =>
-        value === undefined ||
-        (Array.isArray(value) && value.some(item => item === undefined))
-      )) {
-        console.error(`❌ Normalized result contains undefined values at index ${i}`, normalizedResult);
+      // Validate normalized result - allow undefined for zScore, growthRate, diffRatio, anomalyRisk
+      const requiredFields = ['id', 'accountName', 'totalAmount', 'ratio', 'riskLevel', 'issues'];
+      const hasUndefinedRequired = requiredFields.some(field => normalizedResult[field] === undefined);
+
+      if (hasUndefinedRequired) {
+        console.error(`❌ Normalized result contains undefined required values at index ${i}`, normalizedResult);
         return res.status(400).json({
-          error: `forecastResults[${i}]の正規化で未定義値が含まれています`,
+          error: `forecastResults[${i}]の必須フィールドに未定義値が含まれています`,
           normalizedResult,
           originalResult: result
         });
@@ -2910,6 +2917,44 @@ app.get('/api/user/:googleId', async (req, res) => {
       error: 'ユーザードキュメントの取得に失敗しました',
       details: error.message
     });
+  }
+});
+
+// Summary_Account_History のデータを返すエンドポイント
+app.get('/api/summary-account-history', async (req, res) => {
+  try {
+    const userId = getAuthenticatedGoogleId(req);
+    if (!userId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+
+    const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // Summary_Account_History からデータ取得
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Summary_Account_History!A:D',  // 全行取得（ヘッダー含む）
+    });
+
+    const rows = response.data.values || [];
+    // ヘッダー行を除去し、各行の最初の4列を取得
+    const historyData = rows.slice(1).map(row => ({
+      year: parseInt(row[0]) || 0,
+      accountName: row[1] || '',
+      amount: parseFloat(row[2]) || 0,
+      count: parseInt(row[3]) || 0,
+      // 追加の列がある場合はratioも取得（5列目）
+      ratio: row[4] ? parseFloat(row[4]) : 0
+    }));
+
+    res.json(historyData);
+  } catch (error) {
+    console.error('Get Account History Error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

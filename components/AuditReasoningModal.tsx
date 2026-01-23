@@ -30,7 +30,9 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     growthRate,
     diffRatio,
     anomalyRisk,
-    issues
+    issues,
+    detectedAnomalies,
+    anomalyCount
   } = auditData;
 
   // 数値表示のフォーマット関数
@@ -86,6 +88,52 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
             ))}
           </div>
         </div>
+
+        {/* 検知された異常の詳細表示 */}
+        {detectedAnomalies && detectedAnomalies.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+              🎯 検知された異常（{anomalyCount || 0}件）
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { key: '構成比異常', label: '構成比異常', desc: '支出構成の歪み' },
+                { key: '統計的異常', label: '統計的異常', desc: '平均値からの乖離' },
+                { key: '急変異常', label: '急変異常', desc: '前年比の急激な変化' },
+                { key: '比率変動異常', label: '比率変動異常', desc: '構成比の変動' }
+              ].map(({ key, label, desc }) => {
+                const isDetected = detectedAnomalies.some(anomaly => anomaly.dimension === key);
+                const anomaly = detectedAnomalies.find(a => a.dimension === key);
+
+                return (
+                  <div
+                    key={key}
+                    className={`p-3 rounded-lg border-2 ${
+                      isDetected
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-gray-200 bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-lg ${isDetected ? 'text-red-600' : 'text-gray-400'}`}>
+                        {isDetected ? '✔' : '✖'}
+                      </span>
+                      <span className={`font-bold text-sm ${isDetected ? 'text-red-800' : 'text-gray-600'}`}>
+                        {label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-1">{desc}</p>
+                    {anomaly && (
+                      <p className="text-xs text-red-700 font-medium">
+                        {anomaly.message}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ② なぜ危険か（AI解釈） */}
         <div className="mb-6">

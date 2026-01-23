@@ -351,8 +351,8 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
         // 低リスクの場合も基本的な論点を追加
         if (issues.length === 0) {
-          issues.push(`${category}の支出は総支出の${ratio.toFixed(1)}%を占めています`);
-          issues.push('支出の根拠となる資料を整理してください');
+          issues.push(`${category}が総支出の${ratio.toFixed(1)}%を占めています`);
+          issues.push('→ 支出根拠資料の整理を推奨');
         }
 
         return {

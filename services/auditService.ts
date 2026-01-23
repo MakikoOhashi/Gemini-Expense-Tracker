@@ -163,28 +163,55 @@ ${JSON.stringify(transactionSummary, null, 2)}
   }
 
   private generateSimpleAuditPredictions(transactions: any[]): AuditPrediction[] {
+    // 総支出額を計算
+    const totalAmount = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // 科目別の集計
+    const categoryTotals: Record<string, number> = {};
+    transactions
+      .filter(t => t.type === 'expense')
+      .forEach(transaction => {
+        const category = transaction.category || 'その他';
+        categoryTotals[category] = (categoryTotals[category] || 0) + (transaction.amount || 0);
+      });
+
     return transactions
       .filter(t => t.type === 'expense')
       .map(transaction => {
         let riskLevel: 'low' | 'medium' | 'high' = 'low';
         let comment = '問題なし';
 
-        // 金額ベースのリスク判定
-        if (transaction.amount >= 100000) {
+        const category = transaction.category || 'その他';
+        const categoryTotal = categoryTotals[category] || 0;
+        const categoryRatio = totalAmount > 0 ? (categoryTotal / totalAmount) * 100 : 0;
+
+        // 構造ベースのリスク判定（構成比を主軸に）
+        if (categoryRatio > 60) {
           riskLevel = 'high';
-          comment = '高額支出の妥当性を確認してください';
-        } else if (transaction.amount >= 50000) {
+          comment = `${category}が総支出の${categoryRatio.toFixed(1)}%を占める異常な構成です`;
+        } else if (categoryRatio > 40) {
           riskLevel = 'medium';
-          comment = '中額支出です。根拠を確認してください';
+          comment = `${category}が総支出の${categoryRatio.toFixed(1)}%を占めています`;
         }
 
-        // 科目ベースのリスク判定
-        if (transaction.category === '外注費' || transaction.category === '会議費') {
-          riskLevel = 'medium';
-          comment = '領収書と業務目的の関連性を確認してください';
-        } else if (transaction.category === '消耗品費' && transaction.amount >= 10000) {
+        // 金額が大きい場合のseverity調整（補助情報として）
+        if (transaction.amount >= 100000 && riskLevel === 'medium') {
           riskLevel = 'high';
-          comment = '消耗品費が高額です。詳細を確認してください';
+          comment = `${comment}（高額支出のため詳細確認が必要です）`;
+        }
+
+        // 科目別のリスク評価（構造ベースに変更）
+        if (category === '外注費' && categoryRatio > 30) {
+          riskLevel = riskLevel === 'low' ? 'medium' : riskLevel;
+          comment = '外注費の割合が高めです。業務委託契約の関連性を確認してください';
+        } else if (category === '会議費' && categoryRatio > 20) {
+          riskLevel = riskLevel === 'low' ? 'medium' : riskLevel;
+          comment = '会議費の割合が目立ちます。支出目的と参加者情報を整理してください';
+        } else if (category === '消耗品費' && categoryRatio > 25) {
+          riskLevel = riskLevel === 'low' ? 'medium' : riskLevel;
+          comment = '消耗品費の割合が高いです。事業規模とのバランスを確認してください';
         }
 
         return {
@@ -322,31 +349,37 @@ ${JSON.stringify(transactionSummary, null, 2)}
       .map(([category, data], index) => {
         const ratio = totalAmount > 0 ? (data.total / totalAmount) * 100 : 0;
 
-        // 基本リスクレベルと論点を決定
+        // 基本リスクレベルと論点を決定（構造ベース）
         let baseRisk: 'low' | 'medium' | 'high' = 'low';
         const issues: string[] = [];
 
-        // 高額支出の科目はリスクが高い
-        if (data.total >= 500000) {
+        // 構成比ベースのリスク判定（金額は補助情報として使用）
+        if (ratio > 60) {
           baseRisk = 'high';
           issues.push(`${category}が総支出の${ratio.toFixed(1)}%を占める異常な構成`);
           issues.push('→ 事業実態との乖離が疑われやすい状態');
-        } else if (data.total >= 200000) {
+        } else if (ratio > 40) {
           baseRisk = 'medium';
           issues.push(`${category}が総支出の${ratio.toFixed(1)}%を占めています`);
           issues.push('→ 税務調査時に支出の妥当性確認が必要な水準');
         }
 
-        // 科目別のリスク評価
-        if (category === '外注費' && data.total >= 100000) {
+        // 金額が大きい場合のseverity調整（補助情報として）
+        if (data.total >= 1000000 && baseRisk === 'medium') {
+          baseRisk = 'high'; // 大規模支出の場合、mediumをhighに引き上げ
+          issues.push('大規模支出のため、より詳細な確認が必要');
+        }
+
+        // 科目別のリスク評価（構造ベースに変更）
+        if (category === '外注費' && ratio > 30) {
           baseRisk = baseRisk === 'low' ? 'medium' : baseRisk;
-          issues.push('外注費の金額と業務委託契約の関連性を確認してください');
-        } else if (category === '会議費' && data.total >= 50000) {
+          issues.push('外注費の構成比が高めです。業務委託契約の関連性を確認してください');
+        } else if (category === '会議費' && ratio > 20) {
           baseRisk = baseRisk === 'low' ? 'medium' : baseRisk;
-          issues.push('会議費の支出目的と参加者情報を整理してください');
-        } else if (category === '消耗品費' && data.total >= 30000) {
+          issues.push('会議費の構成比が目立ちます。支出目的と参加者情報を整理してください');
+        } else if (category === '消耗品費' && ratio > 25) {
           baseRisk = baseRisk === 'low' ? 'medium' : baseRisk;
-          issues.push('消耗品費の金額と事業規模のバランスを確認してください');
+          issues.push('消耗品費の構成比が高いです。事業規模とのバランスを確認してください');
         }
 
         // 低リスクの場合も基本的な論点を追加

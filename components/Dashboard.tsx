@@ -492,7 +492,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       <AuditReasoningModal
         isOpen={isReasoningModalOpen}
         onClose={() => setIsReasoningModalOpen(false)}
-      />
+        auditData={auditForecast[0]}  // 最もリスクが高い項目
+        year={selectedAuditYear.toString()}
+/>
     </div>
   );
 };

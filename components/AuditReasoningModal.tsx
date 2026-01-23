@@ -1,88 +1,143 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { AuditForecastItem } from '../types';
 
 interface AuditReasoningModalProps {
   isOpen: boolean;
   onClose: () => void;
+  auditData?: AuditForecastItem;  // 実際のデータ
+  year?: string;
 }
 
-const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({ isOpen, onClose }) => {
+const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
+  isOpen,
+  onClose,
+  auditData,
+  year
+}) => {
+  // データが存在しない場合の早期リターン
+  if (!auditData) {
+    return null;
+  }
+
+  // 実際のデータから表示内容を生成
+  const {
+    accountName,
+    totalAmount,
+    ratio,
+    riskLevel,
+    zScore,
+    growthRate,
+    diffRatio,
+    anomalyRisk,
+    issues
+  } = auditData;
+
+  // リスクレベルに応じた表示色
+  const riskColor = riskLevel === 'high' ? 'bg-red-100 border-red-500'
+                : riskLevel === 'medium' ? 'bg-yellow-100 border-yellow-500'
+                : 'bg-green-100 border-green-500';
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col animate-in zoom-in-95 duration-300">
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <span className="text-lg">🧠</span>
-            <h2 className="text-lg font-bold text-gray-800">AI Audit Reasoning（簡易表示）</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition"
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
-        </div>
+    <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${!isOpen && 'hidden'}`}>
+      <div className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
 
-        {/* コンテンツエリア */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <p className="text-sm text-gray-600 leading-relaxed">
-            この監査リスク判定は、以下の3段階の分析に基づいています。
+        {/* ① 総合判定（ファーストビュー） */}
+        <div className={`p-6 rounded-lg border-l-4 ${riskColor} mb-6`}>
+          <h2 className="text-xl font-bold mb-2">
+            🚨 監査リスク分析結果（{accountName}）
+          </h2>
+          <p className="text-lg font-bold mb-2">
+            総合監査リスク：{riskLevel === 'high' ? '高' : riskLevel === 'medium' ? '中' : '低'}
           </p>
-
-          {/* Step 1 */}
-          <div className="space-y-3">
-            <h3 className="font-bold text-gray-800">Step 1: 数値特徴の分析（自動計算）</h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <p className="text-sm text-gray-700">・売上前年差 +38%（前年差平均との差 +2.4σ）</p>
-              <p className="text-sm text-gray-700">・地代家賃 比率 100.0%（業種平均との差 +3.1σ）</p>
-            </div>
-            <p className="text-sm text-gray-600">
-              → 過去平均との差から大きく乖離した数値が検出されました。
-            </p>
+          <div className="text-sm text-gray-700 space-y-1">
+            {issues.map((issue, idx) => (
+              <p key={idx}>• {issue}</p>
+            ))}
           </div>
+        </div>
 
-          {/* Step 2 */}
-          <div className="space-y-3">
-            <h3 className="font-bold text-gray-800">Step 2: リスク特徴のスコアリング（ルールベース）</h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <p className="text-sm text-gray-700">・異常値スコア = 0.78（閾値 0.65 超過）</p>
-              <p className="text-sm text-gray-700">・構成比変動スコア = 0.82</p>
-            </div>
-            <p className="text-sm text-gray-600">
-              → 異常度・構成比変動ともに高リスク領域に該当します。
-            </p>
-          </div>
-
-          {/* Step 3 */}
-          <div className="space-y-3">
-            <h3 className="font-bold text-gray-800">Step 3: AIによるリスク要因の解釈（Gemini）</h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <p className="text-sm text-gray-700">・高額な固定費（地代家賃）が特定項目に集中しています</p>
-              <p className="text-sm text-gray-700">・売上変動に対して費用構造の変化が小さい傾向があります</p>
-              <p className="text-sm text-gray-700">・高リスク傾向の財務パターンに該当しています</p>
-            </div>
-            <p className="text-sm text-gray-600">
-              ※ 本ステップは Step1・2 の数値結果をもとに、AIがリスク要因を言語化したものです。
-            </p>
-          </div>
-
-          {/* 総合判定 */}
-          <div className="bg-red-50 border border-red-200 p-4 rounded-lg space-y-3">
-            <h3 className="font-bold text-red-800 flex items-center gap-2">
-              <span>▶</span>
-              総合判定
-            </h3>
-            <p className="text-sm text-red-700 font-medium">
-              総合監査リスク：高（スコア 0.85）
-            </p>
-            <p className="text-xs text-red-600">
-              ※ 本結果は統計的指標とAIによる補助的な分析結果であり、最終的な判断は専門家による確認を推奨します。
+        {/* ② なぜ危険か（AI解釈） */}
+        <div className="mb-6">
+          <h3 className="text-lg font-bold mb-3">🧠 税務・経営的な意味（AI解釈）</h3>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-700">
+              {accountName}の支出が総支出の{ratio}%を占めています。
+              {growthRate && growthRate > 30 && `前年比 +${growthRate.toFixed(1)}% と急増しており、`}
+              {zScore && zScore > 2 && `統計的にも過去平均から大きく乖離（Zスコア: ${zScore.toFixed(1)}）しています。`}
+              税務調査では「実態に即した経費か？」が最大の論点になります。
             </p>
           </div>
         </div>
+
+        {/* ③ 数値根拠（エビデンス） */}
+        <div className="mb-6">
+          <h3 className="text-lg font-bold mb-3">🔍 リスクの根拠（数値・ルール）</h3>
+          <div className="space-y-2 text-sm">
+            {growthRate !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">売上前年差</span>
+                <span className="font-bold">{growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%</span>
+              </div>
+            )}
+            {ratio !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">{accountName} 比率</span>
+                <span className="font-bold">{ratio.toFixed(1)}%</span>
+              </div>
+            )}
+            {zScore !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">過去平均との差（σ）</span>
+                <span className="font-bold">{zScore > 0 ? '+' : ''}{zScore.toFixed(1)}σ</span>
+              </div>
+            )}
+            {diffRatio !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">構成比変動</span>
+                <span className="font-bold">{diffRatio > 0 ? '+' : ''}{diffRatio.toFixed(1)}pt</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ④ 今やるべきこと */}
+        <div className="mb-6">
+          <h3 className="text-lg font-bold mb-3">🛠 今すぐやるべきこと</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-start gap-2">
+              <span className="font-bold">1.</span>
+              <span>{accountName}の契約書・領収書・使用実態資料を準備</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-bold">2.</span>
+              <span>売上と事業活動との関係性を説明できる資料を作成</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-bold">3.</span>
+              <span>他の経費項目が極端に少ない理由を整理</span>
+            </div>
+            {growthRate && growthRate > 30 && (
+              <div className="flex items-start gap-2">
+                <span className="font-bold">4.</span>
+                <span>前年比 +{growthRate.toFixed(1)}% となった理由を言語化</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-4 p-3 bg-amber-50 rounded-lg text-xs text-amber-900">
+            ※ これらが説明できない場合、否認リスクが高まります
+          </div>
+        </div>
+
+        {/* 閉じるボタン */}
+        <button
+          onClick={onClose}
+          className="w-full bg-gray-600 text-white py-3 rounded-lg font-bold hover:bg-gray-700"
+        >
+          閉じる
+        </button>
       </div>
     </div>
   );

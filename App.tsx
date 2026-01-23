@@ -78,6 +78,7 @@ const App: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConvertingImage, setIsConvertingImage] = useState(false);
+  const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
   
   const [pendingExtraction, setPendingExtraction] = useState<{
     type: 'transaction' | 'rule';
@@ -202,6 +203,12 @@ const App: React.FC = () => {
             content: '❌ Google アカウントとの連携に失敗しました。',
             timestamp: Date.now()
           }]);
+        }
+
+        // Show first time guide if not shown before
+        const hasSeenGuide = localStorage.getItem('hasSeenFirstTimeGuide');
+        if (!hasSeenGuide && status.authenticated) {
+          setShowFirstTimeGuide(true);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -830,6 +837,95 @@ const App: React.FC = () => {
         <div className="w-full lg:max-w-5xl lg:mx-auto lg:px-6">
           {activeTab === 'chat' ? (
           <div className="p-4 space-y-4 pb-48 lg:p-6 xl:p-8">
+            {/* First Time Guide Banner */}
+            {showFirstTimeGuide && (
+              <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg animate-in slide-in-from-top-4 duration-500">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800">まず、やりたいことを選んでください</h3>
+                      <p className="text-sm text-gray-600">何をしたいですか？</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowFirstTimeGuide(false);
+                      localStorage.setItem('hasSeenFirstTimeGuide', 'true');
+                    }}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      handleQuickAction('経費：');
+                      setShowFirstTimeGuide(false);
+                      localStorage.setItem('hasSeenFirstTimeGuide', 'true');
+                    }}
+                    className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition"
+                  >
+                    <BanknotesIcon className="w-5 h-5 text-green-600" />
+                    <div className="text-left">
+                      <p className="font-bold text-green-800 text-sm">経費を登録</p>
+                      <p className="text-xs text-green-600">レシート撮影</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleQuickAction('売上：');
+                      setShowFirstTimeGuide(false);
+                      localStorage.setItem('hasSeenFirstTimeGuide', 'true');
+                    }}
+                    className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition"
+                  >
+                    <SparklesIcon className="w-5 h-5 text-blue-600" />
+                    <div className="text-left">
+                      <p className="font-bold text-blue-800 text-sm">売上を登録</p>
+                      <p className="text-xs text-blue-600">収入記録</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleQuickAction('ルール：');
+                      setShowFirstTimeGuide(false);
+                      localStorage.setItem('hasSeenFirstTimeGuide', 'true');
+                    }}
+                    className="flex items-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 transition"
+                  >
+                    <TagIcon className="w-5 h-5 text-purple-600" />
+                    <div className="text-left">
+                      <p className="font-bold text-purple-800 text-sm">ルール設定</p>
+                      <p className="text-xs text-purple-600">自動分類</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleQuickAction('集計を見せて');
+                      setShowFirstTimeGuide(false);
+                      localStorage.setItem('hasSeenFirstTimeGuide', 'true');
+                    }}
+                    className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition"
+                  >
+                    <ChartBarIcon className="w-5 h-5 text-orange-600" />
+                    <div className="text-left">
+                      <p className="font-bold text-orange-800 text-sm">集計を見る</p>
+                      <p className="text-xs text-orange-600">データ分析</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${m.role === 'user' ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
@@ -1096,6 +1192,21 @@ const App: React.FC = () => {
               ))}
             </div>
             <div className="p-4">
+              {/* モード表示 */}
+              {activePrefixes.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
+                    <div className="w-2 h-2 bg-slate-900 rounded-full"></div>
+                    <span>
+                      {activePrefixes[0].text === '経費：' && '📒 経費入力モード：レシート撮影または取引内容を教えてください'}
+                      {activePrefixes[0].text === '売上：' && '💰 売上入力モード：収入内容を教えてください'}
+                      {activePrefixes[0].text === 'ルール：' && '🏷️ ルール設定モード：自動分類ルールを作成します'}
+                      {activePrefixes[0].text === '集計を見せて' && '📊 集計モード：取引データの集計を表示します'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {selectedImage && (
                 <div className="mb-3 relative inline-block animate-in zoom-in-50 duration-200">
                   <img src={selectedImage} className="w-20 h-20 object-cover rounded-xl border-2 border-slate-200 shadow-md" alt="添付" />
@@ -1104,23 +1215,13 @@ const App: React.FC = () => {
                   </button>
                 </div>
               )}
-              {activePrefixes.length > 0 && (
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {activePrefixes.map((prefix) => (
-                    <div key={prefix.id} className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-full">
-                      <span>{prefix.text}</span>
-                      <button
-                        onClick={() => removePrefix(prefix.id)}
-                        className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition"
-                      >
-                        <XMarkIcon className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+
               <div className="flex items-end gap-2">
-                <button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 transition active:scale-95">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing || activePrefixes.length === 0 || !['経費：', '売上：'].includes(activePrefixes[0]?.text)}
+                  className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
+                >
                   <CameraIcon className="w-6 h-6" />
                   <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleImageUpload} />
                 </button>
@@ -1128,12 +1229,13 @@ const App: React.FC = () => {
                   ref={textareaRef}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="メッセージ..."
-                  className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-gray-400 font-medium"
+                  placeholder={activePrefixes.length === 0 ? "👆上から操作を選んでください（経費／売上／集計／ルール）" : "メッセージ..."}
+                  className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-slate-700 placeholder:font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   rows={1}
+                  disabled={activePrefixes.length === 0}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
                 />
-                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage && activePrefixes.length === 0)} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 active:scale-90 transition">
+                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage) || activePrefixes.length === 0} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition">
                   <PaperAirplaneIcon className="w-6 h-6" />
                 </button>
               </div>
@@ -1203,6 +1305,8 @@ const App: React.FC = () => {
         availableYears={getAvailableYears()}
         type="audit"
       />
+
+
 
       {/* Folder Conflict Modal */}
       {folderConflict && (

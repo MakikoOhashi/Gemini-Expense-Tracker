@@ -60,7 +60,9 @@ export interface AnomalyDetection {
   accountName: string;
   value: number;
   severity: 'low' | 'medium' | 'high';
-  message: string;
+  message: string;          // 既存: UI表示用の説明文
+  fact?: string;            // 🆕 事実の簡潔な記述（AI用）
+  ruleDescription?: string; // 🆕 検知ルールの説明（AI用）
 }
 
 // 監査予報（全体）- 勘定科目合計・比率ベースの論点
@@ -82,10 +84,9 @@ export interface AuditForecastItem {
   detectedAnomalies?: AnomalyDetection[];  // この項目で検知された異常リスト
   anomalyCount?: number;  // 異常検知数
 
-  // AI分析結果（新規追加）
-  aiInterpretation?: string;  // AIによる異常構造の解釈
-  taxConcerns?: string[];     // 税務署の懸念事項（AI生成）
-  preparationPoints?: string[]; // 準備すべきアクション（AI生成）
+  // AI生成コンテンツ（すべてオプショナル・テキストのみ）
+  aiSuspicionView?: string;        // 税務署からの見られ方（AIが生成）
+  aiPreparationAdvice?: string;    // 準備すべきことの説明（AIが生成）
 }
 
 // 記帳チェック（個別）- 個別のチェック項目

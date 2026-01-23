@@ -14,9 +14,8 @@ export class AuditService {
   // 異常検知済み構造データをAIに渡して解釈させる
   async analyzeAuditForecastWithStructure(forecastItems: AuditForecastItem[]): Promise<{
     accountName: string;
-    aiInterpretation: string;
-    taxConcerns: string[];
-    preparationPoints: string[];
+    aiSuspicionView: string;
+    aiPreparationAdvice: string;
   }[]> {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
@@ -26,43 +25,55 @@ export class AuditService {
     const ai = new GoogleGenAI({ apiKey });
     const modelName = 'gemini-2.5-flash-lite';
 
-    // 異常検知済みの構造データをAIに渡す
-    const systemInstruction = `あなたは税務調査対応専門のAIアシスタントです。
+    // 検知済み異常を「事実」として整形（意味づけ前の情報のみ）
+    const structuredData = forecastItems.map(item => ({
+      accountName: item.accountName,
+      totalAmount: item.totalAmount,
+      ratio: item.ratio,
+      detectedAnomalies: (item.detectedAnomalies || []).map(anomaly => ({
+        dimension: anomaly.dimension,
+        fact: anomaly.fact || `値: ${anomaly.value}`,              // 🆕 事実のみ
+        ruleDescription: anomaly.ruleDescription || '基準値超過',   // 🆕 ルール説明のみ
+        severity: anomaly.severity
+      }))
+    }));
 
-以下の異常検知済みデータを分析し、各勘定科目について：
-1. なぜこの異常が問題なのかを税務署の視点から説明
-2. どのような質問をされる可能性があるか
-3. ユーザーが事前に準備すべき説明と資料
+    const systemInstruction = `あなたは税務調査の専門家です。
 
-を具体的に示してください。
+以下のデータは、会計システムが自動検出した「異常構造の事実」です。
+あなたの役割は、この事実が税務調査でどう見られやすいかを「文章として説明すること」だけです。
 
-## 異常検知済みデータ構造
-${JSON.stringify(forecastItems.map(item => ({
-  accountName: item.accountName,
-  totalAmount: item.totalAmount,
-  ratio: item.ratio,
-  riskLevel: item.riskLevel,
-  anomalyCount: item.anomalyCount,
-  detectedAnomalies: item.detectedAnomalies,
-  zScore: item.zScore,
-  growthRate: item.growthRate,
-  diffRatio: item.diffRatio
-})), null, 2)}
+## 重要な制約
+- 異常の分類・判定は完了済みです。再評価や再分類は不要です
+- 数値の計算や追加の判定も不要です
+- あなたは「この事実がどう見られるか」を言葉にするだけです
+- 断定は避け、「〜の可能性があります」「〜と見られやすい」など可能性を示す表現を使ってください
+- 「架空計上」「私的利用」などの断定的な用語は避け、「説明が求められやすい」「確認されやすい」など中立的な表現を使ってください
 
-## 重要ポイント
-- 数値分析は既に完了しているので、AI判断は不要
-- 異常構造の「意味」を解釈することに集中
-- 税務署の視点から具体的な懸念事項を挙げる
-- ユーザーの準備すべき具体的なアクションを提示
+## データ
+${JSON.stringify(structuredData, null, 2)}
+
+## 各勘定科目について以下2つを生成してください
+
+1. **税務署からの見られ方** (100-150文字)
+検出された異常構造（fact と ruleDescription）を踏まえ、税務調査でどのように見られる可能性があるかを説明してください。
+
+2. **準備すべきことの説明** (150-200文字)
+この構造に対して、どのような説明や資料を準備すべきかを具体的に述べてください。
 
 ## 出力形式
-各勘定科目ごとに以下の構造で回答：
-{
-  "accountName": "勘定科目名",
-  "aiInterpretation": "この異常がなぜ問題なのか、税務署視点での説明",
-  "taxConcerns": ["税務署の具体的な懸念点1", "懸念点2"],
-  "preparationPoints": ["準備すべきアクション1", "アクション2"]
-}`;
+勘定科目ごとに、以下の形式で回答してください：
+
+---
+【勘定科目】地代家賃
+【税務署からの見られ方】
+（ここに文章）
+
+【準備すべきこと】
+（ここに文章）
+---
+
+**重要**: 上記の形式で全勘定科目について記載してください。JSONやマークダウンコードブロックは不要です。`;
 
     try {
       const timeoutPromise = new Promise((_, reject) =>
@@ -85,35 +96,19 @@ ${JSON.stringify(forecastItems.map(item => ({
         throw new Error("AIから空の応答が返されました。");
       }
 
-      // JSON抽出ロジック
-      const jsonStart = responseText.indexOf('[');
-      const jsonEnd = responseText.lastIndexOf(']');
+    // テキストレスポンスをパース（区切り文字で分割）
+    const results = this.parseAITextResponse(responseText, forecastItems);
+    return results;
 
-      if (jsonStart === -1 || jsonEnd === -1) {
-        console.warn('AI response is not valid JSON, returning fallback');
-        return forecastItems.map(item => ({
-          accountName: item.accountName,
-          aiInterpretation: `${item.accountName}で${item.anomalyCount}件の異常が検知されました。`,
-          taxConcerns: [`${item.accountName}の支出構成に異常が見られます`],
-          preparationPoints: [`${item.accountName}の支出根拠資料を準備してください`]
-        }));
-      }
-
-      const jsonStr = responseText.substring(jsonStart, jsonEnd + 1);
-      const parsed = JSON.parse(jsonStr);
-
-      return Array.isArray(parsed) ? parsed : [];
-
-    } catch (error: any) {
-      console.error("AI Structure Analysis Error:", error);
-      // Fallback: 基本的な解釈を返す
-      return forecastItems.map(item => ({
-        accountName: item.accountName,
-        aiInterpretation: `${item.accountName}で${item.anomalyCount}件の異常が検知されました。税務調査では支出の妥当性が問われる可能性があります。`,
-        taxConcerns: [`${item.accountName}の支出構成が${item.ratio.toFixed(1)}%を占める構造について`],
-        preparationPoints: [`${item.accountName}の契約書・領収書・使用実態資料を準備`]
-      }));
-    }
+  } catch (error: any) {
+    console.error("AI Structure Analysis Error:", error);
+    // Fallback: 基本的な解釈を返す
+    return forecastItems.map(item => ({
+      accountName: item.accountName,
+      aiSuspicionView: 'AI解釈を取得できませんでした。検知された異常構造について、支出の妥当性を説明できる資料の準備が重要です。',
+      aiPreparationAdvice: `${item.accountName}の契約書・領収書・使用実態を示す資料を整理し、事業との関連性を明確に説明できるよう準備してください。`
+    }));
+  }
   }
 
   async analyzeAuditForecast(transactions: any[], userId?: string): Promise<AIResponse> {
@@ -407,6 +402,65 @@ ${JSON.stringify(transactionSummary, null, 2)}
     return 'low';
   }
 
+  // AIのテキストレスポンスをパース
+  private parseAITextResponse(responseText: string, forecastItems: AuditForecastItem[]): {
+    accountName: string;
+    aiSuspicionView: string;
+    aiPreparationAdvice: string;
+  }[] {
+    const results: {
+      accountName: string;
+      aiSuspicionView: string;
+      aiPreparationAdvice: string;
+    }[] = [];
+
+    // レスポンスを --- で分割
+    const sections = responseText.split('---').filter(section => section.trim());
+
+    for (const section of sections) {
+      const lines = section.trim().split('\n').filter(line => line.trim());
+
+      if (lines.length < 3) continue;
+
+      // 勘定科目名の抽出
+      const accountNameMatch = lines[0].match(/【勘定科目】(.+)/);
+      if (!accountNameMatch) continue;
+
+      const accountName = accountNameMatch[1].trim();
+
+      // 税務署からの見られ方と準備すべきことの説明を抽出
+      let suspicionView = '';
+      let preparationAdvice = '';
+
+      let currentSection = '';
+      for (const line of lines.slice(1)) {
+        if (line.includes('【税務署からの見られ方】')) {
+          currentSection = 'suspicion';
+          continue;
+        } else if (line.includes('【準備すべきこと】')) {
+          currentSection = 'preparation';
+          continue;
+        }
+
+        if (currentSection === 'suspicion') {
+          suspicionView += line + ' ';
+        } else if (currentSection === 'preparation') {
+          preparationAdvice += line + ' ';
+        }
+      }
+
+      results.push({
+        accountName,
+        aiSuspicionView: suspicionView.trim(),
+        aiPreparationAdvice: preparationAdvice.trim()
+      });
+    }
+
+    // forecastItems に含まれない勘定科目は除外
+    const validAccountNames = forecastItems.map(item => item.accountName);
+    return results.filter(result => validAccountNames.includes(result.accountName));
+  }
+
   // Summary_Account_History からデータ取得
   async fetchSummaryAccountHistory(year: number): Promise<any[]> {
     const response = await fetch(`/api/summary-account-history?year=${year}`);
@@ -574,7 +628,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
           accountName: item.accountName,
           value: item.ratio,
           severity: item.ratio > 80 ? 'high' : 'medium',
-          message: `売上に対して${item.accountName}が${item.ratio.toFixed(1)}%を占めています`
+          message: `売上に対して${item.accountName}が${item.ratio.toFixed(1)}%を占めています`,
+          fact: `構成比${item.ratio.toFixed(1)}%`,                    // 🆕 事実のみ
+          ruleDescription: '単一科目が総支出の60%を超過'              // 🆕 ルール説明
         });
       }
     }
@@ -587,7 +643,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
           accountName: item.accountName,
           value: item.growthRate || 0,
           severity: Math.abs(item.growthRate || 0) > 100 ? 'high' : 'medium',
-          message: `前年比${item.growthRate! > 0 ? '+' : ''}${item.growthRate!.toFixed(1)}%と急変`
+          message: `前年比${item.growthRate! > 0 ? '+' : ''}${item.growthRate!.toFixed(1)}%と急変`,
+          fact: `前年比${item.growthRate! > 0 ? '+' : ''}${item.growthRate!.toFixed(1)}%`,  // 🆕 事実のみ
+          ruleDescription: '前年比の変動率が50%を超過'                                      // 🆕 ルール説明
         });
       }
     }
@@ -600,7 +658,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
           accountName: item.accountName,
           value: item.zScore || 0,
           severity: Math.abs(item.zScore || 0) > 3 ? 'high' : 'medium',
-          message: `過去平均から${item.zScore!.toFixed(1)}σ乖離`
+          message: `過去平均から${item.zScore!.toFixed(1)}σ乖離`,
+          fact: `Z値${item.zScore! > 0 ? '+' : ''}${item.zScore!.toFixed(1)}σ`,  // 🆕 事実のみ
+          ruleDescription: '過去平均からの乖離が2σを超過'                        // 🆕 ルール説明
         });
       }
     }
@@ -613,7 +673,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
           accountName: item.accountName,
           value: item.diffRatio || 0,
           severity: Math.abs(item.diffRatio || 0) > 40 ? 'high' : 'medium',
-          message: `構成比が${item.diffRatio! > 0 ? '+' : ''}${item.diffRatio!.toFixed(1)}pt変動`
+          message: `構成比が${item.diffRatio! > 0 ? '+' : ''}${item.diffRatio!.toFixed(1)}pt変動`,
+          fact: `構成比変動${item.diffRatio! > 0 ? '+' : ''}${item.diffRatio!.toFixed(1)}pt`,  // 🆕 事実のみ
+          ruleDescription: '構成比の変動幅が20pt以上'                                         // 🆕 ルール説明
         });
       }
     }
@@ -633,9 +695,8 @@ ${JSON.stringify(transactionSummary, null, 2)}
       for (const aiResult of aiAnalysisResults) {
         const item = auditForecastItems.find(item => item.accountName === aiResult.accountName);
         if (item) {
-          item.aiInterpretation = aiResult.aiInterpretation;
-          item.taxConcerns = aiResult.taxConcerns;
-          item.preparationPoints = aiResult.preparationPoints;
+          item.aiSuspicionView = aiResult.aiSuspicionView;
+          item.aiPreparationAdvice = aiResult.aiPreparationAdvice;
         }
       }
       console.log('✅ AI analysis completed and integrated');
@@ -643,9 +704,8 @@ ${JSON.stringify(transactionSummary, null, 2)}
       console.warn('⚠️ AI analysis failed, continuing without AI interpretation:', aiError.message);
       // AI分析が失敗しても処理を継続（フォールバック）
       for (const item of auditForecastItems) {
-        item.aiInterpretation = `${item.accountName}で${item.anomalyCount}件の異常が検知されました。税務調査では支出の妥当性が問われる可能性があります。`;
-        item.taxConcerns = [`${item.accountName}の支出構成が${item.ratio.toFixed(1)}%を占める構造について`];
-        item.preparationPoints = [`${item.accountName}の契約書・領収書・使用実態資料を準備`];
+        item.aiSuspicionView = 'AI解釈を取得できませんでした。検知された異常構造について、支出の妥当性を説明できる資料の準備が重要です。';
+        item.aiPreparationAdvice = `${item.accountName}の契約書・領収書・使用実態を示す資料を整理し、事業との関連性を明確に説明できるよう準備してください。`;
       }
     }
 

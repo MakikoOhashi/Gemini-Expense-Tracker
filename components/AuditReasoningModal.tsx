@@ -35,6 +35,55 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     anomalyCount
   } = auditData;
 
+  // 検知された異常から「特に注意すべき点」を生成する関数
+  const generateConcernDetails = (): string[] => {
+    const concerns: string[] = [];
+
+    if (!detectedAnomalies || detectedAnomalies.length === 0) {
+      return ['支出の妥当性を説明できる資料を準備してください'];
+    }
+
+    // 検知された異常ごとに対応する注意点を追加
+    detectedAnomalies.forEach(anomaly => {
+      switch (anomaly.dimension) {
+        case '構成比異常':
+          concerns.push('一つの科目への極端な集中は、事業実態との整合性が確認されやすい');
+          break;
+        case '急変異常':
+          if (growthRate !== null && growthRate !== undefined) {
+            concerns.push(`前年比${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%という変化について、売上との連動性が確認されやすい`);
+          }
+          break;
+        case '統計的異常':
+          if (zScore !== null && zScore !== undefined) {
+            concerns.push(`業界平均から統計的に乖離（${zScore.toFixed(1)}σ）している場合、特殊な事情の説明が求められやすい`);
+          }
+          break;
+        case '比率変動異常':
+          if (diffRatio !== null && diffRatio !== undefined) {
+            concerns.push(`構成比が${diffRatio > 0 ? '+' : ''}${diffRatio.toFixed(1)}pt変動している場合、事業構造の変化について確認されやすい`);
+          }
+          break;
+      }
+    });
+
+    // 条件付きで共通注意点を追加（構成比異常または急変異常が検知された場合のみ）
+    const hasStructuralAnomaly = detectedAnomalies.some(a =>
+      a.dimension === '構成比異常' || a.dimension === '急変異常'
+    );
+
+    if (hasStructuralAnomaly) {
+      concerns.push('支出の実態と事業との関連性が確認されやすい');
+    }
+
+    // もし concerns が空なら、フォールバックを返す
+    if (concerns.length === 0) {
+      return ['支出の妥当性を説明できる資料を準備してください'];
+    }
+
+    return concerns;
+  };
+
   // 数値表示のフォーマット関数
   const formatValue = (value: number | null | undefined, unit: string): string => {
     if (value === null || value === undefined) {
@@ -147,23 +196,19 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
             ※ 検知された異常構造を分析し、税務署の視点から解釈しています
           </p>
 
-          {/* AIの総合解釈 */}
-          {auditData.aiInterpretation && (
+          {/* AIの税務署からの見られ方 */}
+          {auditData.aiSuspicionView && (
             <div className="mb-4">
-              <p className="font-semibold text-gray-800 mb-2">AI分析結果：</p>
-              <p className="text-gray-700">{auditData.aiInterpretation}</p>
+              <p className="font-semibold text-gray-800 mb-2">AI分析結果（税務署からの見られ方）：</p>
+              <p className="text-gray-700">{auditData.aiSuspicionView}</p>
             </div>
           )}
 
-          {/* 税務署の懸念事項 */}
-          {auditData.taxConcerns && auditData.taxConcerns.length > 0 && (
+          {/* AIの準備アドバイス */}
+          {auditData.aiPreparationAdvice && (
             <div className="mb-4">
-              <p className="font-semibold text-red-800 mb-2">⚠️ 税務署の主な懸念点：</p>
-              <ul className="list-disc list-inside text-red-700 space-y-1">
-                {auditData.taxConcerns.map((concern, index) => (
-                  <li key={index}>{concern}</li>
-                ))}
-              </ul>
+              <p className="font-semibold text-blue-800 mb-2">AI推奨の準備事項：</p>
+              <p className="text-blue-700">{auditData.aiPreparationAdvice}</p>
             </div>
           )}
 
@@ -191,7 +236,11 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
                   {zScore !== null && zScore !== undefined && Math.abs(zScore) > 2 && (
                     <li>業界平均から統計的に大きく乖離（{zScore.toFixed(1)}σ）</li>
                   )}
-                  <li>「実体なき経費計上」や「私的利用の混入」を疑われやすい特徴</li>
+                  {/* 🆕 条件付きで共通注意点を追加（構成比異常または急変異常が検知された場合のみ） */}
+                  {(detectedAnomalies?.some(a => a.dimension === '構成比異常') ||
+                    detectedAnomalies?.some(a => a.dimension === '急変異常')) && (
+                    <li>支出の実態と事業との関連性が確認されやすい</li>
+                  )}
                 </ul>
               </div>
 
@@ -240,7 +289,11 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
                   {zScore !== null && zScore !== undefined && Math.abs(zScore) > 2 && (
                     <li>業界平均から統計的に大きく乖離（{zScore.toFixed(1)}σ）</li>
                   )}
-                  <li>「実体なき経費計上」や「私的利用の混入」を疑われやすい特徴</li>
+                  {/* 🆕 条件付きで共通注意点を追加（構成比異常または急変異常が検知された場合のみ） */}
+                  {(detectedAnomalies?.some(a => a.dimension === '構成比異常') ||
+                    detectedAnomalies?.some(a => a.dimension === '急変異常')) && (
+                    <li>支出の実態と事業との関連性が確認されやすい</li>
+                  )}
                 </ul>
               </div>
 
@@ -311,17 +364,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
         <div className="mb-6">
           <h3 className="text-lg font-bold mb-3">🛠 今すぐやるべきこと</h3>
 
-          {/* AI推奨の準備事項 */}
-          {auditData.preparationPoints && auditData.preparationPoints.length > 0 && (
-            <div className="mb-4">
-              <p className="font-semibold text-blue-800 mb-2">AI推奨の準備アクション：</p>
-              <ul className="list-disc list-inside text-blue-700 space-y-1">
-                {auditData.preparationPoints.map((point, index) => (
-                  <li key={index}>{point}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+
 
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">

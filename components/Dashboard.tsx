@@ -98,8 +98,15 @@ const Dashboard: React.FC<DashboardProps> = ({
           const forecastData = await forecastResponse.json();
 
           if (forecastResponse.ok && forecastData.forecastResults && forecastData.forecastResults.length > 0) {
-            setAuditForecast(forecastData.forecastResults);
-            console.log('✅ キャッシュから監査予報データを読み込みました');
+            // Fix legacy data format: convert 0 to null for zScore, growthRate, diffRatio
+            const fixedForecastResults = forecastData.forecastResults.map(item => ({
+              ...item,
+              zScore: item.zScore === 0 && item.growthRate === 0 && item.diffRatio === 0 ? null : item.zScore,
+              growthRate: item.growthRate === 0 && item.zScore === 0 && item.diffRatio === 0 ? null : item.growthRate,
+              diffRatio: item.diffRatio === 0 && item.zScore === 0 && item.growthRate === 0 ? null : item.diffRatio
+            }));
+            setAuditForecast(fixedForecastResults);
+            console.log('✅ キャッシュから監査予報データを読み込みました（データ修正済み）');
           } else {
             // キャッシュが存在しない場合は新規生成
             console.log('🆕 キャッシュミスまたは初回アクセス: 監査予報を新規生成します');

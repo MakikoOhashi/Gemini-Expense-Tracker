@@ -395,9 +395,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
           ratio: Math.round(ratio * 10) / 10, // 小数点1桁
           riskLevel: baseRisk,
           issues,
-          zScore: 0, // デフォルト値
-          growthRate: 0, // デフォルト値
-          diffRatio: 0, // デフォルト値
+          zScore: null, // データなし
+          growthRate: null, // データなし
+          diffRatio: null, // データなし
           anomalyRisk: 'low' // デフォルト値
         };
       });
@@ -421,11 +421,16 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
             // 3. zScore 計算（過去3年平均との差）
             const pastAmounts = accountHistory.slice(0, 3).map((h: any) => h.amount);
-            const mean = pastAmounts.reduce((a: number, b: number) => a + b, 0) / pastAmounts.length;
-            const variance = pastAmounts.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / pastAmounts.length;
-            const stdDev = Math.sqrt(variance);
+            if (pastAmounts.length >= 2) {  // 少なくとも2つのデータが必要
+              const mean = pastAmounts.reduce((a: number, b: number) => a + b, 0) / pastAmounts.length;
+              const variance = pastAmounts.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / pastAmounts.length;
+              const stdDev = Math.sqrt(variance);
 
-            item.zScore = stdDev > 0 ? (currentYearData.amount - mean) / stdDev : 0;
+              // 標準偏差が0より大きい場合のみ計算（全て同じ値の場合は計算不能）
+              item.zScore = stdDev > 0 ? (currentYearData.amount - mean) / stdDev : null;
+            } else {
+              item.zScore = null; // データが不十分
+            }
 
             // 4. anomalyRisk 分類
             item.anomalyRisk = this.classifyAnomalyRisk(
@@ -446,9 +451,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
         }
 
         // デフォルト値（過去データがない場合）
-        if (item.zScore === undefined) item.zScore = 0;
-        if (item.growthRate === undefined) item.growthRate = 0;
-        if (item.diffRatio === undefined) item.diffRatio = 0;
+        if (item.zScore === undefined) item.zScore = null;
+        if (item.growthRate === undefined) item.growthRate = null;
+        if (item.diffRatio === undefined) item.diffRatio = null;
         if (item.anomalyRisk === undefined) item.anomalyRisk = 'low';
       }
     }

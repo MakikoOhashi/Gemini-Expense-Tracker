@@ -73,9 +73,9 @@ export interface AuditForecastItem {
   issues: string[]; // 論点リスト
 
   // 異常検知由来（追加）
-  zScore?: number;          // 標準偏差からの乖離度
-  growthRate?: number;      // 前年比成長率（%）
-  diffRatio?: number;       // 前年との比率差（ポイント）
+  zScore: number | null;          // 標準偏差からの乖離度（null: データなし）
+  growthRate: number | null;      // 前年比成長率（%）（null: データなし）
+  diffRatio: number | null;       // 前年との比率差（ポイント）（null: データなし）
   anomalyRisk?: 'low' | 'medium' | 'high';  // 異常検知によるリスク
 
   // 評価軸方式（新規追加）

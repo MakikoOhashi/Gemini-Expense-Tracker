@@ -36,9 +36,12 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
   } = auditData;
 
   // 数値表示のフォーマット関数
-  const formatValue = (value: number | undefined, unit: string): string => {
-    if (value === undefined || value === 0) {
+  const formatValue = (value: number | null | undefined, unit: string): string => {
+    if (value === null || value === undefined) {
       return 'N/A';
+    }
+    if (value === 0) {
+      return '0' + unit;
     }
 
     if (unit === '%') {
@@ -57,9 +60,9 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
   // 前年度データが存在しないかチェック
   const hasComparisonData = () => {
     return (
-      (growthRate !== undefined && growthRate !== 0) ||
-      (zScore !== undefined && zScore !== 0) ||
-      (diffRatio !== undefined && diffRatio !== 0)
+      (growthRate !== null && growthRate !== undefined && growthRate !== 0) ||
+      (zScore !== null && zScore !== undefined && zScore !== 0) ||
+      (diffRatio !== null && diffRatio !== undefined && diffRatio !== 0)
     );
   };
 
@@ -162,10 +165,10 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
                   {ratio > 80 && (
                     <li>一つの科目への極端な集中（通常の事業では複数経費が発生）</li>
                   )}
-                  {growthRate && growthRate > 30 && (
+                  {growthRate !== null && growthRate !== undefined && growthRate > 30 && (
                     <li>前年比{growthRate.toFixed(1)}%増という急激な変化（売上との連動性が問われる）</li>
                   )}
-                  {zScore && Math.abs(zScore) > 2 && (
+                  {zScore !== null && zScore !== undefined && Math.abs(zScore) > 2 && (
                     <li>業界平均から統計的に大きく乖離（{zScore.toFixed(1)}σ）</li>
                   )}
                   <li>「実体なき経費計上」や「私的利用の混入」を疑われやすい特徴</li>
@@ -211,10 +214,10 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
                   {ratio > 80 && (
                     <li>一つの科目への極端な集中（通常の事業では複数経費が発生）</li>
                   )}
-                  {growthRate && growthRate > 30 && (
+                  {growthRate !== null && growthRate !== undefined && growthRate > 30 && (
                     <li>前年比{growthRate.toFixed(1)}%増という急激な変化（売上との連動性が問われる）</li>
                   )}
-                  {zScore && Math.abs(zScore) > 2 && (
+                  {zScore !== null && zScore !== undefined && Math.abs(zScore) > 2 && (
                     <li>業界平均から統計的に大きく乖離（{zScore.toFixed(1)}σ）</li>
                   )}
                   <li>「実体なき経費計上」や「私的利用の混入」を疑われやすい特徴</li>
@@ -300,7 +303,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
               <span className="font-bold">3.</span>
               <span>他の経費項目が極端に少ない理由を整理</span>
             </div>
-            {growthRate && growthRate > 30 && (
+            {growthRate !== null && growthRate !== undefined && growthRate > 30 && (
               <div className="flex items-start gap-2">
                 <span className="font-bold">4.</span>
                 <span>前年比 +{growthRate.toFixed(1)}% となった理由を言語化</span>

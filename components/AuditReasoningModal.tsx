@@ -33,6 +33,34 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     issues
   } = auditData;
 
+  // 数値表示のフォーマット関数
+  const formatValue = (value: number | undefined, unit: string): string => {
+    if (value === undefined || value === 0) {
+      return 'N/A';
+    }
+
+    if (unit === '%') {
+      return `${value > 0 ? '+' : ''}${value.toFixed(1)}${unit}`;
+    }
+    if (unit === 'σ') {
+      return `${value > 0 ? '+' : ''}${value.toFixed(1)}${unit}`;
+    }
+    if (unit === 'pt') {
+      return `${value > 0 ? '+' : ''}${value.toFixed(1)}${unit}`;
+    }
+
+    return `${value.toFixed(1)}${unit}`;
+  };
+
+  // 前年度データが存在しないかチェック
+  const hasComparisonData = () => {
+    return (
+      (growthRate !== undefined && growthRate !== 0) ||
+      (zScore !== undefined && zScore !== 0) ||
+      (diffRatio !== undefined && diffRatio !== 0)
+    );
+  };
+
   // リスクレベルに応じた表示色
   const riskColor = riskLevel === 'high' ? 'bg-red-100 border-red-500'
                 : riskLevel === 'medium' ? 'bg-yellow-100 border-yellow-500'
@@ -76,31 +104,44 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
         <div className="mb-6">
           <h3 className="text-lg font-bold mb-3">🔍 リスクの根拠（数値・ルール）</h3>
           <div className="space-y-2 text-sm">
-            {growthRate !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">売上前年差</span>
-                <span className="font-bold">{growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%</span>
-              </div>
-            )}
-            {ratio !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">{accountName} 比率</span>
-                <span className="font-bold">{ratio.toFixed(1)}%</span>
-              </div>
-            )}
-            {zScore !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">過去平均との差（σ）</span>
-                <span className="font-bold">{zScore > 0 ? '+' : ''}{zScore.toFixed(1)}σ</span>
-              </div>
-            )}
-            {diffRatio !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">構成比変動</span>
-                <span className="font-bold">{diffRatio > 0 ? '+' : ''}{diffRatio.toFixed(1)}pt</span>
-              </div>
-            )}
+            {/* 数値表示 */}
+            <div className="flex justify-between">
+              <span className="text-gray-600">売上前年差</span>
+              <span className={`font-bold ${formatValue(growthRate, '%') === 'N/A' ? 'text-gray-400' : ''}`}>
+                {formatValue(growthRate, '%')}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-gray-600">{accountName} 比率</span>
+              <span className="font-bold">{ratio.toFixed(1)}%</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-gray-600">過去平均との差（σ）</span>
+              <span className={`font-bold ${formatValue(zScore, 'σ') === 'N/A' ? 'text-gray-400' : ''}`}>
+                {formatValue(zScore, 'σ')}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="text-gray-600">構成比変動</span>
+              <span className={`font-bold ${formatValue(diffRatio, 'pt') === 'N/A' ? 'text-gray-400' : ''}`}>
+                {formatValue(diffRatio, 'pt')}
+              </span>
+            </div>
           </div>
+
+          {/* データ不足時の注意書き（条件付き表示） */}
+          {!hasComparisonData() && (
+            <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded text-xs">
+              <p className="font-bold text-blue-900 mb-1">⚠️ 比較データ不足に関する注意</p>
+              <p className="text-blue-800">
+                前年度データが存在しないため、前年差・平均との差の評価は参考値または未算出です。
+                本リスクは「構成比異常」に基づいて検知されています。
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ④ 今やるべきこと */}

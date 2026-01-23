@@ -144,8 +144,28 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
             🧠 税務・経営的な意味（AI解釈）
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            ※ 過去の一般的な税務調査事例・財務パターンをもとにAIが推論しています
+            ※ 検知された異常構造を分析し、税務署の視点から解釈しています
           </p>
+
+          {/* AIの総合解釈 */}
+          {auditData.aiInterpretation && (
+            <div className="mb-4">
+              <p className="font-semibold text-gray-800 mb-2">AI分析結果：</p>
+              <p className="text-gray-700">{auditData.aiInterpretation}</p>
+            </div>
+          )}
+
+          {/* 税務署の懸念事項 */}
+          {auditData.taxConcerns && auditData.taxConcerns.length > 0 && (
+            <div className="mb-4">
+              <p className="font-semibold text-red-800 mb-2">⚠️ 税務署の主な懸念点：</p>
+              <ul className="list-disc list-inside text-red-700 space-y-1">
+                {auditData.taxConcerns.map((concern, index) => (
+                  <li key={index}>{concern}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {accountName === '地代家賃' ? (
             <>
@@ -290,6 +310,19 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
         {/* ④ 今やるべきこと */}
         <div className="mb-6">
           <h3 className="text-lg font-bold mb-3">🛠 今すぐやるべきこと</h3>
+
+          {/* AI推奨の準備事項 */}
+          {auditData.preparationPoints && auditData.preparationPoints.length > 0 && (
+            <div className="mb-4">
+              <p className="font-semibold text-blue-800 mb-2">AI推奨の準備アクション：</p>
+              <ul className="list-disc list-inside text-blue-700 space-y-1">
+                {auditData.preparationPoints.map((point, index) => (
+                  <li key={index}>{point}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
               <span className="font-bold">1.</span>

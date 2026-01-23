@@ -11,6 +11,111 @@ export interface TaxAuditResponse {
 }
 
 export class AuditService {
+  // 異常検知済み構造データをAIに渡して解釈させる
+  async analyzeAuditForecastWithStructure(forecastItems: AuditForecastItem[]): Promise<{
+    accountName: string;
+    aiInterpretation: string;
+    taxConcerns: string[];
+    preparationPoints: string[];
+  }[]> {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。環境変数を確認してください。");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const modelName = 'gemini-2.5-flash-lite';
+
+    // 異常検知済みの構造データをAIに渡す
+    const systemInstruction = `あなたは税務調査対応専門のAIアシスタントです。
+
+以下の異常検知済みデータを分析し、各勘定科目について：
+1. なぜこの異常が問題なのかを税務署の視点から説明
+2. どのような質問をされる可能性があるか
+3. ユーザーが事前に準備すべき説明と資料
+
+を具体的に示してください。
+
+## 異常検知済みデータ構造
+${JSON.stringify(forecastItems.map(item => ({
+  accountName: item.accountName,
+  totalAmount: item.totalAmount,
+  ratio: item.ratio,
+  riskLevel: item.riskLevel,
+  anomalyCount: item.anomalyCount,
+  detectedAnomalies: item.detectedAnomalies,
+  zScore: item.zScore,
+  growthRate: item.growthRate,
+  diffRatio: item.diffRatio
+})), null, 2)}
+
+## 重要ポイント
+- 数値分析は既に完了しているので、AI判断は不要
+- 異常構造の「意味」を解釈することに集中
+- 税務署の視点から具体的な懸念事項を挙げる
+- ユーザーの準備すべき具体的なアクションを提示
+
+## 出力形式
+各勘定科目ごとに以下の構造で回答：
+{
+  "accountName": "勘定科目名",
+  "aiInterpretation": "この異常がなぜ問題なのか、税務署視点での説明",
+  "taxConcerns": ["税務署の具体的な懸念点1", "懸念点2"],
+  "preparationPoints": ["準備すべきアクション1", "アクション2"]
+}`;
+
+    try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+      );
+
+      const generatePromise = ai.models.generateContent({
+        model: modelName,
+        contents: [{ role: 'user', parts: [{ text: `上記の異常検知済みデータを分析し、各勘定科目について税務調査の観点から解釈してください。` }] }],
+        config: {
+          systemInstruction,
+          temperature: 0.3,
+        },
+      });
+
+      const response: any = await Promise.race([generatePromise, timeoutPromise]);
+      const responseText = response.text;
+
+      if (!responseText) {
+        throw new Error("AIから空の応答が返されました。");
+      }
+
+      // JSON抽出ロジック
+      const jsonStart = responseText.indexOf('[');
+      const jsonEnd = responseText.lastIndexOf(']');
+
+      if (jsonStart === -1 || jsonEnd === -1) {
+        console.warn('AI response is not valid JSON, returning fallback');
+        return forecastItems.map(item => ({
+          accountName: item.accountName,
+          aiInterpretation: `${item.accountName}で${item.anomalyCount}件の異常が検知されました。`,
+          taxConcerns: [`${item.accountName}の支出構成に異常が見られます`],
+          preparationPoints: [`${item.accountName}の支出根拠資料を準備してください`]
+        }));
+      }
+
+      const jsonStr = responseText.substring(jsonStart, jsonEnd + 1);
+      const parsed = JSON.parse(jsonStr);
+
+      return Array.isArray(parsed) ? parsed : [];
+
+    } catch (error: any) {
+      console.error("AI Structure Analysis Error:", error);
+      // Fallback: 基本的な解釈を返す
+      return forecastItems.map(item => ({
+        accountName: item.accountName,
+        aiInterpretation: `${item.accountName}で${item.anomalyCount}件の異常が検知されました。税務調査では支出の妥当性が問われる可能性があります。`,
+        taxConcerns: [`${item.accountName}の支出構成が${item.ratio.toFixed(1)}%を占める構造について`],
+        preparationPoints: [`${item.accountName}の契約書・領収書・使用実態資料を準備`]
+      }));
+    }
+  }
+
   async analyzeAuditForecast(transactions: any[], userId?: string): Promise<AIResponse> {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
@@ -517,6 +622,31 @@ ${JSON.stringify(transactionSummary, null, 2)}
     for (const item of auditForecastItems) {
       item.detectedAnomalies = anomalies.filter(a => a.accountName === item.accountName);
       item.anomalyCount = item.detectedAnomalies.length;
+    }
+
+    // ===== AI分析: 異常検知済みデータをAIに渡して解釈させる =====
+    try {
+      console.log('🤖 Starting AI analysis of detected anomalies...');
+      const aiAnalysisResults = await this.analyzeAuditForecastWithStructure(auditForecastItems);
+
+      // AI分析結果を各AuditForecastItemに統合
+      for (const aiResult of aiAnalysisResults) {
+        const item = auditForecastItems.find(item => item.accountName === aiResult.accountName);
+        if (item) {
+          item.aiInterpretation = aiResult.aiInterpretation;
+          item.taxConcerns = aiResult.taxConcerns;
+          item.preparationPoints = aiResult.preparationPoints;
+        }
+      }
+      console.log('✅ AI analysis completed and integrated');
+    } catch (aiError) {
+      console.warn('⚠️ AI analysis failed, continuing without AI interpretation:', aiError.message);
+      // AI分析が失敗しても処理を継続（フォールバック）
+      for (const item of auditForecastItems) {
+        item.aiInterpretation = `${item.accountName}で${item.anomalyCount}件の異常が検知されました。税務調査では支出の妥当性が問われる可能性があります。`;
+        item.taxConcerns = [`${item.accountName}の支出構成が${item.ratio.toFixed(1)}%を占める構造について`];
+        item.preparationPoints = [`${item.accountName}の契約書・領収書・使用実態資料を準備`];
+      }
     }
 
     // 異常検知数でソート（第1優先）、同点の場合は riskLevel でソート（第2優先）

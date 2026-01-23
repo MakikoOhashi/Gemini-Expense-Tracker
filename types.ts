@@ -81,6 +81,11 @@ export interface AuditForecastItem {
   // 評価軸方式（新規追加）
   detectedAnomalies?: AnomalyDetection[];  // この項目で検知された異常リスト
   anomalyCount?: number;  // 異常検知数
+
+  // AI分析結果（新規追加）
+  aiInterpretation?: string;  // AIによる異常構造の解釈
+  taxConcerns?: string[];     // 税務署の懸念事項（AI生成）
+  preparationPoints?: string[]; // 準備すべきアクション（AI生成）
 }
 
 // 記帳チェック（個別）- 個別のチェック項目

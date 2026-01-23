@@ -41,6 +41,11 @@ const QUICK_ACTIONS = [
   { label: '集計', icon: ChartBarIcon, prefix: '集計を見せて' },
 ];
 
+interface ActivePrefix {
+  id: string;
+  text: string;
+}
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'history' | 'tax'>('chat');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -68,6 +73,7 @@ const App: React.FC = () => {
   }]);
 
   const [inputText, setInputText] = useState('');
+  const [activePrefixes, setActivePrefixes] = useState<ActivePrefix[]>([]);
   const [auditQuery, setAuditQuery] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -247,6 +253,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (auditQuery && activeTab === 'chat') {
       setInputText(auditQuery);
+      setActivePrefixes([]); // プレフィックスをクリア
       setAuditQuery(null); // リセット
       // 少し待ってから自動送信
       setTimeout(() => {
@@ -497,9 +504,14 @@ const App: React.FC = () => {
       console.log('⚠️ 処理中のためスキップ: isProcessing=', isProcessing, 'isConvertingImage=', isConvertingImage);
       return;
     }
-    if (!currentInput && !selectedImage) return;
+    if (!currentInput && !selectedImage && activePrefixes.length === 0) return;
+
+    // アクティブなプレフィックスをメッセージに含める
+    const prefixesText = activePrefixes.map(p => p.text).join(' ');
+    const fullMessage = prefixesText ? `${prefixesText} ${currentInput}`.trim() : currentInput;
 
     setInputText('');
+    setActivePrefixes([]); // 送信後にプレフィックスをクリア
     const currentImage = selectedImage;
     setSelectedImage(null);
     setIsProcessing(true);
@@ -514,7 +526,7 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, {
       id: crypto.randomUUID(),
       role: 'user',
-      content: currentInput || "画像を解析してください",
+      content: fullMessage || "画像を解析してください",
       image: currentImage || undefined,
       timestamp: Date.now()
     }]);
@@ -670,8 +682,16 @@ const App: React.FC = () => {
   };
 
   const handleQuickAction = (prefix: string) => {
-    setInputText(prefix);
+    const newPrefix: ActivePrefix = {
+      id: crypto.randomUUID(),
+      text: prefix
+    };
+    setActivePrefixes([newPrefix]); // 常に1つのプレフィックスのみ保持
     textareaRef.current?.focus();
+  };
+
+  const removePrefix = (id: string) => {
+    setActivePrefixes(prev => prev.filter(p => p.id !== id));
   };
 
   const handleInitializeSystem = async () => {
@@ -1084,6 +1104,21 @@ const App: React.FC = () => {
                   </button>
                 </div>
               )}
+              {activePrefixes.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {activePrefixes.map((prefix) => (
+                    <div key={prefix.id} className="inline-flex items-center gap-1 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-full">
+                      <span>{prefix.text}</span>
+                      <button
+                        onClick={() => removePrefix(prefix.id)}
+                        className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition"
+                      >
+                        <XMarkIcon className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex items-end gap-2">
                 <button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 transition active:scale-95">
                   <CameraIcon className="w-6 h-6" />
@@ -1098,7 +1133,7 @@ const App: React.FC = () => {
                   rows={1}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
                 />
-                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage)} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 active:scale-90 transition">
+                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage && activePrefixes.length === 0)} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 active:scale-90 transition">
                   <PaperAirplaneIcon className="w-6 h-6" />
                 </button>
               </div>

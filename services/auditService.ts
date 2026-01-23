@@ -329,12 +329,12 @@ ${JSON.stringify(transactionSummary, null, 2)}
         // 高額支出の科目はリスクが高い
         if (data.total >= 500000) {
           baseRisk = 'high';
-          issues.push(`${category}の支出が総支出の${ratio.toFixed(1)}%を占めています`);
-          issues.push('大口支出の事業性と必要性を確認する必要があります');
+          issues.push(`${category}が総支出の${ratio.toFixed(1)}%を占める異常な構成`);
+          issues.push('→ 事業実態との乖離が疑われやすい状態');
         } else if (data.total >= 200000) {
           baseRisk = 'medium';
-          issues.push(`${category}の支出が総支出の${ratio.toFixed(1)}%を占めています`);
-          issues.push('支出内容の妥当性を確認してください');
+          issues.push(`${category}が総支出の${ratio.toFixed(1)}%を占めています`);
+          issues.push('→ 税務調査時に支出の妥当性確認が必要な水準');
         }
 
         // 科目別のリスク評価

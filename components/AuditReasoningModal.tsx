@@ -89,15 +89,107 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
 
         {/* ② なぜ危険か（AI解釈） */}
         <div className="mb-6">
-          <h3 className="text-lg font-bold mb-3">🧠 税務・経営的な意味（AI解釈）</h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-700">
-              {accountName}の支出が総支出の{ratio}%を占めています。
-              {growthRate && growthRate > 30 && `前年比 +${growthRate.toFixed(1)}% と急増しており、`}
-              {zScore && zScore > 2 && `統計的にも過去平均から大きく乖離（Zスコア: ${zScore.toFixed(1)}）しています。`}
-              税務調査では「実態に即した経費か？」が最大の論点になります。
-            </p>
-          </div>
+          <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+            🧠 税務・経営的な意味（AI解釈）
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            ※ 過去の一般的な税務調査事例・財務パターンをもとにAIが推論しています
+          </p>
+
+          {accountName === '地代家賃' ? (
+            <>
+              {/* 1. 思考：税務署の視点 */}
+              <div className="mb-4">
+                <p className="font-semibold text-gray-800 mb-2">税務調査での疑義ポイント：</p>
+                <p className="text-gray-700">
+                  {accountName}が総支出の{ratio.toFixed(1)}%を占める構造は、
+                  「実態のある事業活動が本当に存在しているか」という観点で強く疑義を持たれやすい財務パターンです。
+                </p>
+              </div>
+
+              {/* 2. ロジック：なぜ問題か */}
+              <div className="mb-4">
+                <p className="font-semibold text-gray-800 mb-2">特に注意すべき点：</p>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  {ratio > 80 && (
+                    <li>一つの科目への極端な集中（通常の事業では複数経費が発生）</li>
+                  )}
+                  {growthRate && growthRate > 30 && (
+                    <li>前年比{growthRate.toFixed(1)}%増という急激な変化（売上との連動性が問われる）</li>
+                  )}
+                  {zScore && Math.abs(zScore) > 2 && (
+                    <li>業界平均から統計的に大きく乖離（{zScore.toFixed(1)}σ）</li>
+                  )}
+                  <li>「実体なき経費計上」や「私的利用の混入」を疑われやすい特徴</li>
+                </ul>
+              </div>
+
+              {/* 3. 反証：正当化される可能性 */}
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                <p className="font-semibold text-gray-800 mb-2">ただし、正当化されやすいケース：</p>
+                <div className="text-sm text-gray-700 space-y-2">
+                  <p><strong>問題になりにくい業種：</strong></p>
+                  <ul className="list-disc list-inside ml-4">
+                    <li>不動産賃貸業</li>
+                    <li>レンタルスペース・スタジオ運営</li>
+                    <li>倉庫業など設備依存型ビジネス</li>
+                  </ul>
+                  <p className="mt-2"><strong>問題になりやすい業種：</strong></p>
+                  <ul className="list-disc list-inside ml-4">
+                    <li>物販業・IT業（通常は人件費・仕入が発生）</li>
+                    <li>コンサルティング業（地代家賃が主要経費になりにくい）</li>
+                  </ul>
+                  <p className="mt-3 text-blue-800 font-medium">
+                    → 事業モデルとの整合性説明が成否を分けます
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* 1. 思考：税務署の視点 */}
+              <div className="mb-4">
+                <p className="font-semibold text-gray-800 mb-2">税務調査での疑義ポイント：</p>
+                <p className="text-gray-700">
+                  {accountName}が総支出の{ratio.toFixed(1)}%を占める構造は、
+                  「実態のある事業活動が本当に存在しているか」という観点で強く疑義を持たれやすい財務パターンです。
+                </p>
+              </div>
+
+              {/* 2. ロジック：なぜ問題か */}
+              <div className="mb-4">
+                <p className="font-semibold text-gray-800 mb-2">特に注意すべき点：</p>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  {ratio > 80 && (
+                    <li>一つの科目への極端な集中（通常の事業では複数経費が発生）</li>
+                  )}
+                  {growthRate && growthRate > 30 && (
+                    <li>前年比{growthRate.toFixed(1)}%増という急激な変化（売上との連動性が問われる）</li>
+                  )}
+                  {zScore && Math.abs(zScore) > 2 && (
+                    <li>業界平均から統計的に大きく乖離（{zScore.toFixed(1)}σ）</li>
+                  )}
+                  <li>「実体なき経費計上」や「私的利用の混入」を疑われやすい特徴</li>
+                </ul>
+              </div>
+
+              {/* 3. 反証：正当化される可能性 */}
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                <p className="font-semibold text-gray-800 mb-2">ただし、正当化されやすいケース：</p>
+                <div className="text-sm text-gray-700 space-y-2">
+                  <p><strong>汎用的な正当化ポイント：</strong></p>
+                  <ul className="list-disc list-inside ml-4">
+                    <li>事業規模・業種に合った合理的な支出額であること</li>
+                    <li>売上・事業活動との明確な因果関係が説明できること</li>
+                    <li>市場相場・業界平均と比較して妥当な水準であること</li>
+                  </ul>
+                  <p className="mt-3 text-blue-800 font-medium">
+                    → 事業内容との整合性説明と裏付け資料が重要です
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ③ 数値根拠（エビデンス） */}

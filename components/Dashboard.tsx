@@ -12,7 +12,7 @@ interface DashboardProps {
   transactions: Transaction[];
   onAuditQuery?: (query: string) => void;
   onTabChange?: (tab: 'chat' | 'dashboard' | 'history' | 'tax') => void;
-  selectedAuditYear: number;
+  selectedAuditYear: number | null;
   onAuditYearSelect: (year: number) => void;
   availableYears: number[];
   onOpenYearModal: () => void;
@@ -75,6 +75,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
         const googleId = googleIdData.googleId;
 
+        if (!selectedAuditYear) return; // null の場合は処理しない
         const year = selectedAuditYear.toString();
         const today = getTodayJSTString(); // "2026-01-21" 形式
 
@@ -392,7 +393,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
         <p className="text-sm text-slate-700">
-          {selectedAuditYear}年度（{selectedAuditYear}年1月1日〜{selectedAuditYear}年12月31日）の取引データを集計しています。
+          {selectedAuditYear ? `${selectedAuditYear}年度（${selectedAuditYear}年1月1日〜${selectedAuditYear}年12月31日）の取引データを集計しています。` : '年度が選択されていません。'}
         </p>
       </div>
 
@@ -437,7 +438,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-800">{item.accountName}</p>
                     <p className="text-xs text-gray-500">
-                      ¥{item.totalAmount.toLocaleString()} ({item.ratio.toFixed(1)}%)
+                      ¥{(item.totalAmount || 0).toLocaleString()} ({item.ratio.toFixed(1)}%)
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -500,7 +501,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         isOpen={isReasoningModalOpen}
         onClose={() => setIsReasoningModalOpen(false)}
         auditData={auditForecast[0]}  // 最もリスクが高い項目
-        year={selectedAuditYear.toString()}
+        year={selectedAuditYear ? selectedAuditYear.toString() : ''}
 />
     </div>
   );

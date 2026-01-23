@@ -308,26 +308,45 @@ export class UserService {
       console.log('🧹 Performing legacy data cleanup...');
       await this.cleanupLegacyForecastData(googleId, userDoc);
 
-      // 4. データの検証
+      // 4. データの検証（オプショナルフィールドのundefinedは許可）
       console.log('✅ Validating forecast results data...');
       const hasUndefined = forecastResults.some(result =>
-        Object.values(result).some(value =>
-          value === undefined ||
-          (Array.isArray(value) && value.some(item => item === undefined))
-        )
+        // 必須フィールドのみチェック（オプショナルフィールドのundefinedは許可）
+        result.id === undefined ||
+        result.accountName === undefined ||
+        result.totalAmount === undefined ||
+        result.ratio === undefined ||
+        result.riskLevel === undefined ||
+        result.issues === undefined ||
+        // 配列内のundefinedチェック
+        (Array.isArray(result.issues) && result.issues.some(item => item === undefined)) ||
+        (Array.isArray(result.detectedAnomalies) && result.detectedAnomalies.some(item => item === undefined))
       );
 
       if (hasUndefined) {
-        console.error('❌ Firestore保存前にundefined値が検出されました');
-        throw new Error('forecastResultsにundefined値が含まれています');
+        console.error('❌ Firestore保存前にundefined値が検出されました（必須フィールド）');
+        throw new Error('forecastResultsに必須フィールドのundefined値が含まれています');
       }
 
-      // 5. 正規化されたフォーマットで保存
+      // 5. Firestore用にデータを正規化（undefinedをnullに変換）
+      const normalizedForecastResults = forecastResults.map(result => ({
+        ...result,
+        // Firestoreはundefinedを許可しないのでnullに変換
+        zScore: result.zScore !== undefined ? result.zScore : null,
+        growthRate: result.growthRate !== undefined ? result.growthRate : null,
+        diffRatio: result.diffRatio !== undefined ? result.diffRatio : null,
+        anomalyRisk: result.anomalyRisk !== undefined ? result.anomalyRisk : null,
+        anomalyCount: result.anomalyCount !== undefined ? result.anomalyCount : null,
+        aiSuspicionView: result.aiSuspicionView !== undefined ? result.aiSuspicionView : null,
+        aiPreparationAdvice: result.aiPreparationAdvice !== undefined ? result.aiPreparationAdvice : null,
+      }));
+
+      // 6. 正規化されたフォーマットで保存
       const updatePath = `forecasts.${year}`;
       const updateData = {
         [updatePath]: {
           date: date,
-          results: forecastResults,
+          results: normalizedForecastResults,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }
       };

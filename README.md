@@ -706,8 +706,6 @@ In other words, Gemini reasons over:
 Amount × Category × Business Model × Tax Perspective
 → Potential discussion points and risk factors
 
-yaml
-コードをコピーする
 
 This shifts the focus from item-by-item validation  
 to **whether the total business structure can be reasonably explained**.

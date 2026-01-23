@@ -256,10 +256,25 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       if (result.success) {
         console.log('✅ Summary generated successfully');
-        // 成功時は最終更新日時を更新し、ステータスメッセージをクリア
-        if (result.lastUpdated) {
-          setLastSummaryUpdated(result.lastUpdated);
-          setSummaryStatusMessage(null);
+
+        // 成功時は最終更新日時を現在時刻に設定（バックエンドがlastSummaryGeneratedAtを更新しないため）
+        const now = new Date();
+        const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        setLastSummaryUpdated(formattedDate);
+        setSummaryStatusMessage(null);
+
+        // メタデータを再読み込みして最新の状態を反映（バックエンドのタイミング問題対策）
+        // ただし、バックエンドがlastSummaryGeneratedAtを更新しない場合は現在時刻を維持
+        try {
+          const meta = await sheetsService.getSummaryMeta(selectedAuditYear);
+          if (meta.lastUpdated) {
+            setLastSummaryUpdated(meta.lastUpdated);
+          }
+          // messageはクリアしたまま維持（生成成功済みのため）
+        } catch (metaError) {
+          console.error('❌ Summary meta refresh error:', metaError);
+          // メタデータの読み込みに失敗しても、現在時刻を維持
         }
       } else {
         setSummaryError('集計生成に失敗しました');

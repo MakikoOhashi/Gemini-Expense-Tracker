@@ -10,6 +10,7 @@ import { Readable } from 'stream';
 import Busboy from 'busboy';
 import jwt from 'jsonwebtoken';
 import { userService } from '../services/userService.ts';
+import { auditService } from '../services/auditService.ts';
 
 dotenv.config();
 
@@ -2323,6 +2324,22 @@ app.post('/api/user/forecast', async (req, res) => {
         diffRatio: typeof result.diffRatio === 'number' && isFinite(result.diffRatio) ? result.diffRatio : undefined,
         anomalyRisk: typeof result.anomalyRisk === 'string' && ['low', 'medium', 'high'].includes(result.anomalyRisk)
           ? result.anomalyRisk
+          : undefined,
+
+        // ← 以下2つを追加
+        detectedAnomalies: Array.isArray(result.detectedAnomalies)
+          ? result.detectedAnomalies.filter(anomaly =>
+              anomaly &&
+              typeof anomaly.dimension === 'string' &&
+              typeof anomaly.accountName === 'string' &&
+              typeof anomaly.value === 'number' &&
+              typeof anomaly.severity === 'string' &&
+              typeof anomaly.message === 'string'
+            )
+          : undefined,
+
+        anomalyCount: typeof result.anomalyCount === 'number' && isFinite(result.anomalyCount) && result.anomalyCount >= 0
+          ? result.anomalyCount
           : undefined
       };
 
@@ -2955,6 +2972,51 @@ app.get('/api/summary-account-history', async (req, res) => {
   } catch (error) {
     console.error('Get Account History Error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// 税務調査対応アシスタント - 検知済み異常データから税務署の観点・質問・準備事項を生成
+app.post('/api/tax-audit-assistance', async (req, res) => {
+  try {
+    const { forecastData } = req.body;
+
+    if (!forecastData || !Array.isArray(forecastData)) {
+      return res.status(400).json({
+        error: 'forecastDataは必須で、配列である必要があります'
+      });
+    }
+
+    // 各項目のバリデーション
+    for (let i = 0; i < forecastData.length; i++) {
+      const item = forecastData[i];
+      if (!item.accountName || typeof item.totalAmount !== 'number' || typeof item.ratio !== 'number' || typeof item.anomalyCount !== 'number') {
+        return res.status(400).json({
+          error: `forecastData[${i}]の形式が正しくありません`,
+          required: 'accountName(string), totalAmount(number), ratio(number), anomalyCount(number), detectedAnomalies(array)'
+        });
+      }
+      if (!Array.isArray(item.detectedAnomalies)) {
+        return res.status(400).json({
+          error: `forecastData[${i}].detectedAnomaliesは配列である必要があります`
+        });
+      }
+    }
+
+    console.log(`🔍 税務調査対応アシスタント: ${forecastData.length}件の異常データを分析`);
+
+    // auditServiceを使用して分析
+    const result = await auditService.generateTaxAuditAssistance(forecastData);
+
+    console.log(`✅ 分析完了: ${result.taxAuthorityConcerns.length}件の観点、${result.expectedQuestions.length}件の質問、${result.userPreparationPoints.length}件の準備事項`);
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Tax Audit Assistance Error:', error);
+    res.status(500).json({
+      error: '税務調査対応アシスタントの実行に失敗しました',
+      details: error.message
+    });
   }
 });
 

@@ -2,6 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, AnomalyDetection } from "../types";
 import { sheetsService } from "./sheetsService";
 
+// 税務調査対応アシスタントの出力形式
+export interface TaxAuditResponse {
+  taxAuthorityConcerns: string[];
+  expectedQuestions: string[];
+  userPreparationPoints: string[];
+  nextActions: string[];
+}
+
 export class AuditService {
   async analyzeAuditForecast(transactions: any[], userId?: string): Promise<AIResponse> {
     const apiKey = process.env.API_KEY;
@@ -604,6 +612,154 @@ ${JSON.stringify(transactionSummary, null, 2)}
     // チェック項目を優先順位でソート（不足 -> 確認 -> 推奨）
     const typeOrder = { '不足': 3, '確認': 2, '推奨': 1 };
     return checks.sort((a, b) => typeOrder[b.type] - typeOrder[a.type]);
+  }
+
+  // 税務調査対応アシスタント - 検知済み異常データから税務署の観点・質問・準備事項を生成
+  async generateTaxAuditAssistance(forecastData: {
+    accountName: string;
+    totalAmount: number;
+    ratio: number;
+    anomalyCount: number;
+    detectedAnomalies: AnomalyDetection[];
+  }[]): Promise<TaxAuditResponse> {
+    console.log('🔍 Starting tax audit assistance generation...');
+    console.log('📊 Input forecastData:', JSON.stringify(forecastData, null, 2));
+
+    const taxAuthorityConcerns: string[] = [];
+    const expectedQuestions: string[] = [];
+    const userPreparationPoints: string[] = [];
+    const nextActions: string[] = [];
+
+    // severity が high の異常を優先的に処理
+    const highSeverityAnomalies = forecastData
+      .flatMap(item => item.detectedAnomalies || [])
+      .filter(anomaly => anomaly.severity === 'high')
+      .sort((a, b) => {
+        // 同じdimension内ではvalueの絶対値が大きいものを優先
+        if (a.dimension === b.dimension) {
+          return Math.abs(b.value) - Math.abs(a.value);
+        }
+        return 0;
+      });
+
+    const mediumSeverityAnomalies = forecastData
+      .flatMap(item => item.detectedAnomalies || [])
+      .filter(anomaly => anomaly.severity === 'medium');
+
+    // 全ての異常を処理（high → medium の順）
+    const allAnomalies = [...highSeverityAnomalies, ...mediumSeverityAnomalies];
+    console.log('📋 All anomalies to process:', allAnomalies.length);
+
+    for (const anomaly of allAnomalies) {
+      const item = forecastData.find(f => f.accountName === anomaly.accountName);
+      if (!item) continue;
+
+      console.log(`🔍 Processing anomaly: ${anomaly.dimension} for ${anomaly.accountName}`);
+
+      // 各dimensionに基づいて税務署の観点、質問、準備事項、次アクションを生成
+      switch (anomaly.dimension) {
+        case '構成比異常':
+          const concern1 = `${item.accountName}が売上全体の${item.ratio.toFixed(1)}%を占める理由について、事業の必要性と妥当性を確認する`;
+          const question1 = `${item.accountName}の支出が売上の${item.ratio.toFixed(1)}%にも達する理由を説明してください`;
+          const question2 = `この支出割合は同業他社と比較して適正であるか、具体的な根拠を示してください`;
+          const prep1 = `売上との関連性を示す事業計画書や予算書の準備`;
+          const prep2 = `${item.accountName}の支出が事業に必要な理由をまとめた説明資料`;
+          const prep3 = `同業他社との比較データや業界平均値の調査資料`;
+
+          taxAuthorityConcerns.push(concern1);
+          expectedQuestions.push(question1);
+          expectedQuestions.push(question2);
+          userPreparationPoints.push(prep1);
+          userPreparationPoints.push(prep2);
+          userPreparationPoints.push(prep3);
+          console.log('✅ Added 構成比異常 items');
+          break;
+
+        case '急変異常':
+          const growthText = anomaly.value > 0 ? `急増（+${anomaly.value.toFixed(1)}%）` : `急減（${anomaly.value.toFixed(1)}%）`;
+          const concern2 = `${item.accountName}の前年比${growthText}について、急変の理由と事業継続性を確認する`;
+          const question3 = `${item.accountName}が前年比${anomaly.value.toFixed(1)}%変動した具体的な理由を説明してください`;
+          const question4 = `この変動は一時的なものか、今後も継続する計画か明確にしてください`;
+          const prep4 = `前年との比較表と変動理由の詳細説明`;
+          const prep5 = `契約書、発注書、見積書など変動の根拠となる書類`;
+          const prep6 = `事業計画の変更や市場環境変化を説明する資料`;
+
+          taxAuthorityConcerns.push(concern2);
+          expectedQuestions.push(question3);
+          expectedQuestions.push(question4);
+          userPreparationPoints.push(prep4);
+          userPreparationPoints.push(prep5);
+          userPreparationPoints.push(prep6);
+          console.log('✅ Added 急変異常 items');
+          break;
+
+        case '統計的異常':
+          const zScoreText = anomaly.value > 0 ? `高い値（+${anomaly.value.toFixed(1)}σ）` : `低い値（${anomaly.value.toFixed(1)}σ）`;
+          const concern3 = `${item.accountName}の過去平均からの乖離度（${zScoreText}）について、異常値の原因を確認する`;
+          const question5 = `${item.accountName}の支出が過去平均から${anomaly.value.toFixed(1)}σ乖離している理由を説明してください`;
+          const question6 = `この乖離は事業の成長による自然な変動か、特別な要因によるものか判断してください`;
+          const prep7 = `過去3年分の${item.accountName}支出推移表`;
+          const prep8 = `統計的異常の原因となる契約書や発注書類`;
+          const prep9 = `${item.accountName}の支出パターンを説明する事業特性資料`;
+
+          taxAuthorityConcerns.push(concern3);
+          expectedQuestions.push(question5);
+          expectedQuestions.push(question6);
+          userPreparationPoints.push(prep7);
+          userPreparationPoints.push(prep8);
+          userPreparationPoints.push(prep9);
+          console.log('✅ Added 統計的異常 items');
+          break;
+
+        case '比率変動異常':
+          const diffText = anomaly.value > 0 ? `上昇（+${anomaly.value.toFixed(1)}pt）` : `下降（${anomaly.value.toFixed(1)}pt）`;
+          const concern4 = `${item.accountName}の構成比${diffText}について、事業構造の変化を確認する`;
+          const question7 = `${item.accountName}の構成比が${anomaly.value.toFixed(1)}pt変動した事業上の理由を説明してください`;
+          const question8 = `この比率変動は事業戦略の変更によるものか、具体的な計画を示してください`;
+          const prep10 = `構成比の時系列推移グラフと変動理由説明`;
+          const prep11 = `事業構造変化を裏付ける契約書や事業計画書`;
+          const prep12 = `競合環境や市場変化を説明する業界資料`;
+
+          taxAuthorityConcerns.push(concern4);
+          expectedQuestions.push(question7);
+          expectedQuestions.push(question8);
+          userPreparationPoints.push(prep10);
+          userPreparationPoints.push(prep11);
+          userPreparationPoints.push(prep12);
+          console.log('✅ Added 比率変動異常 items');
+          break;
+      }
+    }
+
+    console.log('📝 Before deduplication:');
+    console.log('  taxAuthorityConcerns:', taxAuthorityConcerns.length, taxAuthorityConcerns);
+    console.log('  expectedQuestions:', expectedQuestions.length, expectedQuestions);
+    console.log('  userPreparationPoints:', userPreparationPoints.length, userPreparationPoints);
+
+    // 重複を除去し、優先順位付け
+    const uniqueConcerns = [...new Set(taxAuthorityConcerns)].filter(item => item && item.length > 0).slice(0, 5);
+    const uniqueQuestions = [...new Set(expectedQuestions)].filter(item => item && item.length > 0).slice(0, 8);
+    const uniquePreparationPoints = [...new Set(userPreparationPoints)].filter(item => item && item.length > 0).slice(0, 10);
+
+    // 次アクションの設定（優先順位付き）
+    const nextActionsList = [
+      '検知された異常のseverityが高い項目から順に説明資料を準備する',
+      '各異常のdimensionごとに必要な根拠書類をリストアップする',
+      '税理士や専門家に相談し、説明内容の妥当性を確認する',
+      '類似事業者のデータや業界平均を調査し、比較資料を作成する',
+      '必要に応じて追加の証憑書類を準備・整理する'
+    ];
+
+    const result = {
+      taxAuthorityConcerns: uniqueConcerns,
+      expectedQuestions: uniqueQuestions,
+      userPreparationPoints: uniquePreparationPoints,
+      nextActions: nextActionsList
+    };
+
+    console.log('📋 Final result:', JSON.stringify(result, null, 2));
+
+    return result;
   }
 }
 

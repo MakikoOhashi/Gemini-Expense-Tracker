@@ -152,6 +152,9 @@ const Dashboard: React.FC<DashboardProps> = ({
         setAuditForecast(forecastData);
 
         // 生成した予報をサーバーAPI経由でFirestoreに保存（最重要リスク1件のみ）
+        console.log('🔍 Saving to Firebase:', forecastData[0]);
+        console.log('🔍 detectedAnomalies:', forecastData[0]?.detectedAnomalies);
+
         const requestBody = {
           googleId,
           year,

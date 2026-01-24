@@ -35,9 +35,9 @@ import heic2any from 'heic2any';
 const gemini = new GeminiService();
 
 const QUICK_ACTIONS = [
-  { label: 'ルール設定', icon: TagIcon, prefix: 'ルール：' },
   { label: '経費入力', icon: BanknotesIcon, prefix: '経費：' },
   { label: '売上入力', icon: SparklesIcon, prefix: '売上：' },
+  { label: 'ルール設定', icon: TagIcon, prefix: 'ルール：' },
 ];
 
 interface ActivePrefix {

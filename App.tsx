@@ -38,7 +38,6 @@ const QUICK_ACTIONS = [
   { label: 'ルール設定', icon: TagIcon, prefix: 'ルール：' },
   { label: '経費入力', icon: BanknotesIcon, prefix: '経費：' },
   { label: '売上入力', icon: SparklesIcon, prefix: '売上：' },
-  { label: '集計', icon: ChartBarIcon, prefix: '集計を見せて' },
 ];
 
 interface ActivePrefix {
@@ -909,20 +908,6 @@ const App: React.FC = () => {
                     </div>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      handleQuickAction('集計を見せて');
-                      setShowFirstTimeGuide(false);
-                      localStorage.setItem('hasSeenFirstTimeGuide', 'true');
-                    }}
-                    className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition"
-                  >
-                    <ChartBarIcon className="w-5 h-5 text-orange-600" />
-                    <div className="text-left">
-                      <p className="font-bold text-orange-800 text-sm">集計を見る</p>
-                      <p className="text-xs text-orange-600">データ分析</p>
-                    </div>
-                  </button>
                 </div>
               </div>
             )}
@@ -1201,7 +1186,6 @@ const App: React.FC = () => {
                       {activePrefixes[0].text === '経費：' && '📒 経費入力モード：レシート撮影または取引内容を教えてください'}
                       {activePrefixes[0].text === '売上：' && '💰 売上入力モード：収入内容を教えてください'}
                       {activePrefixes[0].text === 'ルール：' && '🏷️ ルール設定モード：自動分類ルールを作成します'}
-                      {activePrefixes[0].text === '集計を見せて' && '📊 集計モード：取引データの集計を表示します'}
                     </span>
                   </div>
                 </div>
@@ -1229,7 +1213,7 @@ const App: React.FC = () => {
                   ref={textareaRef}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={activePrefixes.length === 0 ? "👆上から操作を選んでください（経費／売上／集計／ルール）" : "メッセージ..."}
+                  placeholder={activePrefixes.length === 0 ? "👆上から操作を選んでください（経費／売上／ルール）" : "メッセージ..."}
                   className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-slate-700 placeholder:font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   rows={1}
                   disabled={activePrefixes.length === 0}

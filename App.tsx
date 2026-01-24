@@ -1009,9 +1009,9 @@ const handleRuleInputSubmit = async () => {
             {/* Rule input card - displayed when showRuleInputCard is true */}
             {showRuleInputCard && (
               <div className="flex justify-start animate-in slide-in-from-bottom-8 duration-500">
-                <div className="w-full max-w-[95%] bg-white border-2 border-purple-200 rounded-3xl p-5 shadow-2xl ring-4 ring-purple-50/50">
-                  <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3">
-                    <div className="flex items-center gap-2 text-purple-700 font-bold">
+                <div className="w-full max-w-[95%] bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-2xl ring-4 ring-slate-50/50">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-2 text-slate-700 font-bold">
                       <TagIcon className="w-6 h-6" />
                       <span className="text-sm font-bold">ルール設定</span>
                     </div>
@@ -1023,27 +1023,27 @@ const handleRuleInputSubmit = async () => {
                   <div className="space-y-4">
                     {/* キーワード入力 */}
                     <div>
-                      <label className="text-[10px] text-purple-400 font-bold uppercase mb-1 block">
+                      <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
                         キーワード（必須）
                       </label>
                       <input
                         type="text"
                         value={ruleInputData.keyword}
                         onChange={(e) => setRuleInputData(prev => ({ ...prev, keyword: e.target.value }))}
-                        className="w-full p-3 border-2 border-purple-100 rounded-xl focus:border-purple-300 focus:outline-none"
+                        className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-slate-300 focus:outline-none"
                         placeholder="例: Amazon, Slack"
                       />
                     </div>
 
                     {/* カテゴリ選択 */}
                     <div>
-                      <label className="text-[10px] text-purple-400 font-bold uppercase mb-1 block">
+                      <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
                         勘定科目（必須）
                       </label>
                       <select
                         value={ruleInputData.category}
                         onChange={(e) => setRuleInputData(prev => ({ ...prev, category: e.target.value }))}
-                        className="w-full p-3 border-2 border-purple-100 rounded-xl focus:border-purple-300 focus:outline-none"
+                        className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-slate-300 focus:outline-none"
                       >
                         {CATEGORIES.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -1053,13 +1053,13 @@ const handleRuleInputSubmit = async () => {
 
                     {/* メモ入力 */}
                     <div>
-                      <label className="text-[10px] text-purple-400 font-bold uppercase mb-1 block">
+                      <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
                         メモ（任意）
                       </label>
                       <textarea
                         value={ruleInputData.notes}
                         onChange={(e) => setRuleInputData(prev => ({ ...prev, notes: e.target.value }))}
-                        className="w-full p-3 border-2 border-purple-100 rounded-xl focus:border-purple-300 focus:outline-none"
+                        className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-slate-300 focus:outline-none"
                         rows={2}
                         placeholder="例: オンラインショッピング"
                       />
@@ -1069,7 +1069,7 @@ const handleRuleInputSubmit = async () => {
                   {/* 送信ボタン */}
                   <button
                     onClick={handleRuleInputSubmit}
-                    className="w-full mt-4 bg-purple-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-purple-700 active:scale-95 transition"
+                    className="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-slate-900 active:scale-95 transition"
                   >
                     ルールを追加
                   </button>

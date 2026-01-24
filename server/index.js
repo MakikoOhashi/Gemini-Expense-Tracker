@@ -1704,6 +1704,63 @@ app.post('/api/expenses', async (req, res) => {
   }
 });
 
+// POST new rule
+app.post('/api/rules', async (req, res) => {
+  try {
+    const { keyword, category, notes, userId } = req.body;
+
+    // バリデーション
+    if (!keyword || !category) {
+      return res.status(400).json({ error: 'キーワードとカテゴリは必須です' });
+    }
+
+    // Get the base Gemini_Expenses spreadsheet
+    const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
+    const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, new Date().getFullYear(), userId);
+
+    const client = await getAuthenticatedClient(userId);
+    const sheets = google.sheets({ version: 'v4', auth: client });
+
+    // Get current rules to find next empty row
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Rules!A:A',
+    });
+
+    const nextRow = (response.data.values || []).length + 1;
+
+    // Add new rule with confidence fixed at 1.0
+    const newRule = [[keyword, category, 1.0, notes || '']];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Rules!A${nextRow}:D${nextRow}`,
+      valueInputOption: 'RAW',
+      resource: { values: newRule },
+    });
+
+    const rule = {
+      id: crypto.randomUUID(),
+      keyword,
+      category,
+      confidence: 1.0,
+      notes: notes || '',
+    };
+
+    res.json({
+      success: true,
+      id: rule.id,
+      rule
+    });
+
+  } catch (error) {
+    console.error('Rule save error:', error);
+    res.status(500).json({
+      error: 'ルールの保存に失敗しました',
+      details: error.message
+    });
+  }
+});
+
 // Receipt upload endpoint - using Busboy for streaming
 app.post('/api/upload-receipt', async (req, res) => {
   try {

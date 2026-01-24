@@ -79,12 +79,20 @@ const App: React.FC = () => {
   const [isConvertingImage, setIsConvertingImage] = useState(false);
   const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
   
-  const [pendingExtraction, setPendingExtraction] = useState<{
-    type: 'transaction' | 'rule';
-    data: any;
-    imageUrl?: string;
-  } | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+const [pendingExtraction, setPendingExtraction] = useState<{
+  type: 'transaction' | 'rule';
+  data: any;
+  imageUrl?: string;
+} | null>(null);
+const [isEditing, setIsEditing] = useState(false);
+
+// Rule input card state
+const [showRuleInputCard, setShowRuleInputCard] = useState(false);
+const [ruleInputData, setRuleInputData] = useState({
+  keyword: '',
+  category: CATEGORIES[0],
+  notes: ''
+});
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -687,14 +695,81 @@ const App: React.FC = () => {
     }
   };
 
-  const handleQuickAction = (prefix: string) => {
+const handleQuickAction = (prefix: string) => {
+  if (prefix === 'ルール：') {
+    setShowRuleInputCard(true);
+    setActivePrefixes([{ id: crypto.randomUUID(), text: prefix }]);
+  } else {
+    // 既存の処理（変更なし）
     const newPrefix: ActivePrefix = {
       id: crypto.randomUUID(),
       text: prefix
     };
-    setActivePrefixes([newPrefix]); // 常に1つのプレフィックスのみ保持
+    setActivePrefixes([newPrefix]);
     textareaRef.current?.focus();
-  };
+  }
+};
+
+// Rule input submit handler
+const handleRuleInputSubmit = async () => {
+  // バリデーション
+  if (!ruleInputData.keyword.trim()) {
+    setMessages(prev => [...prev, {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: '❌ キーワードを入力してください',
+      timestamp: Date.now()
+    }]);
+    return;
+  }
+
+  try {
+    // 既存の/api/expensesと同じパターンでAPI呼び出し
+    const response = await fetch('http://localhost:3001/api/rules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keyword: ruleInputData.keyword.trim(),
+        category: ruleInputData.category,
+        notes: ruleInputData.notes.trim(),
+        userId: authStatus?.userId || 'test-user'
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.details || result.error || '保存に失敗しました');
+    }
+
+    // 成功処理
+    setMessages(prev => [...prev, {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: `✅ ルール追加: 「${ruleInputData.keyword}」→「${ruleInputData.category}」`,
+      timestamp: Date.now()
+    }]);
+
+    setShowRuleInputCard(false);
+    setRuleInputData({ keyword: '', category: CATEGORIES[0], notes: '' });
+
+    // ローカル状態も更新
+    setRules(prev => [...prev, {
+      id: result.id,
+      keyword: ruleInputData.keyword,
+      category: ruleInputData.category
+    }]);
+
+  } catch (error: any) {
+    console.error('Rule save error:', error);
+    setMessages(prev => [...prev, {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: `❌ 保存に失敗しました: ${error.message}`,
+      timestamp: Date.now()
+    }]);
+  }
+};
 
   const removePrefix = (id: string) => {
     setActivePrefixes(prev => prev.filter(p => p.id !== id));
@@ -927,6 +1002,77 @@ const App: React.FC = () => {
                   <span className="text-xs font-bold tracking-widest uppercase">
                     {isConvertingImage ? 'Optimizing Image...' : 'Analyzing Data...'}
                   </span>
+                </div>
+              </div>
+            )}
+
+            {/* Rule input card - displayed when showRuleInputCard is true */}
+            {showRuleInputCard && (
+              <div className="flex justify-start animate-in slide-in-from-bottom-8 duration-500">
+                <div className="w-full max-w-[95%] bg-white border-2 border-purple-200 rounded-3xl p-5 shadow-2xl ring-4 ring-purple-50/50">
+                  <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3">
+                    <div className="flex items-center gap-2 text-purple-700 font-bold">
+                      <TagIcon className="w-6 h-6" />
+                      <span className="text-sm font-bold">ルール設定</span>
+                    </div>
+                    <button onClick={() => setShowRuleInputCard(false)} className="p-1 text-gray-300 hover:text-rose-400 transition">
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* キーワード入力 */}
+                    <div>
+                      <label className="text-[10px] text-purple-400 font-bold uppercase mb-1 block">
+                        キーワード（必須）
+                      </label>
+                      <input
+                        type="text"
+                        value={ruleInputData.keyword}
+                        onChange={(e) => setRuleInputData(prev => ({ ...prev, keyword: e.target.value }))}
+                        className="w-full p-3 border-2 border-purple-100 rounded-xl focus:border-purple-300 focus:outline-none"
+                        placeholder="例: Amazon, Slack"
+                      />
+                    </div>
+
+                    {/* カテゴリ選択 */}
+                    <div>
+                      <label className="text-[10px] text-purple-400 font-bold uppercase mb-1 block">
+                        勘定科目（必須）
+                      </label>
+                      <select
+                        value={ruleInputData.category}
+                        onChange={(e) => setRuleInputData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full p-3 border-2 border-purple-100 rounded-xl focus:border-purple-300 focus:outline-none"
+                      >
+                        {CATEGORIES.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* メモ入力 */}
+                    <div>
+                      <label className="text-[10px] text-purple-400 font-bold uppercase mb-1 block">
+                        メモ（任意）
+                      </label>
+                      <textarea
+                        value={ruleInputData.notes}
+                        onChange={(e) => setRuleInputData(prev => ({ ...prev, notes: e.target.value }))}
+                        className="w-full p-3 border-2 border-purple-100 rounded-xl focus:border-purple-300 focus:outline-none"
+                        rows={2}
+                        placeholder="例: オンラインショッピング"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 送信ボタン */}
+                  <button
+                    onClick={handleRuleInputSubmit}
+                    className="w-full mt-4 bg-purple-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-purple-700 active:scale-95 transition"
+                  >
+                    ルールを追加
+                  </button>
                 </div>
               </div>
             )}

@@ -1315,12 +1315,30 @@ const handleRuleInputSubmit = async () => {
             </div>
           );
         })() : (
-          <TransactionList
-            transactions={transactions}
-            onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))}
-            onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))}
-            selectedYear={selectedHistoryYear}
-          />
+          <div>
+            <div className="space-y-8 p-4">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-slate-800">📅 選択された年度</h3>
+                  <button
+                    onClick={() => setIsHistoryYearSelectionModalOpen(true)}
+                    className="px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
+                  >
+                    年度変更
+                  </button>
+                </div>
+                <p className="text-sm text-slate-700">
+                  {selectedHistoryYear || getCurrentYearJST()}年度（{selectedHistoryYear || getCurrentYearJST()}年1月1日〜{selectedHistoryYear || getCurrentYearJST()}年12月31日）の取引データを集計しています。
+                </p>
+              </div>
+            </div>
+            <TransactionList
+              transactions={transactions}
+              onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))}
+              onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))}
+              selectedYear={selectedHistoryYear}
+            />
+          </div>
         )}
         </div>
       </main>

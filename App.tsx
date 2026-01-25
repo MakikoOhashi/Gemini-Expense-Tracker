@@ -51,10 +51,12 @@ const App: React.FC = () => {
   const [isYearSelectionModalOpen, setIsYearSelectionModalOpen] = useState(false);
   const [selectedTaxYear, setSelectedTaxYear] = useState<number | null>(null);
   const [selectedAuditYear, setSelectedAuditYear] = useState<number | null>(null);
+  const [selectedHistoryYear, setSelectedHistoryYear] = useState<number | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isAuditYearSelectionModalOpen, setIsAuditYearSelectionModalOpen] = useState(false);
+  const [isHistoryYearSelectionModalOpen, setIsHistoryYearSelectionModalOpen] = useState(false);
   
   // Folder conflict modal state
   const [folderConflict, setFolderConflict] = useState<{
@@ -820,6 +822,12 @@ const handleRuleInputSubmit = async () => {
     setActiveTab('dashboard');
   };
 
+  const handleHistoryYearSelect = (year: number) => {
+    setSelectedHistoryYear(year);
+    setIsHistoryYearSelectionModalOpen(false);
+    setActiveTab('history');
+  };
+
   const getAvailableYears = (): number[] => {
     const currentYear = getCurrentYearJST();
     return [currentYear - 1, currentYear, currentYear + 1];
@@ -1311,6 +1319,7 @@ const handleRuleInputSubmit = async () => {
             transactions={transactions}
             onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))}
             onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))}
+            selectedYear={selectedHistoryYear}
           />
         )}
         </div>
@@ -1384,7 +1393,13 @@ const handleRuleInputSubmit = async () => {
             <button onClick={() => setActiveTab('chat')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'chat' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
               <ChatBubbleLeftRightIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">チャット</span>
             </button>
-            <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
+            <button onClick={() => {
+              if (selectedHistoryYear) {
+                setActiveTab('history');
+              } else {
+                setIsHistoryYearSelectionModalOpen(true);
+              }
+            }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
               <ListBulletIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">履歴</span>
             </button>
             <button onClick={() => {
@@ -1438,6 +1453,14 @@ const handleRuleInputSubmit = async () => {
         }}
         availableYears={getAvailableYears()}
         type="audit"
+      />
+
+      <YearSelectionModal
+        isOpen={isHistoryYearSelectionModalOpen}
+        onClose={() => setIsHistoryYearSelectionModalOpen(false)}
+        onSelectYear={handleHistoryYearSelect}
+        availableYears={getAvailableYears()}
+        type="history"
       />
 
 

@@ -19,6 +19,7 @@ interface TransactionListProps {
   transactions: Transaction[];
   onRemove: (id: string) => void;
   onUpdate: (transaction: Transaction) => void;
+  selectedYear?: number | null;
 }
 
 type SortKey = 'date' | 'category';
@@ -29,7 +30,7 @@ const hasReceipt = (t: Transaction): boolean => {
   return !!(t.receiptUrl && t.receiptUrl.trim() !== '');
 };
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemove, onUpdate }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemove, onUpdate, selectedYear }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Transaction>>({});
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -40,6 +41,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
 
   const filteredAndSortedTransactions = useMemo(() => {
     let result = [...transactions];
+
+    // Filtering by Year if selectedYear is provided
+    if (selectedYear) {
+      result = result.filter(t => {
+        const transactionYear = new Date(t.date).getFullYear();
+        return transactionYear === selectedYear;
+      });
+    }
 
     // Filtering by Category
     if (filterCategory !== 'all') {
@@ -63,7 +72,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
     });
 
     return result;
-  }, [transactions, filterCategory, sortKey, proofFilter]);
+  }, [transactions, filterCategory, sortKey, proofFilter, selectedYear]);
 
   const startEdit = (t: Transaction) => {
     setEditingId(t.id);

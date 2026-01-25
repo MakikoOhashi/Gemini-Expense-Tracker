@@ -548,22 +548,22 @@ async function initializeSheets(spreadsheetId, year, userId) {
     console.log(`📊 ${year}年度スプレッドシート初期化完了（Summaryシートは使用せず）`);
 
     // Initialize Rules sheet with headers and sample data
-    const rulesHeaders = [['Keyword', 'Category', 'Confidence', 'Notes']];
+    const rulesHeaders = [['Keyword', 'Category', 'Notes']];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Rules!A1:D1',
+      range: 'Rules!A1:C1',
       valueInputOption: 'RAW',
       resource: { values: rulesHeaders },
     });
 
     // Rules data - minimal example
     const sampleRules = [
-      ['Amazon', '消耗品費', 75, 'オンラインショッピング'],
-      ['Slack', '通信費', 90, 'サブスクリプション'],
+      ['Amazon', '消耗品費', 'オンラインショッピング'],
+      ['Slack', '通信費', 'サブスクリプション'],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Rules!A2:D3',
+      range: 'Rules!A2:C3',
       valueInputOption: 'RAW',
       resource: { values: sampleRules },
     });
@@ -874,22 +874,22 @@ async function initializeRulesSheet(spreadsheetId, userId) {
 
   try {
     // Initialize Rules sheet with headers and sample data
-    const rulesHeaders = [['Keyword', 'Category', 'Confidence', 'Notes']];
+    const rulesHeaders = [['Keyword', 'Category', 'Notes']];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Rules!A1:D1',
+      range: 'Rules!A1:C1',
       valueInputOption: 'RAW',
       resource: { values: rulesHeaders },
     });
 
     // Rules data - minimal example
     const sampleRules = [
-      ['Amazon', '消耗品費', 75, 'オンラインショッピング'],
-      ['Slack', '通信費', 90, 'サブスクリプション'],
+      ['Amazon', '消耗品費', 'オンラインショッピング'],
+      ['Slack', '通信費', 'サブスクリプション'],
     ];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Rules!A2:D3',
+      range: 'Rules!A2:C3',
       valueInputOption: 'RAW',
       resource: { values: sampleRules },
     });
@@ -1185,7 +1185,7 @@ app.get('/api/rules', async (req, res) => {
     // Rules シートから全ルールを取得
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Rules!A2:E',
+      range: 'Rules!A2:C',
     });
 
     const rows = response.data.values || [];
@@ -1193,8 +1193,7 @@ app.get('/api/rules', async (req, res) => {
       id: `rule_${index + 2}`,
       keyword: row[0] || '',
       category: row[1] || '',
-      confidence: parseInt(row[2]) || 0,
-      notes: row[3] || '',
+      notes: row[2] || '',
     }));
 
     res.json({
@@ -1226,7 +1225,7 @@ app.get('/api/rules/:year', async (req, res) => {
     // Get rules from Rules sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Rules!A2:D',
+      range: 'Rules!A2:C',
     });
 
     const rows = response.data.values || [];
@@ -1234,8 +1233,7 @@ app.get('/api/rules/:year', async (req, res) => {
       id: `${year}_${index + 2}`, // Row number as ID
       keyword: row[0] || '',
       category: row[1] || '',
-      confidence: parseInt(row[2]) || 0,
-      notes: row[3] || '',
+      notes: row[2] || '',
     })).filter(rule => rule.keyword && rule.category);
 
     res.json({ rules });
@@ -1253,7 +1251,7 @@ app.post('/api/rules/:year', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const userId = req.body.userId || 'test-user';
-    const { keyword, category, confidence, notes } = req.body;
+    const { keyword, category, notes } = req.body;
 
     if (!keyword || !category) {
       return res.status(400).json({ error: 'キーワードとカテゴリは必須です' });
@@ -1272,10 +1270,10 @@ app.post('/api/rules/:year', async (req, res) => {
     const nextRow = (response.data.values || []).length + 1;
 
     // Add new rule
-    const newRule = [[keyword, category, confidence || 80, notes || '']];
+    const newRule = [[keyword, category, notes || '']];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `Rules!A${nextRow}:D${nextRow}`,
+      range: `Rules!A${nextRow}:C${nextRow}`,
       valueInputOption: 'RAW',
       resource: { values: newRule },
     });
@@ -1284,7 +1282,6 @@ app.post('/api/rules/:year', async (req, res) => {
       id: `${year}_${nextRow}`,
       keyword,
       category,
-      confidence: confidence || 80,
       notes: notes || '',
     };
 
@@ -1321,7 +1318,7 @@ app.delete('/api/rules/:year/:id', async (req, res) => {
     // Clear the row (we can't delete rows in Google Sheets API easily)
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `Rules!A${rowNumber}:D${rowNumber}`,
+      range: `Rules!A${rowNumber}:C${rowNumber}`,
     });
 
     res.json({
@@ -1729,11 +1726,11 @@ app.post('/api/rules', async (req, res) => {
 
     const nextRow = (response.data.values || []).length + 1;
 
-    // Add new rule with confidence fixed at 1.0
-    const newRule = [[keyword, category, 1.0, notes || '']];
+    // Add new rule without confidence field
+    const newRule = [[keyword, category, notes || '']];
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `Rules!A${nextRow}:D${nextRow}`,
+      range: `Rules!A${nextRow}:C${nextRow}`,
       valueInputOption: 'RAW',
       resource: { values: newRule },
     });
@@ -1742,7 +1739,6 @@ app.post('/api/rules', async (req, res) => {
       id: crypto.randomUUID(),
       keyword,
       category,
-      confidence: 1.0,
       notes: notes || '',
     };
 

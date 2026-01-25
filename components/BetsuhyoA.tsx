@@ -45,7 +45,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
   return (
     <div className="form-area space-y-8 p-4">
 
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-2xl mx-auto">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <h3 className="font-bold text-red-800 mb-2">⚠️注意⚠️</h3>
         <p className="text-sm text-red-700">
         本画面に表示されている数値は、
@@ -659,7 +659,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
 
 
 
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-2xl mx-auto">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <h3 className="font-bold text-red-800 mb-2">⚠️注意点⚠️</h3>
         <p className="text-sm text-red-700">
         本画面に表示されている数値は、

@@ -69,7 +69,7 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([{
     id: 'welcome',
     role: 'assistant',
-    content: 'こんにちは！Gemini Expenseです。\n入力内容からデータを抽出し、確認カードを表示します。',
+    content: 'こんにちは！Audit Risk Forecast Trackerです。\n入力内容からデータを抽出し、確認カードを表示します。',
     timestamp: Date.now()
   }]);
 
@@ -865,7 +865,7 @@ const handleRuleInputSubmit = async () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold">
               <ReceiptPercentIcon className="w-8 h-8" />
-              <h1 className="text-xl tracking-tight">Gemini Expense</h1>
+              <h1 className="text-xl tracking-tight">Audit Risk Forecast Tracker</h1>
             </div>
             <div className="flex items-center gap-2">
               {authStatus && (

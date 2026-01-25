@@ -700,6 +700,10 @@ const handleQuickAction = (prefix: string) => {
     setShowRuleInputCard(true);
     setActivePrefixes([{ id: crypto.randomUUID(), text: prefix }]);
   } else {
+    // ルール設定カードが開いている場合は閉じる
+    if (showRuleInputCard) {
+      setShowRuleInputCard(false);
+    }
     // 既存の処理（変更なし）
     const newPrefix: ActivePrefix = {
       id: crypto.randomUUID(),
@@ -1349,7 +1353,7 @@ const handleRuleInputSubmit = async () => {
               <div className="flex items-end gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isProcessing || activePrefixes.length === 0 || !['経費：', '売上：'].includes(activePrefixes[0]?.text)}
+                  disabled={isProcessing || activePrefixes.length === 0 || !['経費：', '売上：'].includes(activePrefixes[0]?.text) || activePrefixes[0]?.text === 'ルール：'}
                   className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
                 >
                   <CameraIcon className="w-6 h-6" />
@@ -1362,10 +1366,10 @@ const handleRuleInputSubmit = async () => {
                   placeholder={activePrefixes.length === 0 ? "👆上から操作を選んでください（経費／売上／ルール）" : "メッセージ..."}
                   className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-slate-700 placeholder:font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   rows={1}
-                  disabled={activePrefixes.length === 0}
+                  disabled={activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
                 />
-                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage) || activePrefixes.length === 0} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition">
+                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage) || activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition">
                   <PaperAirplaneIcon className="w-6 h-6" />
                 </button>
               </div>

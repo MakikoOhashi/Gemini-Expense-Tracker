@@ -27,6 +27,7 @@ export interface ChatMessage {
   content: string;
   image?: string;
   timestamp: number;
+  type?: string; // e.g., 'welcome', 'authSuccess'
 }
 
 export interface AIAction {

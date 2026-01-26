@@ -75,9 +75,22 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([{
     id: 'welcome',
     role: 'assistant',
-    content: 'こんにちは！Audit Risk Forecast Trackerです。\n入力内容からデータを抽出し、確認カードを表示します。',
-    timestamp: Date.now()
+    content: TEXT['ja'].welcomeMessage, // Use hardcoded Japanese as default
+    timestamp: Date.now(),
+    type: 'welcome'
   }]);
+
+  // Update messages when language changes
+  useEffect(() => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.type === 'welcome') {
+        return { ...msg, content: t.welcomeMessage };
+      } else if (msg.type === 'authSuccess') {
+        return { ...msg, content: t.authSuccess };
+      }
+      return msg;
+    }));
+  }, [language, t.welcomeMessage, t.authSuccess]);
 
   const [inputText, setInputText] = useState('');
   const [activePrefixes, setActivePrefixes] = useState<ActivePrefix[]>([]);
@@ -195,12 +208,13 @@ const [ruleInputData, setRuleInputData] = useState({
 
         // Check for auth result from URL (一度だけ実行)
         const authResult = authService.checkAuthResult();
-        if (authResult === 'success' && !messages.some(m => m.content.includes('Google アカウントとの連携が完了しました'))) {
+        if (authResult === 'success' && !messages.some(m => m.type === 'authSuccess')) {
           setMessages(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: '✅ Google アカウントとの連携が完了しました！',
-            timestamp: Date.now()
+            content: t.authSuccess,
+            timestamp: Date.now(),
+            type: 'authSuccess'
           }]);
           // Refresh auth status
           const updatedStatus = await authService.checkAuthStatus();
@@ -211,11 +225,11 @@ const [ruleInputData, setRuleInputData] = useState({
           if (updatedStatus.idToken) {
             authService.setIdToken(updatedStatus.idToken);
           }
-        } else if (authResult === 'error' && !messages.some(m => m.content.includes('Google アカウントとの連携に失敗しました'))) {
+        } else if (authResult === 'error' && !messages.some(m => m.content.includes(t.authFailed))) {
           setMessages(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: '❌ Google アカウントとの連携に失敗しました。',
+            content: t.authFailed,
             timestamp: Date.now()
           }]);
         }
@@ -485,7 +499,7 @@ const [ruleInputData, setRuleInputData] = useState({
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `✅ 保存完了: ${newTx.description} (ID: ${newTx.id})`,
+        content: t.saveCompleted.replace('{description}', newTx.description).replace('{id}', newTx.id),
         timestamp: Date.now()
       }]);
 
@@ -513,7 +527,7 @@ const [ruleInputData, setRuleInputData] = useState({
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `✅ ルール追加: 「${keyword}」→「${category}」`,
+        content: t.ruleAdded.replace('{keyword}', keyword).replace('{category}', category),
         timestamp: Date.now()
       }]);
       setPendingExtraction(null);
@@ -724,16 +738,16 @@ const handleQuickAction = (prefix: string) => {
 
 // Rule input submit handler
 const handleRuleInputSubmit = async () => {
-  // バリデーション
-  if (!ruleInputData.keyword.trim()) {
-    setMessages(prev => [...prev, {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: '❌ キーワードを入力してください',
-      timestamp: Date.now()
-    }]);
-    return;
-  }
+    // バリデーション
+    if (!ruleInputData.keyword.trim()) {
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: t.keywordRequired,
+        timestamp: Date.now()
+      }]);
+      return;
+    }
 
   try {
     // 既存の/api/expensesと同じパターンでAPI呼び出し
@@ -758,7 +772,7 @@ const handleRuleInputSubmit = async () => {
     setMessages(prev => [...prev, {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: `✅ ルール追加: 「${ruleInputData.keyword}」→「${ruleInputData.category}」`,
+      content: t.ruleAdded.replace('{keyword}', ruleInputData.keyword).replace('{category}', ruleInputData.category),
       timestamp: Date.now()
     }]);
 
@@ -808,7 +822,7 @@ const handleRuleInputSubmit = async () => {
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: '✅ Google アカウントからログアウトしました。',
+        content: t.logoutSuccess,
         timestamp: Date.now()
       }]);
     } catch (error) {
@@ -1487,7 +1501,7 @@ const handleRuleInputSubmit = async () => {
         onClose={() => setIsSettingsOpen(false)}
         rules={rules}
         onDeleteRule={(id) => setRules(p => p.filter(r => r.id !== id))}
-        onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: '履歴をクリアしました。', timestamp: Date.now() }])}
+        onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: t.historyCleared, timestamp: Date.now() }])}
         onInitializeSystem={handleInitializeSystem}
         authStatus={authStatus}
       />

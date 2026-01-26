@@ -196,6 +196,14 @@ export const TEXT = {
     authenticating: '連携中...',
     googleConnect: 'Google連携',
 
+    // 成功メッセージ
+    authSuccess: 'Google アカウントとの連携が完了しました！',
+    authFailed: 'Google アカウントとの連携に失敗しました。',
+    logoutSuccess: 'Google アカウントからログアウトしました。',
+    historyCleared: '履歴をクリアしました。',
+    saveCompleted: '保存完了: {description} (ID: {id})',
+    ruleAdded: 'ルール追加: 「{keyword}」→「{category}」',
+
     // エラー
     authRequired: '認証が必要です。再度ログインしてください。',
     summaryGenerationFailed: '集計生成に失敗しました',
@@ -225,12 +233,12 @@ export const TEXT = {
     // ルール入力
     ruleInput: 'ルール設定',
     keyword: 'キーワード',
+    keywordRequired: 'キーワードを入力してください',
     keywordPlaceholder: '例: Amazon, Slack',
     accountCategory: '勘定科目',
     ruleNotes: 'メモ',
     ruleNotesPlaceholder: '例: オンラインショッピング',
     addRule: 'ルールを追加',
-    ruleAdded: 'ルール追加',
 
     // 確認ダイアログ
     extractionConfirmation: '抽出内容の確認',
@@ -495,6 +503,14 @@ export const TEXT = {
     authenticating: 'Connecting...',
     googleConnect: 'Google Connect',
 
+    // Success Messages
+    authSuccess: 'Google account integration completed!',
+    authFailed: 'Google account integration failed.',
+    logoutSuccess: 'Logged out from Google account.',
+    historyCleared: 'History cleared.',
+    saveCompleted: 'Save completed: {description} (ID: {id})',
+    ruleAdded: 'Rule added: "{keyword}" → "{category}"',
+
     // Errors
     authRequired: 'Authentication required. Please login again.',
     summaryGenerationFailed: 'Summary generation failed',
@@ -529,12 +545,12 @@ export const TEXT = {
     // Rule Input
     ruleInput: 'Rule Setting',
     keyword: 'Keyword',
+    keywordRequired: 'Please enter a keyword',
     keywordPlaceholder: 'e.g., Amazon, Slack',
     accountCategory: 'Account Category',
     ruleNotes: 'Notes',
     ruleNotesPlaceholder: 'e.g., Online shopping',
     addRule: 'Add Rule',
-    ruleAdded: 'Rule Added',
 
     // Confirmation Dialog
     extractionConfirmation: 'Extraction Confirmation',

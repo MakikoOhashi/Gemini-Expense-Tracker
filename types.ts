@@ -98,12 +98,3 @@ export interface BookkeepingCheckItem {
   actionable: boolean; // その場で修正可能か
   transactionId?: string; // 関連する取引ID（任意）
 }
-
-export interface AuditChatContext {
-  predictionId: string;
-  accountName: string;
-  amount: number;
-  currentCategory: string;
-  riskLevel: 'low' | 'medium' | 'high';
-  comment: string;
-}

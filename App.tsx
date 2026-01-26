@@ -1460,7 +1460,7 @@ const handleRuleInputSubmit = async () => {
         <div className="w-full lg:max-w-5xl lg:mx-auto lg:px-6 px-4">
           <div className="flex justify-around items-center py-2">
             <button onClick={() => setActiveTab('chat')} className={`flex flex-col items-center gap-1 transition ${activeTab === 'chat' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
-              <ChatBubbleLeftRightIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">チャット</span>
+              <ChatBubbleLeftRightIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">{t.tabChat}</span>
             </button>
             <button onClick={() => {
               if (selectedHistoryYear) {
@@ -1469,7 +1469,7 @@ const handleRuleInputSubmit = async () => {
                 setIsHistoryYearSelectionModalOpen(true);
               }
             }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'history' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
-              <ListBulletIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">履歴</span>
+              <ListBulletIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">{t.tabHistory}</span>
             </button>
             <button onClick={() => {
               if (selectedTaxYear) {
@@ -1478,7 +1478,7 @@ const handleRuleInputSubmit = async () => {
                 setIsYearSelectionModalOpen(true);
               }
             }} className={`flex flex-col items-center gap-1 transition ${activeTab === 'tax' ? 'text-slate-900 scale-110' : 'text-gray-400'}`}>
-              <ReceiptPercentIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">確定申告</span>
+              <ReceiptPercentIcon className="w-6 h-6" /> <span className="text-[10px] font-bold">{t.tabTaxReturn}</span>
             </button>
             <button onClick={() => {
               if (selectedAuditYear === null) {
@@ -1490,7 +1490,7 @@ const handleRuleInputSubmit = async () => {
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              </svg> <span className="text-[10px] font-bold">監査予報</span>
+              </svg> <span className="text-[10px] font-bold">{t.tabDashboard}</span>
             </button>
           </div>
         </div>

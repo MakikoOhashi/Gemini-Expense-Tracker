@@ -36,9 +36,9 @@ import { TEXT, Language } from './src/i18n/text';
 const gemini = new GeminiService();
 
 const QUICK_ACTIONS = [
-  { label: '経費入力', icon: BanknotesIcon, prefix: '経費：' },
-  { label: '売上入力', icon: SparklesIcon, prefix: '売上：' },
-  { label: 'ルール設定', icon: TagIcon, prefix: 'ルール：' },
+  { labelKey: 'addExpense', icon: BanknotesIcon, prefix: '経費：' },
+  { labelKey: 'addIncome', icon: SparklesIcon, prefix: '売上：' },
+  { labelKey: 'setRule', icon: TagIcon, prefix: 'ルール：' },
 ];
 
 interface ActivePrefix {
@@ -1400,7 +1400,7 @@ const handleRuleInputSubmit = async () => {
             <div className="pt-3 flex gap-2 overflow-x-auto no-scrollbar">
               {QUICK_ACTIONS.map((action, i) => (
                 <button key={i} onClick={() => handleQuickAction(action.prefix)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-900 text-[11px] font-bold shadow-sm hover:bg-slate-50 transition active:scale-95">
-                  <action.icon className="w-3.5 h-3.5" /> {action.label}
+                  <action.icon className="w-3.5 h-3.5" /> {t[action.labelKey as keyof typeof t] as string}
                 </button>
               ))}
             </div>

@@ -31,6 +31,7 @@ import YearSelectionModal from './components/YearSelectionModal';
 import { BetsuhyoA } from './components/BetsuhyoA';
 import { CATEGORIES } from './constants';
 import heic2any from 'heic2any';
+import { TEXT, Language } from './src/i18n/text';
 
 const gemini = new GeminiService();
 
@@ -57,6 +58,11 @@ const App: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isAuditYearSelectionModalOpen, setIsAuditYearSelectionModalOpen] = useState(false);
   const [isHistoryYearSelectionModalOpen, setIsHistoryYearSelectionModalOpen] = useState(false);
+
+  // Language state management
+  const [language, setLanguage] = useState<Language>('ja');
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const t = TEXT[language];
   
   // Folder conflict modal state
   const [folderConflict, setFolderConflict] = useState<{
@@ -847,15 +853,15 @@ const handleRuleInputSubmit = async () => {
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-in zoom-in-95 duration-300">
-            <h2 className="text-xl font-bold mb-4">🔐 Google Sheets 連携が必要です</h2>
+            <h2 className="text-xl font-bold mb-4">🔐 {t.googleAuthRequired}</h2>
             <p className="text-gray-600 mb-6">
-              アプリを使用するには Google アカウントでの認証が必須です。
+              {t.googleAuthDescription}
             </p>
             <button
               onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
             >
-              Google で連携する
+              {t.googleAuthButton}
             </button>
           </div>
         </div>
@@ -871,19 +877,47 @@ const handleRuleInputSubmit = async () => {
                 <h1 className="text-xl tracking-tight">Audit Risk Forecast Tracker</h1>
               </div>
             <div className="flex items-center gap-2">
+              {/* Language switcher */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition"
+                >
+                  🌐 {language.toUpperCase()}
+                </button>
+
+                {showLanguageMenu && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <p className="px-4 py-1 text-xs text-gray-500 font-bold">{t.language}</p>
+                    <button
+                      onClick={() => { setLanguage('ja'); setShowLanguageMenu(false); }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-gray-800"
+                    >
+                      {language === 'ja' && '✓'} {t.japanese}
+                    </button>
+                    <button
+                      onClick={() => { setLanguage('en'); setShowLanguageMenu(false); }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-gray-800"
+                    >
+                      {language === 'en' && '✓'} {t.english}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {authStatus && (
                 <div className="flex items-center gap-2 text-sm">
                   {authStatus.authenticated ? (
                     <>
                       <span className="flex items-center gap-1 text-green-300">
                         <CheckCircleIcon className="w-4 h-4" />
-                        Google連携済み
+                        {t.googleAuthConnected}
                       </span>
                       <button
                         onClick={handleLogout}
                         className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full text-xs transition"
                       >
-                        ログアウト
+                        {t.logout}
                       </button>
                     </>
                   ) : (
@@ -895,7 +929,7 @@ const handleRuleInputSubmit = async () => {
                       {isAuthenticating ? (
                         <>
                           <ArrowPathIcon className="w-3 h-3 animate-spin" />
-                          連携中...
+                          {t.authenticating}
                         </>
                       ) : (
                         <>
@@ -905,7 +939,7 @@ const handleRuleInputSubmit = async () => {
                             <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                             <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                           </svg>
-                          Google連携
+                          {t.googleConnect}
                         </>
                       )}
                     </button>
@@ -937,8 +971,8 @@ const handleRuleInputSubmit = async () => {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-800">まず、やりたいことを選んでください</h3>
-                      <p className="text-sm text-gray-600">何をしたいですか？</p>
+                      <h3 className="text-lg font-bold text-gray-800">{t.firstTimeGuide}</h3>
+                      <p className="text-sm text-gray-600">{t.whatWouldYouLike}</p>
                     </div>
                   </div>
                   <button
@@ -963,8 +997,8 @@ const handleRuleInputSubmit = async () => {
                   >
                     <BanknotesIcon className="w-5 h-5 text-green-600" />
                     <div className="text-left">
-                      <p className="font-bold text-green-800 text-sm">経費を登録</p>
-                      <p className="text-xs text-green-600">レシート撮影</p>
+                      <p className="font-bold text-green-800 text-sm">{t.registerExpense}</p>
+                      <p className="text-xs text-green-600">{t.registerExpenseSubtitle}</p>
                     </div>
                   </button>
 
@@ -978,8 +1012,8 @@ const handleRuleInputSubmit = async () => {
                   >
                     <SparklesIcon className="w-5 h-5 text-blue-600" />
                     <div className="text-left">
-                      <p className="font-bold text-blue-800 text-sm">売上を登録</p>
-                      <p className="text-xs text-blue-600">収入記録</p>
+                      <p className="font-bold text-blue-800 text-sm">{t.registerIncome}</p>
+                      <p className="text-xs text-blue-600">{t.registerIncomeSubtitle}</p>
                     </div>
                   </button>
 
@@ -993,8 +1027,8 @@ const handleRuleInputSubmit = async () => {
                   >
                     <TagIcon className="w-5 h-5 text-purple-600" />
                     <div className="text-left">
-                      <p className="font-bold text-purple-800 text-sm">ルール設定</p>
-                      <p className="text-xs text-purple-600">自動分類</p>
+                      <p className="font-bold text-purple-800 text-sm">{t.setupRules}</p>
+                      <p className="text-xs text-purple-600">{t.setupRulesSubtitle}</p>
                     </div>
                   </button>
 
@@ -1028,7 +1062,7 @@ const handleRuleInputSubmit = async () => {
                   <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
                     <div className="flex items-center gap-2 text-slate-700 font-bold">
                       <TagIcon className="w-6 h-6" />
-                      <span className="text-sm font-bold">ルール設定</span>
+                      <span className="text-sm font-bold">{t.ruleInput}</span>
                     </div>
                     <button onClick={() => setShowRuleInputCard(false)} className="p-1 text-gray-300 hover:text-rose-400 transition">
                       <XMarkIcon className="w-6 h-6" />
@@ -1039,21 +1073,21 @@ const handleRuleInputSubmit = async () => {
                     {/* キーワード入力 */}
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
-                        キーワード（必須）
+                        {t.keyword}（必須）
                       </label>
                       <input
                         type="text"
                         value={ruleInputData.keyword}
                         onChange={(e) => setRuleInputData(prev => ({ ...prev, keyword: e.target.value }))}
                         className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-slate-300 focus:outline-none"
-                        placeholder="例: Amazon, Slack"
+                        placeholder={t.keywordPlaceholder}
                       />
                     </div>
 
                     {/* カテゴリ選択 */}
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
-                        勘定科目（必須）
+                        {t.category}（必須）
                       </label>
                       <select
                         value={ruleInputData.category}
@@ -1069,14 +1103,14 @@ const handleRuleInputSubmit = async () => {
                     {/* メモ入力 */}
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
-                        メモ（任意）
+                        {t.notes}（任意）
                       </label>
                       <textarea
                         value={ruleInputData.notes}
                         onChange={(e) => setRuleInputData(prev => ({ ...prev, notes: e.target.value }))}
                         className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-slate-300 focus:outline-none"
                         rows={2}
-                        placeholder="例: オンラインショッピング"
+                        placeholder={t.ruleNotesPlaceholder}
                       />
                     </div>
                   </div>
@@ -1086,7 +1120,7 @@ const handleRuleInputSubmit = async () => {
                     onClick={handleRuleInputSubmit}
                     className="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-slate-900 active:scale-95 transition"
                   >
-                    ルールを追加
+                    {t.addRule}
                   </button>
                 </div>
               </div>
@@ -1098,7 +1132,7 @@ const handleRuleInputSubmit = async () => {
                   <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
                     <div className="flex items-center gap-2 text-slate-700 font-bold">
                       <SparklesIcon className="w-6 h-6 animate-pulse" />
-                      <span className="text-sm font-bold">抽出内容の確認</span>
+                      <span className="text-sm font-bold">{t.extractionConfirmation}</span>
                     </div>
                     <button onClick={() => setPendingExtraction(null)} className="p-1 text-gray-300 hover:text-rose-400 transition">
                       <XMarkIcon className="w-6 h-6" />
@@ -1110,7 +1144,7 @@ const handleRuleInputSubmit = async () => {
                       {pendingExtraction.type === 'transaction' ? (
                         <>
                           <div>
-                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">日付</label>
+                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.date}</label>
                             <input
                               type="date"
                               value={pendingExtraction.data.date || getTodayJSTString()}
@@ -1120,13 +1154,13 @@ const handleRuleInputSubmit = async () => {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-[10px] text-gray-400 font-bold mb-1 block">金額</label>
+                              <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.amount}</label>
                               <input type="number" value={pendingExtraction.data.amount} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, amount: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none" />
                             </div>
                             {/* 収入データの場合は種別を表示せず、支出データの場合のみ科目を表示 */}
                             {pendingExtraction.data.type !== 'income' && (
                               <div>
-                                <label className="text-[10px] text-gray-400 font-bold mb-1 block">科目</label>
+                                <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.category}</label>
                                 <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none">
                                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
@@ -1134,18 +1168,18 @@ const handleRuleInputSubmit = async () => {
                             )}
                           </div>
                           <div>
-                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">内容</label>
+                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.description}</label>
                             <input type="text" value={pendingExtraction.data.description} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, description: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none" />
                           </div>
                           {/* 収入データの場合のみ支払者名と源泉徴収税額を編集可能 */}
                           {pendingExtraction.data.type === 'income' && (
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <label className="text-[10px] text-green-400 font-bold mb-1 block">支払者名</label>
-                                <input type="text" value={pendingExtraction.data.payerName || ''} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, payerName: e.target.value}})} className="w-full p-2 rounded-lg border border-green-200 text-sm font-bold outline-none" placeholder="支払者名を入力" />
+                                <label className="text-[10px] text-green-400 font-bold mb-1 block">{t.payerName}</label>
+                                <input type="text" value={pendingExtraction.data.payerName || ''} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, payerName: e.target.value}})} className="w-full p-2 rounded-lg border border-green-200 text-sm font-bold outline-none" placeholder={t.payerNamePlaceholder} />
                               </div>
                               <div>
-                                <label className="text-[10px] text-green-400 font-bold mb-1 block">源泉徴収税額</label>
+                                <label className="text-[10px] text-green-400 font-bold mb-1 block">{t.withholdingTax}</label>
                                 <input type="number" value={pendingExtraction.data.withholdingTax || 0} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, withholdingTax: parseFloat(e.target.value) || 0}})} className="w-full p-2 rounded-lg border border-green-200 text-sm font-bold outline-none" placeholder="0" />
                               </div>
                             </div>
@@ -1154,25 +1188,25 @@ const handleRuleInputSubmit = async () => {
                       ) : (
                         <div className="space-y-3">
                           <div>
-                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">キーワード</label>
+                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.keyword}</label>
                             <input type="text" value={pendingExtraction.data.keyword} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, keyword: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none" />
                           </div>
                           <div>
-                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">分類科目</label>
+                            <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.category}</label>
                             <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none">
                               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                           </div>
                         </div>
                       )}
-                      <button onClick={() => setIsEditing(false)} className="w-full py-2 bg-slate-900 text-white rounded-xl font-bold text-xs">編集完了</button>
+                      <button onClick={() => setIsEditing(false)} className="w-full py-2 bg-slate-900 text-white rounded-xl font-bold text-xs">{t.editComplete}</button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       {pendingExtraction.type === 'transaction' ? (
                         <>
                           <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">日付</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.date}</p>
                             <p className="text-lg font-black text-slate-700">
                               {(() => {
                                 const displayDate = pendingExtraction.data.date || getTodayJSTString();
@@ -1182,29 +1216,29 @@ const handleRuleInputSubmit = async () => {
                             </p>
                           </div>
                           <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">金額</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.amount}</p>
                             <p className="text-2xl font-black text-slate-700">¥{Number(pendingExtraction.data.amount || 0).toLocaleString()}</p>
                           </div>
                           {/* 収入データの場合は種別を表示せず、支出データの場合のみ勘定科目を表示 */}
                           {pendingExtraction.data.type !== 'income' && (
                             <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
-                              <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">勘定科目</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.category}</p>
                               <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category || '未設定'}</p>
                             </div>
                           )}
                           <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">内容</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">{t.description}</p>
                             <p className="text-sm font-bold text-gray-700">{pendingExtraction.data.description || '内容なし'}</p>
                           </div>
                           {/* 収入データの場合のみ支払者名と源泉徴収税額を表示 */}
                           {pendingExtraction.data.type === 'income' && (
                             <>
                               <div className="bg-green-50/50 p-4 rounded-2xl border border-green-50">
-                                <p className="text-[10px] text-green-400 font-bold uppercase mb-1">支払者名</p>
+                                <p className="text-[10px] text-green-400 font-bold uppercase mb-1">{t.payerName}</p>
                                 <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.payerName || '未設定'}</p>
                               </div>
                               <div className="bg-green-50/50 p-4 rounded-2xl border border-green-50">
-                                <p className="text-[10px] text-green-400 font-bold uppercase mb-1">源泉徴収税額</p>
+                                <p className="text-[10px] text-green-400 font-bold uppercase mb-1">{t.withholdingTax}</p>
                                 <p className="text-lg font-black text-green-700">¥{Number(pendingExtraction.data.withholdingTax || 0).toLocaleString()}</p>
                               </div>
                             </>
@@ -1227,14 +1261,14 @@ const handleRuleInputSubmit = async () => {
                       className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
                     >
                       <CheckCircleIcon className="w-6 h-6" />
-                      この内容で保存
+                      {t.saveWithThisContent}
                     </button>
                     <button
                       onClick={() => setIsEditing(true)}
                       className="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-bold text-sm border-2 border-slate-100 hover:bg-slate-50 active:scale-95 transition flex items-center justify-center gap-1"
                     >
                       <PencilSquareIcon className="w-5 h-5" />
-                      修正
+                      {t.edit}
                     </button>
                   </div>
                 </div>
@@ -1363,9 +1397,9 @@ const handleRuleInputSubmit = async () => {
                   <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
                     <div className="w-2 h-2 bg-slate-900 rounded-full"></div>
                     <span>
-                      {activePrefixes[0].text === '経費：' && '📒 経費入力モード：レシート撮影または取引内容を教えてください'}
-                      {activePrefixes[0].text === '売上：' && '💰 売上入力モード：収入内容を教えてください'}
-                      {activePrefixes[0].text === 'ルール：' && '🏷️ ルール設定モード：自動分類ルールを作成します'}
+                      {activePrefixes[0].text === '経費：' && `📒 ${t.expenseInputMode}`}
+                      {activePrefixes[0].text === '売上：' && `💰 ${t.incomeInputMode}`}
+                      {activePrefixes[0].text === 'ルール：' && `🏷️ ${t.ruleSettingMode}`}
                     </span>
                   </div>
                 </div>
@@ -1393,7 +1427,7 @@ const handleRuleInputSubmit = async () => {
                   ref={textareaRef}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={activePrefixes.length === 0 ? "👆上から操作を選んでください（経費／売上／ルール）" : "メッセージ..."}
+                  placeholder={activePrefixes.length === 0 ? t.selectOperation : t.chatPlaceholder}
                   className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-slate-700 placeholder:font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   rows={1}
                   disabled={activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'}
@@ -1490,7 +1524,7 @@ const handleRuleInputSubmit = async () => {
       {folderConflict && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
-            <div className="flex-shrink-0 p-6">
+              <div className="flex-shrink-0 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1498,8 +1532,8 @@ const handleRuleInputSubmit = async () => {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">フォルダ名の重複を検出</h2>
-                  <p className="text-sm text-gray-500">複数の同名フォルダが見つかりました</p>
+                  <h2 className="text-xl font-bold text-gray-800">{t.folderConflictDetected}</h2>
+                  <p className="text-sm text-gray-500">{t.folderConflictDescription}</p>
                 </div>
               </div>
 
@@ -1555,7 +1589,7 @@ const handleRuleInputSubmit = async () => {
                           }}
                           className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
                         >
-                          このフォルダを使用
+                          {t.useThisFolder}
                         </button>
                       </div>
                     </div>
@@ -1565,13 +1599,11 @@ const handleRuleInputSubmit = async () => {
 
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                 <p className="text-blue-800 text-sm">
-                  <span className="font-bold">解決方法：</span>
+                  <span className="font-bold">{t.folderConflictResolution}</span>
                   <br />
-                  Google Drive で「いらない方」のフォルダ名を変更してください。
+                  {t.folderConflictExample}
                   <br />
-                  例：「Gemini Expense Tracker_old」など
-                  <br />
-                  名前を変更すると、次回アプリを起動した際にこの警告は表示されなくなります。
+                  {t.folderConflictNote}
                 </p>
               </div>
             </div>

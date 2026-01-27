@@ -1099,7 +1099,7 @@ const handleRuleInputSubmit = async () => {
                     {/* キーワード入力 */}
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
-                        {t.keyword}（必須）
+                        {t.keyword}（{t.required}）
                       </label>
                       <input
                         type="text"
@@ -1113,7 +1113,7 @@ const handleRuleInputSubmit = async () => {
                     {/* カテゴリ選択 */}
                     <div>
                       <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">
-                        {t.category}（必須）
+                        {t.category}（{t.required}）
                       </label>
                       <select
                         value={ruleInputData.category}
@@ -1121,7 +1121,7 @@ const handleRuleInputSubmit = async () => {
                         className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-slate-300 focus:outline-none"
                       >
                         {CATEGORIES.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat} value={cat}>{t.categories[cat]}</option>
                         ))}
                       </select>
                     </div>

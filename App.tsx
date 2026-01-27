@@ -1526,6 +1526,7 @@ const handleRuleInputSubmit = async () => {
         onClose={() => setIsYearSelectionModalOpen(false)}
         onSelectYear={handleYearSelect}
         availableYears={getAvailableYears()}
+        t={t}
       />
 
       <YearSelectionModal
@@ -1537,6 +1538,7 @@ const handleRuleInputSubmit = async () => {
         }}
         availableYears={getAvailableYears()}
         type="audit"
+        t={t}
       />
 
       <YearSelectionModal
@@ -1545,6 +1547,7 @@ const handleRuleInputSubmit = async () => {
         onSelectYear={handleHistoryYearSelect}
         availableYears={getAvailableYears()}
         type="history"
+        t={t}
       />
 
 

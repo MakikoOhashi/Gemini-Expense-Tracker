@@ -1,5 +1,6 @@
 import React from 'react';
 import { XMarkIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { TEXT, Language } from '../src/i18n/text';
 
 interface YearSelectionModalProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface YearSelectionModalProps {
   onSelectYear: (year: number) => void;
   availableYears: number[];
   type?: 'tax' | 'audit' | 'history';
+  t: any;
 }
 
 const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
@@ -14,7 +16,8 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
   onClose,
   onSelectYear,
   availableYears,
-  type = 'tax'
+  type = 'tax',
+  t
 }) => {
   if (!isOpen) return null;
 
@@ -29,7 +32,7 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
           <div className="flex items-center gap-2">
             <CalendarDaysIcon className="w-5 h-5 text-slate-900" />
             <h2 className="font-bold text-gray-800">
-              {isAudit ? '監査予報年度選択' : isHistory ? '取引履歴年度選択' : '確定申告年度選択'}
+              {isAudit ? t.auditForecastYearSelection : isHistory ? t.historyYearSelection : t.taxReturnYearSelection}
             </h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition">
@@ -41,10 +44,10 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
           <div className="text-center mb-6">
             <p className="text-sm text-gray-600">
               {isAudit
-                ? '監査予報に使用する年度のデータを選択してください'
+                ? t.selectAuditYearDescription
                 : isHistory
-                ? '取引履歴に表示する年度のデータを選択してください'
-                : '確定申告に使用する年度のデータを選択してください'
+                ? t.selectHistoryYearDescription
+                : t.selectTaxYearDescription
               }
             </p>
           </div>
@@ -63,15 +66,15 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-bold text-lg">
-                      {year}年度
+                      {year}{t.fiscalYear}
                       {year === currentYear && (
                         <span className="ml-2 text-xs bg-slate-900 text-white px-2 py-1 rounded-full">
-                          当年度
+                          {t.currentYear}
                         </span>
                       )}
                     </div>
                     <div className="text-sm text-gray-500 mt-1">
-                      {year}年1月1日〜{year}年12月31日の取引データ
+                      {t.yearRange.replace(/年/g, year.toString())}
                     </div>
                   </div>
                   {year === currentYear && (
@@ -84,12 +87,12 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
 
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-sm text-amber-800">
-              <span className="font-bold">注意：</span>
+              <span className="font-bold">{t.attention}：</span>
               {isAudit
-                ? '選択した年度の取引データのみが監査予報に使用されます。他の年度のデータは除外されます。'
+                ? t.yearSelectionNoteAudit
                 : isHistory
-                ? '選択した年度の取引データのみが取引履歴に表示されます。他の年度のデータは除外されます。'
-                : '選択した年度の取引データのみが確定申告書に反映されます。他の年度のデータは除外されます。'
+                ? t.yearSelectionNoteHistory
+                : t.yearSelectionNoteTax
               }
             </p>
           </div>
@@ -100,7 +103,7 @@ const YearSelectionModal: React.FC<YearSelectionModalProps> = ({
             onClick={onClose}
             className="w-full py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition shadow-sm"
           >
-            キャンセル
+            {t.cancel}
           </button>
         </div>
       </div>

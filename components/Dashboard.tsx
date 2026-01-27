@@ -479,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">🧠</span>
-            <h4 className="font-bold text-blue-800">Gemini AI Audit Risk Summary</h4>
+            <h4 className="font-bold text-blue-800">{t.geminiAIAuditRiskSummary}</h4>
           </div>
           <p className="text-sm text-blue-700">
             {t.mostLikelyItem} 「{(() => {
@@ -488,8 +488,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                 const riskOrder = { high: 3, medium: 2, low: 1 };
                 return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
               });
-              return sortedByRisk[0]?.accountName || 'なし';
-            })()}」 です
+              const accountName = sortedByRisk[0]?.accountName || 'なし';
+              return t.categories[accountName] || accountName;
+            })()}」
           </p>
         </div>
 

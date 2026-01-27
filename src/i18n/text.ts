@@ -136,6 +136,7 @@ export const TEXT = {
     loadingSummaryData: '集計データを読み込み中...',
     todayAuditForecast: '今日の監査予報（{date}時点）',
     mostLikelyItem: '今年、最も調査対象になりやすい項目は',
+    geminiAIAuditRiskSummary: 'Gemini AI Audit Risk Summary',
     noAuditData: '監査予報データが見つかりませんでした',
     individualBookkeepingChecks: '記帳チェック（個別）',
 
@@ -526,6 +527,7 @@ export const TEXT = {
     loadingSummaryData: 'Loading summary data...',
     todayAuditForecast: 'Today\'s Audit Forecast (as of {date})',
     mostLikelyItem: 'This year, the item most likely to be investigated is',
+    geminiAIAuditRiskSummary: 'Gemini AI Audit Risk Summary',
     noAuditData: 'No audit forecast data found',
     individualBookkeepingChecks: 'Bookkeeping Checks (Individual)',
 

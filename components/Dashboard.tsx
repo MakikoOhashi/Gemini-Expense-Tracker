@@ -508,7 +508,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">{item.accountName}</p>
+                    <p className="text-sm font-medium text-gray-800">{t.categories[item.accountName] || item.accountName}</p>
                     <p className="text-xs text-gray-500">
                       ¥{(item.totalAmount || 0).toLocaleString()} ({item.ratio.toFixed(1)}%)
                     </p>

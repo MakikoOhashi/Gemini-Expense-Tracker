@@ -18,6 +18,7 @@ interface DashboardProps {
   availableYears: number[];
   onOpenYearModal: () => void;
   t: any;
+  language?: 'ja' | 'en';
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -28,7 +29,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onAuditYearSelect,
   availableYears,
   onOpenYearModal,
-  t
+  t,
+  language = 'ja'
 }) => {
   const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
@@ -126,7 +128,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         // 記帳チェックデータは常に新規生成（キャッシュ不要）
-        const checksData = await auditService.generateBookkeepingChecks(filteredTransactions);
+        const checksData = await auditService.generateBookkeepingChecks(filteredTransactions, language);
         setBookkeepingChecks(checksData);
 
       } catch (error) {
@@ -136,7 +138,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           console.log('🔄 Firestoreエラー: 既存処理にフォールバックします');
           const [forecastData, checksData] = await Promise.all([
             auditService.generateAuditForecast(filteredTransactions),
-            auditService.generateBookkeepingChecks(filteredTransactions)
+            auditService.generateBookkeepingChecks(filteredTransactions, language)
           ]);
           setAuditForecast(forecastData);
           setBookkeepingChecks(checksData);
@@ -225,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     };
 
     loadAuditData();
-  }, [transactions, selectedAuditYear]);
+  }, [transactions, selectedAuditYear, language]);
 
   // Summaryメタデータを取得（ページロード時）
   useEffect(() => {

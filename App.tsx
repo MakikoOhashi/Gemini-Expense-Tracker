@@ -203,6 +203,13 @@ const [ruleInputData, setRuleInputData] = useState({
     }
   }, []);
 
+  // Initialize selectedAuditYear when transactions are loaded
+  useEffect(() => {
+    if (transactions.length > 0 && selectedAuditYear === null) {
+      setSelectedAuditYear(getCurrentYearJST());
+    }
+  }, [transactions, selectedAuditYear]);
+
   // Check authentication status on app load
   useEffect(() => {
     const checkAuth = async () => {
@@ -1315,6 +1322,7 @@ const handleRuleInputSubmit = async () => {
               setIsAuditYearSelectionModalOpen(true);
             }}
             t={t}
+            language={language}
           />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();

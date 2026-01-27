@@ -35,6 +35,12 @@ import { TEXT, Language } from './src/i18n/text';
 
 const gemini = new GeminiService();
 
+// Auto-detect language for pre-authentication modal
+const getPreAuthLanguage = (): Language => {
+  const lang = navigator.language || (navigator as any).userLanguage;
+  return lang.startsWith('ja') ? 'ja' : 'en';
+};
+
 interface ActivePrefix {
   id: string;
   text: string;
@@ -883,22 +889,26 @@ const handleRuleInputSubmit = async () => {
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden relative">
       {/* Authentication Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-in zoom-in-95 duration-300">
-            <h2 className="text-xl font-bold mb-4">🔐 {t.googleAuthRequired}</h2>
-            <p className="text-gray-600 mb-6">
-              {t.googleAuthDescription}
-            </p>
-            <button
-              onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
-            >
-              {t.googleAuthButton}
-            </button>
+      {showAuthModal && (() => {
+        const preAuthLang = getPreAuthLanguage();
+        const preAuthText = TEXT[preAuthLang];
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl animate-in zoom-in-95 duration-300">
+              <h2 className="text-xl font-bold mb-4">🔐 {preAuthText.googleAuthRequired}</h2>
+              <p className="text-gray-600 mb-6">
+                {preAuthText.googleAuthDescription}
+              </p>
+              <button
+                onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+              >
+                {preAuthText.googleAuthButton}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       <header className="bg-slate-900 text-white shadow-md flex items-center justify-between z-30">
         <div className="w-full lg:max-w-5xl lg:mx-auto lg:px-6 px-4 py-4">
           <div className="flex items-center justify-between">

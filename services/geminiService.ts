@@ -1,8 +1,8 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_WITH_IMAGE, SYSTEM_PROMPT_WITHOUT_IMAGE } from "../constants";
-import { AIResponse, ChatMessage, TransactionRule } from "../types";
-import { sheetsService } from "./sheetsService";
+import { AIResponse, ChatMessage, TransactionRule } from "../types.ts";
+import { sheetsService } from "./sheetsService.ts";
 
 export class GeminiService {
   async processInput(

@@ -1,5 +1,5 @@
 
-import { Transaction, ChatMessage, TransactionRule } from "../types";
+import { Transaction, ChatMessage, TransactionRule } from "../types.ts";
 
 const TRANSACTIONS_KEY = 'gemini_expense_tracker_transactions';
 const MESSAGES_KEY = 'gemini_expense_tracker_messages';

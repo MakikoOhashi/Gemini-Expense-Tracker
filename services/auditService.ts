@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, AnomalyDetection } from "../types";
-import { sheetsService } from "./sheetsService";
+import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, AnomalyDetection } from "../types.ts";
+import { sheetsService } from "./sheetsService.ts";
 
 // 税務調査対応アシスタントの出力形式
 export interface TaxAuditResponse {

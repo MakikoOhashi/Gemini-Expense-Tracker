@@ -1,4 +1,4 @@
-import { authService } from './authService';
+import { authService } from './authService.ts';
 
 export interface ExpenseData {
   date: string;

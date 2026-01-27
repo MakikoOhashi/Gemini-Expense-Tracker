@@ -42,6 +42,7 @@ export const TEXT = {
 
     // 設定
     settings: '設定',
+    editInSheets: 'Sheets で編集',
 
     // 監査予報
     auditForecast: '監査予報',
@@ -280,6 +281,10 @@ export const TEXT = {
     dataDeleted: 'データを削除しました',
     dataDeleteFailed: 'データの削除に失敗しました',
 
+    // Prefixes
+    expensePrefix: '経費：',
+    incomePrefix: '売上：',
+
     // 科目
     categories: {
       雑費: '雑費',
@@ -349,6 +354,7 @@ export const TEXT = {
 
     // Settings
     settings: 'Settings',
+    editInSheets: 'Edit in Sheets',
 
     // Audit Forecast
     auditForecast: 'Audit Forecast',
@@ -591,6 +597,10 @@ export const TEXT = {
     dataUpdateFailed: 'Failed to update data',
     dataDeleted: 'Data deleted',
     dataDeleteFailed: 'Failed to delete data',
+
+    // Prefixes
+    expensePrefix: 'Expense: ',
+    incomePrefix: 'Income: ',
 
     // Categories
     categories: {

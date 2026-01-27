@@ -14,12 +14,14 @@ import {
 import { Transaction } from '../types';
 import { CATEGORIES } from '../constants';
 import { sheetsService } from '../services/sheetsService';
+import { TEXT, Language } from '../src/i18n/text';
 
 interface TransactionListProps {
   transactions: Transaction[];
   onRemove: (id: string) => void;
   onUpdate: (transaction: Transaction) => void;
   selectedYear?: number | null;
+  text: any;
 }
 
 type SortKey = 'date' | 'category';
@@ -30,7 +32,7 @@ const hasReceipt = (t: Transaction): boolean => {
   return !!(t.receiptUrl && t.receiptUrl.trim() !== '');
 };
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemove, onUpdate, selectedYear }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemove, onUpdate, selectedYear, text }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Transaction>>({});
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -198,8 +200,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
               onChange={(e) => setSortKey(e.target.value as SortKey)}
               className="block w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 appearance-none shadow-sm cursor-pointer"
             >
-              <option value="date">日付順</option>
-              <option value="category">科目順</option>
+              <option value="date">{text.dateOrder}</option>
+              <option value="category">{text.categoryOrder}</option>
             </select>
           </div>
         </div>
@@ -210,19 +212,19 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
             onClick={() => setProofFilter('all')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
-            すべて
+            {text.all}
           </button>
           <button 
             onClick={() => setProofFilter('with')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'with' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
-            証憑あり
+            {text.withReceipt}
           </button>
           <button 
             onClick={() => setProofFilter('without')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${proofFilter === 'without' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
-            証憑なし
+            {text.withoutReceipt}
           </button>
         </div>
       </div>
@@ -331,7 +333,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
                     )}
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                    {t.date} • <span className="text-slate-900 font-bold uppercase">{t.category}</span>
+                    {t.date} • <span className="text-slate-900 font-bold uppercase">{text.categories[t.category]}</span>
                   </p>
                 </div>
               </div>

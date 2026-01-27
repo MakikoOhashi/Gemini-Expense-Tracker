@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { XMarkIcon, TrashIcon, SparklesIcon, CloudIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { TransactionRule } from '../types';
 import { AuthStatus } from '../services/authService';
+import { TEXT, Language } from '../src/i18n/text';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,9 +13,10 @@ interface SettingsModalProps {
   onClearHistory: () => void;
   onInitializeSystem: () => Promise<void>;
   authStatus: AuthStatus | null;
+  t: any;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: initialRules, onDeleteRule, onClearHistory, onInitializeSystem, authStatus }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: initialRules, onDeleteRule, onClearHistory, onInitializeSystem, authStatus, t }) => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [initMessage, setInitMessage] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
@@ -84,7 +86,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
             <SparklesIcon className="w-5 h-5 text-slate-900" />
-            <h2 className="font-bold text-gray-800">個人ルール設定</h2>
+            <h2 className="font-bold text-gray-800">{t.personalRuleSettings}</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition">
             <XMarkIcon className="w-6 h-6 text-gray-500" />
@@ -94,10 +96,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">自動分類ルール</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t.autoClassificationRules}</h3>
               {rules.length > 0 && (
                 <span className="text-xs font-bold text-slate-900 bg-slate-50 px-2 py-1 rounded-full">
-                  {rules.length}件
+                  {rules.length}{t.rulesCount}
                 </span>
               )}
             </div>
@@ -114,21 +116,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
                   <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
                   <path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>
                 </svg>
-                Google Sheets でルールを確認
+                {t.checkRulesInSheets}
               </a>
             )}
             
             {rules.length === 0 ? (
               <p className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-xl text-center">
-                チャットで「〜の時は〜の科目にして」と<br/>教えてもらうとここに自動追加されます。
+                {t.rulesDescription}
               </p>
             ) : (
               <div className="space-y-2">
                 {rules.map(rule => (
                   <div key={rule.id} className="flex items-center justify-between bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
                     <div className="overflow-hidden">
-                      <p className="text-xs font-bold text-slate-900 mb-0.5">キーワード: {rule.keyword}</p>
-                      <p className="text-sm text-gray-800 font-medium">勘定科目: {rule.category}</p>
+                      <p className="text-xs font-bold text-slate-900 mb-0.5">{t.keyword}: {rule.keyword}</p>
+                      <p className="text-sm text-gray-800 font-medium">{t.accountCategory}: {rule.category}</p>
                     </div>
                     <button
                       onClick={() => {
@@ -143,7 +145,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
                         <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
                         <path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>
                       </svg>
-                      Sheets で編集
+                      {t.editInSheets}
                     </button>
                   </div>
                 ))}
@@ -152,7 +154,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
           </section>
 
           <section className="pt-4 border-t border-gray-100">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">システム設定</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t.systemSettings}</h3>
             <div className="space-y-3">
               <button
                 onClick={handleInitializeSystem}
@@ -167,7 +169,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
                 ) : (
                   <>
                     <CloudIcon className="w-4 h-4" />
-                    Google Drive と Sheet をセットアップ
+                    {t.setupGoogleDrive}
                   </>
                 )}
               </button>
@@ -184,17 +186,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
           </section>
 
           <section className="pt-4 border-t border-gray-100">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">データ管理</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t.dataManagement}</h3>
             <button
               onClick={() => {
-                if (window.confirm('チャット履歴を全て削除しますか？')) {
+                if (window.confirm(t.clearHistoryConfirm)) {
                   onClearHistory();
                   onClose();
                 }
               }}
               className="w-full py-3 px-4 bg-rose-50 text-rose-600 text-sm font-bold rounded-xl hover:bg-rose-100 transition text-center"
             >
-              チャット履歴をクリア
+              {t.clearChatHistory}
             </button>
           </section>
         </div>
@@ -204,7 +206,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
             onClick={onClose}
             className="w-full py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition shadow-sm"
           >
-            閉じる
+            {t.close}
           </button>
         </div>
       </div>

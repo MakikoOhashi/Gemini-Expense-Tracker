@@ -35,12 +35,6 @@ import { TEXT, Language } from './src/i18n/text';
 
 const gemini = new GeminiService();
 
-const QUICK_ACTIONS = [
-  { labelKey: 'addExpense', icon: BanknotesIcon, prefix: '経費：' },
-  { labelKey: 'addIncome', icon: SparklesIcon, prefix: '売上：' },
-  { labelKey: 'setRule', icon: TagIcon, prefix: 'ルール：' },
-];
-
 interface ActivePrefix {
   id: string;
   text: string;
@@ -63,7 +57,13 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('ja');
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const t = TEXT[language];
-  
+
+  const QUICK_ACTIONS = [
+    { labelKey: 'addExpense', icon: BanknotesIcon, prefix: t.expensePrefix },
+    { labelKey: 'addIncome', icon: SparklesIcon, prefix: t.incomePrefix },
+    { labelKey: 'setRule', icon: TagIcon, prefix: 'ルール：' },
+  ];
+
   // Folder conflict modal state
   const [folderConflict, setFolderConflict] = useState<{
     duplicateFolders: Array<{ id: string; name: string; createdTime: string }>;
@@ -91,6 +91,18 @@ const App: React.FC = () => {
       return msg;
     }));
   }, [language, t.welcomeMessage, t.authSuccess]);
+
+  // Update active prefixes when language changes
+  useEffect(() => {
+    setActivePrefixes(prev => prev.map(prefix => {
+      if (prefix.text === '経費：' || prefix.text === t.expensePrefix) {
+        return { ...prefix, text: t.expensePrefix };
+      } else if (prefix.text === '売上：' || prefix.text === t.incomePrefix) {
+        return { ...prefix, text: t.incomePrefix };
+      }
+      return prefix;
+    }));
+  }, [language, t.expensePrefix, t.incomePrefix]);
 
   const [inputText, setInputText] = useState('');
   const [activePrefixes, setActivePrefixes] = useState<ActivePrefix[]>([]);
@@ -1176,7 +1188,7 @@ const handleRuleInputSubmit = async () => {
                               <div>
                                 <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.category}</label>
                                 <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none">
-                                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                  {CATEGORIES.map(c => <option key={c} value={c}>{t.categories[c]}</option>)}
                                 </select>
                               </div>
                             )}
@@ -1208,7 +1220,7 @@ const handleRuleInputSubmit = async () => {
                           <div>
                             <label className="text-[10px] text-gray-400 font-bold mb-1 block">{t.category}</label>
                             <select value={pendingExtraction.data.category} onChange={(e) => setPendingExtraction({...pendingExtraction, data: {...pendingExtraction.data, category: e.target.value}})} className="w-full p-2 rounded-lg border border-slate-200 text-sm font-bold outline-none">
-                              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                              {CATEGORIES.map(c => <option key={c} value={c}>{t.categories[c]}</option>)}
                             </select>
                           </div>
                         </div>
@@ -1237,7 +1249,7 @@ const handleRuleInputSubmit = async () => {
                           {pendingExtraction.data.type !== 'income' && (
                             <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.category}</p>
-                              <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category || '未設定'}</p>
+                              <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category ? t.categories[pendingExtraction.data.category] : '未設定'}</p>
                             </div>
                           )}
                           <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -1262,7 +1274,7 @@ const handleRuleInputSubmit = async () => {
                         <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                           <p className="text-sm font-bold text-gray-800 leading-relaxed">
                             「<span className="text-slate-900 font-black">{pendingExtraction.data.keyword}</span>」のときは
-                            「<span className="text-slate-900 font-black">{pendingExtraction.data.category}</span>」に自動分類します。
+                            「<span className="text-slate-900 font-black">{t.categories[pendingExtraction.data.category]}</span>」に自動分類します。
                           </p>
                         </div>
                       )}
@@ -1388,6 +1400,7 @@ const handleRuleInputSubmit = async () => {
               onRemove={(id) => setTransactions(p => p.filter(t => t.id !== id))}
               onUpdate={(u) => setTransactions(p => p.map(t => t.id === u.id ? u : t))}
               selectedYear={selectedHistoryYear}
+              text={t}
             />
           </div>
         )}
@@ -1411,8 +1424,8 @@ const handleRuleInputSubmit = async () => {
                   <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
                     <div className="w-2 h-2 bg-slate-900 rounded-full"></div>
                     <span>
-                      {activePrefixes[0].text === '経費：' && `📒 ${t.expenseInputMode}`}
-                      {activePrefixes[0].text === '売上：' && `💰 ${t.incomeInputMode}`}
+                      {activePrefixes[0].text === t.expensePrefix && `📒 ${t.expenseInputMode}`}
+                      {activePrefixes[0].text === t.incomePrefix && `💰 ${t.incomeInputMode}`}
                       {activePrefixes[0].text === 'ルール：' && `🏷️ ${t.ruleSettingMode}`}
                     </span>
                   </div>
@@ -1504,6 +1517,7 @@ const handleRuleInputSubmit = async () => {
         onClearHistory={() => setMessages([{ id: 'welcome', role: 'assistant', content: t.historyCleared, timestamp: Date.now() }])}
         onInitializeSystem={handleInitializeSystem}
         authStatus={authStatus}
+        t={t}
       />
 
       <YearSelectionModal

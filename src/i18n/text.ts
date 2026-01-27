@@ -387,7 +387,9 @@ export const TEXT = {
       給料賃金: '給料賃金',
       消耗品費: '消耗品費',
       通信費: '通信費',
-      旅費交通費: '旅費交通費'
+      旅費交通費: '旅費交通費',
+      その他: 'その他',
+      食事代: '食事代'
     }
   },
   en: {
@@ -783,7 +785,9 @@ export const TEXT = {
       給料賃金: 'Salaries and Wages',
       消耗品費: 'Consumables',
       通信費: 'Communication Expenses',
-      旅費交通費: 'Travel Expenses'
+      旅費交通費: 'Travel Expenses',
+      その他: 'Other',
+      食事代: 'Meal Expenses'
     }
   }
 } as const;

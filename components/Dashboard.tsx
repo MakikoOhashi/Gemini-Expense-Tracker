@@ -128,7 +128,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         // 記帳チェックデータは常に新規生成（キャッシュ不要）
-        const checksData = await auditService.generateBookkeepingChecks(filteredTransactions, language);
+        const checksData = await auditService.generateBookkeepingChecks(filteredTransactions, language, t.categories);
         setBookkeepingChecks(checksData);
 
       } catch (error) {
@@ -138,7 +138,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           console.log('🔄 Firestoreエラー: 既存処理にフォールバックします');
           const [forecastData, checksData] = await Promise.all([
             auditService.generateAuditForecast(filteredTransactions),
-            auditService.generateBookkeepingChecks(filteredTransactions, language)
+            auditService.generateBookkeepingChecks(filteredTransactions, language, t.categories)
           ]);
           setAuditForecast(forecastData);
           setBookkeepingChecks(checksData);

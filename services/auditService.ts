@@ -722,7 +722,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
   }
 
   // 記帳チェック（個別）- 個別のチェック項目を生成
-  async generateBookkeepingChecks(transactions: any[], language: 'ja' | 'en' = 'ja'): Promise<BookkeepingCheckItem[]> {
+  async generateBookkeepingChecks(transactions: any[], language: 'ja' | 'en' = 'ja', categories?: any): Promise<BookkeepingCheckItem[]> {
     const checks: BookkeepingCheckItem[] = [];
 
     // 領収書がない取引を集計
@@ -760,15 +760,16 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
     // 領収書がない取引のチェックをカテゴリごとにまとめて表示
     Object.entries(missingReceipts).forEach(([category, data]) => {
+      const translatedCategory = categories ? categories[category] || category : category;
       checks.push({
         id: `check_receipt_${category}`,
         type: language === 'ja' ? '不足' : 'Deficiency',
         title: language === 'ja'
-          ? `領収書の添付が必要: ${category} (${data.count}件)`
-          : `Receipts needed: ${category} (${data.count} items)`,
+          ? `領収書の添付が必要: ${translatedCategory} (${data.count}件)`
+          : `Receipts needed: ${translatedCategory} (${data.count} items)`,
         description: language === 'ja'
-          ? `${category}カテゴリで${data.count}件の取引に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。`
-          : `${data.count} transactions in the ${category} category do not have receipts attached. These are required for tax audits, so please attach them.`,
+          ? `${translatedCategory}カテゴリで${data.count}件の取引に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。`
+          : `${data.count} transactions in the ${translatedCategory} category do not have receipts attached. These are required for tax audits, so please attach them.`,
         actionable: true
       });
     });
@@ -777,6 +778,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
     highAmountTransactions.forEach((transaction) => {
       const amount = transaction.amount as number;
       const category = (transaction.category as string) || 'その他';
+      const translatedCategory = categories ? categories[category] || category : category;
       const description = transaction.description as string;
       const date = transaction.date as string;
       const id = transaction.id as string;
@@ -785,8 +787,8 @@ ${JSON.stringify(transactionSummary, null, 2)}
         id: `check_high_amount_${id}`,
         type: language === 'ja' ? '確認' : 'Confirmation',
         title: language === 'ja'
-          ? `高額支出の確認: ${category} ¥${amount.toLocaleString()} (${date})`
-          : `High amount transaction check: ${category} ¥${amount.toLocaleString()} (${date})`,
+          ? `高額支出の確認: ${translatedCategory} ¥${amount.toLocaleString()} (${date})`
+          : `High amount transaction check: ${translatedCategory} ¥${amount.toLocaleString()} (${date})`,
         description: language === 'ja'
           ? `${description}の支出が10万円を超えています。事業との関連性と根拠資料を確認してください。`
           : `The ${description} expense exceeds ¥100,000. Please verify the business relevance and supporting documents.`,
@@ -804,15 +806,16 @@ ${JSON.stringify(transactionSummary, null, 2)}
       });
 
       Object.entries(descriptionByCategory).forEach(([category, count]) => {
+        const translatedCategory = categories ? categories[category] || category : category;
         checks.push({
           id: `check_description_${category}`,
           type: language === 'ja' ? '推奨' : 'Recommendation',
           title: language === 'ja'
-            ? `説明の充実を推奨: ${category} (${count}件)`
-            : `Description enhancement recommended: ${category} (${count} items)`,
+            ? `説明の充実を推奨: ${translatedCategory} (${count}件)`
+            : `Description enhancement recommended: ${translatedCategory} (${count} items)`,
           description: language === 'ja'
-            ? `${category}カテゴリで${count}件の取引説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。`
-            : `${count} transactions in the ${category} category have insufficient descriptions. It is recommended to add detailed descriptions explaining the business relevance and purpose of the expenses.`,
+            ? `${translatedCategory}カテゴリで${count}件の取引説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。`
+            : `${count} transactions in the ${translatedCategory} category have insufficient descriptions. It is recommended to add detailed descriptions explaining the business relevance and purpose of the expenses.`,
           actionable: true
         });
       });
@@ -827,15 +830,16 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
     Object.entries(categoryCount).forEach(([category, count]) => {
       if (count > 10) {
+        const translatedCategory = categories ? categories[category] || category : category;
         checks.push({
           id: `check_category_frequency_${category}`,
           type: language === 'ja' ? '確認' : 'Confirmation',
           title: language === 'ja'
-            ? `頻繁な取引の確認: ${category}`
-            : `Frequent transactions check: ${category}`,
+            ? `頻繁な取引の確認: ${translatedCategory}`
+            : `Frequent transactions check: ${translatedCategory}`,
           description: language === 'ja'
-            ? `${category}の取引が${count}件あります。取引内容の一貫性と事業性を確認してください。`
-            : `There are ${count} transactions in the ${category} category. Please verify the consistency and business nature of the transactions.`,
+            ? `${translatedCategory}の取引が${count}件あります。取引内容の一貫性と事業性を確認してください。`
+            : `There are ${count} transactions in the ${translatedCategory} category. Please verify the consistency and business nature of the transactions.`,
           actionable: false
         });
       }

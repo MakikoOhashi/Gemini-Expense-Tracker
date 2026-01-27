@@ -233,11 +233,15 @@ const Dashboard: React.FC<DashboardProps> = ({
       try {
         const meta = await sheetsService.getSummaryMeta(selectedAuditYear);
         setLastSummaryUpdated(meta.lastUpdated);
-        setSummaryStatusMessage(meta.message || null);
+        if (!meta.hasSummary) {
+          setSummaryStatusMessage(t.generateCrossTabulationFirst);
+        } else {
+          setSummaryStatusMessage(null);
+        }
       } catch (error) {
         console.error('❌ Summary meta loading error:', error);
         setLastSummaryUpdated(null);
-        setSummaryStatusMessage('集計メタデータの取得に失敗しました');
+        setSummaryStatusMessage(t.summaryMetadataFetchFailed);
       }
     };
 
@@ -328,13 +332,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
           <EyeIcon className="w-6 h-6 text-slate-900" />
-          監査予報
+          {t.auditForecastDashboard}
         </h2>
         <p className="text-gray-600 text-sm leading-relaxed">
-          スプシのデータから、<br />
-          数値の構成から推測される事業の特徴を踏まえ、<br />
-          税務署が確認しやすい観点とユーザーが説明として整理すべきポイントを列挙します。<br />
-          Gemini によるAI推論で監査リスクを予測します。
+          {t.auditForecastDescription}
         </p>
       </div>
 
@@ -343,7 +344,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             📊
-            監査用横断集計を更新
+            {t.updateCrossTabulation}
           </h3>
 
           {/* ボタン */}
@@ -359,12 +360,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isGeneratingSummary ? (
               <>
                 <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                更新中...
+                {t.updating}
               </>
             ) : (
               <>
                 <ArrowPathIcon className="w-4 h-4" />
-                更新
+                {t.update}
               </>
             )}
           </button>
@@ -372,16 +373,14 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         {/* 説明文 */}
         <p className="text-sm text-gray-600 leading-relaxed mb-3">
-          複数年度の取引データを横断集計し、監査用Summaryをスプレッドシートに作成します。<br />
-          本集計データをもとに、下記の監査予報を生成します。<br />
-          ※ 新しい勘定科目や年度を反映する場合は、必ず更新してください
+          {t.crossTabulationDescription}
         </p>
 
         {/* 最終更新日時表示 */}
         <div className="mb-3">
           {lastSummaryUpdated ? (
             <p className="text-sm text-gray-700 font-medium">
-              最終更新：{lastSummaryUpdated} JST
+              {t.lastUpdated}{lastSummaryUpdated} JST
             </p>
           ) : summaryStatusMessage ? (
             <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -389,7 +388,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </p>
           ) : (
             <p className="text-sm text-gray-500">
-              集計データを読み込み中...
+              {t.loadingSummaryData}
             </p>
           )}
         </div>
@@ -418,7 +417,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* セクションB：監査予報（全体） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-700 mb-4">
-          今日の監査予報（{getTodayJSTString()}時点）
+          {t.todayAuditForecast.replace('{date}', getTodayJSTString())}
         </h3>
 
         {/* Gemini AI Audit Risk Summary */}
@@ -428,7 +427,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <h4 className="font-bold text-blue-800">Gemini AI Audit Risk Summary</h4>
           </div>
           <p className="text-sm text-blue-700">
-            今年、最も調査対象になりやすい項目は 「{(() => {
+            {t.mostLikelyItem} 「{(() => {
               // リスクレベルでソート（high -> medium -> low）
               const sortedByRisk = [...auditForecast].sort((a, b) => {
                 const riskOrder = { high: 3, medium: 2, low: 1 };
@@ -447,7 +446,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         ) : auditForecast.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">監査予報データが見つかりませんでした</p>
+          <p className="text-sm text-gray-500 text-center py-4">{t.noAuditData}</p>
         ) : (
           <div className="space-y-3">
             {auditForecast.slice(0, 1).map((item) => (
@@ -484,13 +483,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* セクションA：記帳チェック（個別） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-700">記帳チェック（個別）</h3>
+          <h3 className="text-sm font-bold text-gray-700">{t.individualBookkeepingChecks}</h3>
           <button className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition">
-            スプレッドシートで修正する
+            {t.fixInSpreadsheet}
           </button>
         </div>
         {bookkeepingChecks.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">チェック項目が見つかりませんでした</p>
+          <p className="text-sm text-gray-500 text-center py-4">{t.noCheckItems}</p>
         ) : (
           <div className="space-y-3">
             {bookkeepingChecks.slice(0, 10).map((check) => (
@@ -508,8 +507,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="flex items-start gap-3">
           <ExclamationTriangleIcon className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-bold text-gray-700 mb-2">次のアクション</h3>
-            <p className="text-sm text-gray-600">赤字または高リスク項目について、分類根拠や証憑を確認し、必要に応じて修正してください。</p>
+            <h3 className="text-sm font-bold text-gray-700 mb-2">{t.nextActions}</h3>
+            <p className="text-sm text-gray-600">{t.nextActionDescription}</p>
           </div>
         </div>
       </div>
@@ -520,7 +519,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         onClose={() => setIsReasoningModalOpen(false)}
         auditData={auditForecast[0]}  // 最もリスクが高い項目
         year={selectedAuditYear ? selectedAuditYear.toString() : ''}
-/>
+        t={t}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { POS } from '../layout.locked';
+import { TEXT, Language } from '../src/i18n/text';
 
 interface BetsuhyoAProps {
   data: {
@@ -27,6 +28,7 @@ interface BetsuhyoAProps {
     旅費交通費: number;
     所得の内訳: Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>;
   };
+  t: any;
 }
 
 const TOOLTIP_CLASSES = `
@@ -41,30 +43,23 @@ const TOOLTIP_CLASSES = `
   group-hover:opacity-100 group-hover:scale-100
 `.trim();
 
-export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
+export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
   return (
     <div className="form-area space-y-8 p-4">
 
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="font-bold text-red-800 mb-2">⚠️注意⚠️</h3>
+        <h3 className="font-bold text-red-800 mb-2">{t.attention}</h3>
         <p className="text-sm text-red-700">
-        本画面に表示されている数値は、
-        このアプリに登録された取引のみを集計した結果です。
-
-        ここに含まれていない収入・経費がある場合は、
-        国税庁の申告書上で必ず加算・修正してください。
-
-        最終的な合計金額は、申告書上で計算した数値を使用してください。
+        {t.attentionMessage}
         </p>
       </div>
      {/* 凡例 */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-slate-800 mb-2">入力欄について</h3>
-        <p className="text-sm text-slate-700">
-          赤字で表示されている金額は、Google Sheetsから取得した取引データを集計したものです。
-          マウスをホバーすると、各項目の説明が表示されます。
-        </p>
-      </div>
+     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+       <h3 className="font-bold text-slate-800 mb-2">{t.inputFields}</h3>
+       <p className="text-sm text-slate-700">
+         {t.inputFieldsDescription}
+       </p>
+     </div>
  
 
       {/* 収支内訳書1 */}
@@ -657,20 +652,6 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data }) => {
         </div>
       )}
 
-
-
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="font-bold text-red-800 mb-2">⚠️注意点⚠️</h3>
-        <p className="text-sm text-red-700">
-        本画面に表示されている数値は、
-        このアプリに登録された取引のみを集計した結果です。
-
-        ここに含まれていない収入・経費がある場合は、
-        国税庁の申告書上で必ず加算・修正してください。
-
-        最終的な合計金額は、申告書上で計算した数値を使用してください。
-        </p>
-      </div>
     </div>
   );
 };

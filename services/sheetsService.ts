@@ -352,7 +352,7 @@ export class SheetsService {
       return {
         hasSummary,
         lastUpdated: formattedLastUpdated,
-        message: hasSummary ? null : 'まず横断集計を生成してください'
+        message: null
       };
     } catch (error: any) {
       console.error('Get Summary Meta Error:', error);

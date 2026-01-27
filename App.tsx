@@ -1411,7 +1411,7 @@ const handleRuleInputSubmit = async () => {
                   console.log("📊 所得の内訳集計結果:", groupedByPayer);
                   return groupedByPayer;
                 })()
-              }} t={t} />
+              }} t={t} language={language} />
             </div>
           );
         })() : (

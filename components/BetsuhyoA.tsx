@@ -29,6 +29,7 @@ interface BetsuhyoAProps {
     所得の内訳: Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>;
   };
   t: any;
+  language: Language;
 }
 
 const TOOLTIP_CLASSES = `
@@ -43,7 +44,11 @@ const TOOLTIP_CLASSES = `
   group-hover:opacity-100 group-hover:scale-100
 `.trim();
 
-export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
+export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
+  const getImageSrc = (baseName: string) => {
+    return language === 'en' ? `/${baseName}e.png` : `/${baseName}.png`;
+  };
+
   return (
     <div className="form-area space-y-8 p-4">
 
@@ -53,18 +58,18 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
         {t.attentionMessage}
         </p>
       </div>
-     {/* 凡例 */}
-     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-       <h3 className="font-bold text-slate-800 mb-2">{t.inputFields}</h3>
-       <p className="text-sm text-slate-700">
-         {t.inputFieldsDescription}
-       </p>
-     </div>
- 
+      {/* 凡例 */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 className="font-bold text-slate-800 mb-2">{t.inputFields}</h3>
+        <p className="text-sm text-slate-700">
+          {t.inputFieldsDescription}
+        </p>
+      </div>
+
 
       {/* 収支内訳書1 */}
       <div className="relative w-[800px] mx-auto">
-        <img src="/07.png" alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
+        <img src={getImageSrc("07")} alt="収支内訳書1" className="w-full shadow-lg rounded-lg" />
         {/* 収入 -売上欄 */}
         <div className="group absolute" style={POS.incomeSales}>
           <input
@@ -449,7 +454,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
       </div>
       {/* 収支内訳書2 */}
       <div className="relative w-[800px] mx-auto">
-        <img src="/07-.png" alt="収支内訳書2" className="w-full shadow-lg rounded-lg" />
+        <img src={getImageSrc("07-")} alt="収支内訳書2" className="w-full shadow-lg rounded-lg" />
 
         {/* 所得の内訳 - 収支内訳書2に表示 */}
         {(() => {
@@ -524,7 +529,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
 
      {/* 第一表 */}
      <div className="relative w-[800px] mx-auto">
-        <img src="/01.png" alt="別表A第一表" className="w-full shadow-lg rounded-lg" />
+       <img src={getImageSrc("01")} alt="別表A第一表" className="w-full shadow-lg rounded-lg" />
 
         {/* 経費合計 - 第一表の経費合計欄 
         <div className="group absolute" style={{ top: '245px', left: '520px', width: '100px' }} title="すべての経費の合計金額です">
@@ -582,7 +587,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
 
       {/* 第二表 */}
       <div className="relative w-[800px] mx-auto">
-        <img src="/02.png" alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
+        <img src={getImageSrc("02")} alt="別表A第二表" className="w-full shadow-lg rounded-lg" />
 
         {/* 所得の内訳 - 第二表の1件目〜4件目のみ表示 */}
         {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) =>
@@ -617,7 +622,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t }) => {
       {/* 所得の内訳書 - payerNameの種類が5件以上の場合のみ表示 */}
       {Object.keys(data.所得の内訳 || {}).length >= 5 && (
         <div className="relative w-[800px] mx-auto">
-          <img src="/09.png" alt="所得の内訳書" className="w-full shadow-lg rounded-lg" />
+          <img src={getImageSrc("09")} alt="所得の内訳書" className="w-full shadow-lg rounded-lg" />
 
           {/* 所得の内訳 - 支払者5件目以降のみ縦方向に表示 */}
           {Object.entries(data.所得の内訳 || {}).map(([payerName, payerData], index) =>

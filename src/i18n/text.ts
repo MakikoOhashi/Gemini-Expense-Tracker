@@ -138,9 +138,6 @@ export const TEXT = {
     mostLikelyItem: '今年、最も調査対象になりやすい項目は',
     noAuditData: '監査予報データが見つかりませんでした',
     individualBookkeepingChecks: '記帳チェック（個別）',
-    fixInSpreadsheet: 'スプレッドシートで修正する',
-    noCheckItems: 'チェック項目が見つかりませんでした',
-    nextActionDescription: '赤字または高リスク項目について、分類根拠や証憑を確認し、必要に応じて修正してください。',
 
     // 確定申告
     selectedYearDescription: '年度（年度年1月1日〜年度年12月31日）の取引データを集計しています。',
@@ -180,6 +177,25 @@ export const TEXT = {
     organizeReasons: '理由を整理',
     explainChangeReason: '変化の理由を言語化',
     noteJustification: 'これらが説明できない場合、否認リスクが高まります',
+
+    // 記帳チェック
+    bookkeepingChecks: '記帳チェック',
+    missingReceipts: '領収書の添付が必要: {category} ({count}件)',
+    missingReceiptsDescription: '{category}カテゴリで{count}件の取引に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。',
+    highAmountTransaction: '高額支出の確認: {category} ¥{amount} ({date})',
+    highAmountTransactionDescription: '{description}の支出が10万円を超えています。事業との関連性と根拠資料を確認してください。',
+    insufficientDescription: '説明の充実を推奨: {category} ({count}件)',
+    insufficientDescriptionText: '{category}カテゴリで{count}件の取引説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。',
+    frequentTransactions: '頻繁な取引の確認: {category}',
+    frequentTransactionsDescription: '{category}の取引が{count}件あります。取引内容の一貫性と事業性を確認してください。',
+    lowTransactionCount: '取引件数の確認',
+    lowTransactionCountDescription: '取引件数が{count}件と少ないです。事業の実態に合った取引数を確認してください。',
+    checkTypeDeficiency: '不足',
+    checkTypeConfirmation: '確認',
+    checkTypeRecommendation: '推奨',
+    fixInSpreadsheet: 'スプレッドシートで修正する',
+    noCheckItems: 'チェック項目が見つかりませんでした',
+    nextActionDescription: '赤字または高リスク項目について、分類根拠や証憑を確認し、必要に応じて修正してください。',
 
     // 監査推論モーダル
     auditRiskAnalysisResult: '監査リスク分析結果',
@@ -478,9 +494,6 @@ export const TEXT = {
     mostLikelyItem: 'This year, the item most likely to be investigated is',
     noAuditData: 'No audit forecast data found',
     individualBookkeepingChecks: 'Bookkeeping Checks (Individual)',
-    fixInSpreadsheet: 'Fix in Spreadsheet',
-    noCheckItems: 'No check items found',
-    nextActionDescription: 'For red or high-risk items, check the classification basis and receipts, and make corrections as needed.',
 
 
     // Tax Return
@@ -521,6 +534,25 @@ export const TEXT = {
     organizeReasons: 'Organize reasons',
     explainChangeReason: 'Explain reasons for change',
     noteJustification: 'If these cannot be explained, the risk of denial increases',
+
+    // Bookkeeping Checks
+    bookkeepingChecks: 'Bookkeeping Checks',
+    missingReceipts: 'Receipts needed: {category} ({count} items)',
+    missingReceiptsDescription: '{count} transactions in the {category} category do not have receipts attached. These are required for tax audits, so please attach them.',
+    highAmountTransaction: 'High amount transaction check: {category} ¥{amount} ({date})',
+    highAmountTransactionDescription: 'The {description} expense exceeds ¥100,000. Please verify the business relevance and supporting documents.',
+    insufficientDescription: 'Description enhancement recommended: {category} ({count} items)',
+    insufficientDescriptionText: '{count} transactions in the {category} category have insufficient descriptions. It is recommended to add detailed descriptions explaining the business relevance and purpose of the expenses.',
+    frequentTransactions: 'Frequent transactions check: {category}',
+    frequentTransactionsDescription: 'There are {count} transactions in the {category} category. Please verify the consistency and business nature of the transactions.',
+    lowTransactionCount: 'Transaction count check',
+    lowTransactionCountDescription: 'There are only {count} transactions, which is low. Please verify if this matches your actual business activities.',
+    checkTypeDeficiency: 'Deficiency',
+    checkTypeConfirmation: 'Confirmation',
+    checkTypeRecommendation: 'Recommendation',
+    fixInSpreadsheet: 'Fix in Spreadsheet',
+    noCheckItems: 'No check items found',
+    nextActionDescription: 'For red or high-risk items, check the classification basis and receipts, and make corrections as needed.',
 
     // Audit Reasoning Modal
     auditRiskAnalysisResult: 'Audit Risk Analysis Result',

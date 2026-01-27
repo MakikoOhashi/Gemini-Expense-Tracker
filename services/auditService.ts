@@ -722,7 +722,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
   }
 
   // 記帳チェック（個別）- 個別のチェック項目を生成
-  async generateBookkeepingChecks(transactions: any[]): Promise<BookkeepingCheckItem[]> {
+  async generateBookkeepingChecks(transactions: any[], language: 'ja' | 'en' = 'ja'): Promise<BookkeepingCheckItem[]> {
     const checks: BookkeepingCheckItem[] = [];
 
     // 領収書がない取引を集計
@@ -762,9 +762,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
     Object.entries(missingReceipts).forEach(([category, data]) => {
       checks.push({
         id: `check_receipt_${category}`,
-        type: '不足',
-        title: `領収書の添付が必要: ${category} (${data.count}件)`,
-        description: `${category}カテゴリで${data.count}件の取引に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。`,
+        type: language === 'ja' ? '不足' : 'Deficiency',
+        title: language === 'ja'
+          ? `領収書の添付が必要: ${category} (${data.count}件)`
+          : `Receipts needed: ${category} (${data.count} items)`,
+        description: language === 'ja'
+          ? `${category}カテゴリで${data.count}件の取引に領収書が添付されていません。税務調査時に必要となるため、必ず添付してください。`
+          : `${data.count} transactions in the ${category} category do not have receipts attached. These are required for tax audits, so please attach them.`,
         actionable: true
       });
     });
@@ -779,9 +783,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
       checks.push({
         id: `check_high_amount_${id}`,
-        type: '確認',
-        title: `高額支出の確認: ${category} ¥${amount.toLocaleString()} (${date})`,
-        description: `${description}の支出が10万円を超えています。事業との関連性と根拠資料を確認してください。`,
+        type: language === 'ja' ? '確認' : 'Confirmation',
+        title: language === 'ja'
+          ? `高額支出の確認: ${category} ¥${amount.toLocaleString()} (${date})`
+          : `High amount transaction check: ${category} ¥${amount.toLocaleString()} (${date})`,
+        description: language === 'ja'
+          ? `${description}の支出が10万円を超えています。事業との関連性と根拠資料を確認してください。`
+          : `The ${description} expense exceeds ¥100,000. Please verify the business relevance and supporting documents.`,
         actionable: false,
         transactionId: id
       });
@@ -798,9 +806,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
       Object.entries(descriptionByCategory).forEach(([category, count]) => {
         checks.push({
           id: `check_description_${category}`,
-          type: '推奨',
-          title: `説明の充実を推奨: ${category} (${count}件)`,
-          description: `${category}カテゴリで${count}件の取引説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。`,
+          type: language === 'ja' ? '推奨' : 'Recommendation',
+          title: language === 'ja'
+            ? `説明の充実を推奨: ${category} (${count}件)`
+            : `Description enhancement recommended: ${category} (${count} items)`,
+          description: language === 'ja'
+            ? `${category}カテゴリで${count}件の取引説明が簡素です。事業との関連性や支出目的がわかるよう、詳細な説明を追加することを推奨します。`
+            : `${count} transactions in the ${category} category have insufficient descriptions. It is recommended to add detailed descriptions explaining the business relevance and purpose of the expenses.`,
           actionable: true
         });
       });
@@ -817,9 +829,13 @@ ${JSON.stringify(transactionSummary, null, 2)}
       if (count > 10) {
         checks.push({
           id: `check_category_frequency_${category}`,
-          type: '確認',
-          title: `頻繁な取引の確認: ${category}`,
-          description: `${category}の取引が${count}件あります。取引内容の一貫性と事業性を確認してください。`,
+          type: language === 'ja' ? '確認' : 'Confirmation',
+          title: language === 'ja'
+            ? `頻繁な取引の確認: ${category}`
+            : `Frequent transactions check: ${category}`,
+          description: language === 'ja'
+            ? `${category}の取引が${count}件あります。取引内容の一貫性と事業性を確認してください。`
+            : `There are ${count} transactions in the ${category} category. Please verify the consistency and business nature of the transactions.`,
           actionable: false
         });
       }
@@ -830,15 +846,19 @@ ${JSON.stringify(transactionSummary, null, 2)}
     if (totalTransactions < 5) {
       checks.push({
         id: 'check_overall_transaction_count',
-        type: '推奨',
-        title: '取引件数の確認',
-        description: `取引件数が${totalTransactions}件と少ないです。事業の実態に合った取引数を確認してください。`,
+        type: language === 'ja' ? '推奨' : 'Recommendation',
+        title: language === 'ja'
+          ? '取引件数の確認'
+          : 'Transaction count check',
+        description: language === 'ja'
+          ? `取引件数が${totalTransactions}件と少ないです。事業の実態に合った取引数を確認してください。`
+          : `There are only ${totalTransactions} transactions, which is low. Please verify if this matches your actual business activities.`,
         actionable: false
       });
     }
 
     // チェック項目を優先順位でソート（不足 -> 確認 -> 推奨）
-    const typeOrder = { '不足': 3, '確認': 2, '推奨': 1 };
+    const typeOrder = { '不足': 3, '確認': 2, '推奨': 1, 'Deficiency': 3, 'Confirmation': 2, 'Recommendation': 1 };
     return checks.sort((a, b) => typeOrder[b.type] - typeOrder[a.type]);
   }
 

@@ -93,7 +93,7 @@ export interface AuditForecastItem {
 // 記帳チェック（個別）- 個別のチェック項目
 export interface BookkeepingCheckItem {
   id: string;
-  type: '不足' | '確認' | '推奨'; // チェックタイプ
+  type: '不足' | '確認' | '推奨' | 'Deficiency' | 'Confirmation' | 'Recommendation'; // チェックタイプ（日本語と英語）
   title: string; // チェック項目名
   description: string; // 詳細説明
   actionable: boolean; // その場で修正可能か

@@ -43,28 +43,28 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     const concerns: string[] = [];
 
     if (!detectedAnomalies || detectedAnomalies.length === 0) {
-      return ['支出の妥当性を説明できる資料を準備してください'];
+      return [t.concernDefault];
     }
 
     // 検知された異常ごとに対応する注意点を追加
     detectedAnomalies.forEach(anomaly => {
       switch (anomaly.dimension) {
         case '構成比異常':
-          concerns.push('一つの科目への極端な集中は、事業実態との整合性が確認されやすい');
+          concerns.push(t.concernCompositionAnomaly);
           break;
         case '急変異常':
           if (growthRate !== null && growthRate !== undefined) {
-            concerns.push(`前年比${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}%という変化について、売上との連動性が確認されやすい`);
+            concerns.push(t.concernSuddenChange.replace(/\{growthRate\}/g, `${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}`));
           }
           break;
         case '統計的異常':
           if (zScore !== null && zScore !== undefined) {
-            concerns.push(`業界平均から統計的に乖離（${zScore.toFixed(1)}σ）している場合、特殊な事情の説明が求められやすい`);
+            concerns.push(t.concernStatistical.replace(/\{zScore\}/g, zScore.toFixed(1)));
           }
           break;
         case '比率変動異常':
           if (diffRatio !== null && diffRatio !== undefined) {
-            concerns.push(`構成比が${diffRatio > 0 ? '+' : ''}${diffRatio.toFixed(1)}pt変動している場合、事業構造の変化について確認されやすい`);
+            concerns.push(t.concernRatioVariation.replace(/\{diffRatio\}/g, `${diffRatio > 0 ? '+' : ''}${diffRatio.toFixed(1)}`));
           }
           break;
       }
@@ -76,12 +76,12 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     );
 
     if (hasStructuralAnomaly) {
-      concerns.push('支出の実態と事業との関連性が確認されやすい');
+      concerns.push(t.concernBusinessRelevance);
     }
 
     // もし concerns が空なら、フォールバックを返す
     if (concerns.length === 0) {
-      return ['支出の妥当性を説明できる資料を準備してください'];
+      return [t.concernDefault];
     }
 
     return concerns;
@@ -273,8 +273,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
               <div className="mb-4">
                 <p className="font-semibold text-gray-800 mb-2">{t.taxAuditConcerns}：</p>
                 <p className="text-gray-700">
-                  {accountName}が総支出の{ratio.toFixed(1)}%を占める構造は、
-                  「実態のある事業活動が本当に存在しているか」という観点で強く疑義を持たれやすい財務パターンです。
+                  {t.taxAuditConcernsGeneric.replace(/\{accountName\}/g, accountName).replace(/\{ratio\}/g, ratio.toFixed(1))}
                 </p>
               </div>
 
@@ -301,16 +300,16 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
 
               {/* 3. 反証：正当化される可能性 */}
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
-                <p className="font-semibold text-gray-800 mb-2">ただし、正当化されやすいケース：</p>
+                <p className="font-semibold text-gray-800 mb-2">{t.justificationCasesGeneric}</p>
                 <div className="text-sm text-gray-700 space-y-2">
-                  <p><strong>汎用的な正当化ポイント：</strong></p>
+                  <p><strong>{t.commonJustificationPoints}</strong></p>
                   <ul className="list-disc list-inside ml-4">
-                    <li>事業規模・業種に合った合理的な支出額であること</li>
-                    <li>売上・事業活動との明確な因果関係が説明できること</li>
-                    <li>市場相場・業界平均と比較して妥当な水準であること</li>
+                    <li>{t.justificationPoint1}</li>
+                    <li>{t.justificationPoint2}</li>
+                    <li>{t.justificationPoint3}</li>
                   </ul>
                   <p className="mt-3 text-blue-800 font-medium">
-                    → 事業内容との整合性説明と裏付け資料が重要です
+                    {t.justificationNote}
                   </p>
                 </div>
               </div>
@@ -320,7 +319,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
 
         {/* ③ 数値根拠（エビデンス） */}
         <div className="mb-6">
-          <h3 className="text-lg font-bold mb-3">🔍 リスクの根拠（数値・ルール）</h3>
+          <h3 className="text-lg font-bold mb-3">🔍 {t.riskBasisTitle}</h3>
           <div className="space-y-2 text-sm">
             {/* 数値表示 */}
             <div className="flex justify-between">
@@ -331,7 +330,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
             </div>
 
             <div className="flex justify-between">
-              <span className="text-gray-600">{accountName} 比率</span>
+              <span className="text-gray-600">{t.accountRatio.replace(/\{accountName\}/g, accountName)}</span>
               <span className="font-bold">{ratio.toFixed(1)}%</span>
             </div>
 
@@ -353,10 +352,9 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
           {/* データ不足時の注意書き（条件付き表示） */}
           {!hasComparisonData() && (
             <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded text-xs">
-              <p className="font-bold text-blue-900 mb-1">⚠️ 比較データ不足に関する注意</p>
+              <p className="font-bold text-blue-900 mb-1">{t.dataInsufficientNoteTitle}</p>
               <p className="text-blue-800">
-                前年度データが存在しないため、前年差・平均との差の評価は参考値または未算出です。
-                本リスクは「構成比異常」に基づいて検知されています。
+                {t.dataInsufficientNote}
               </p>
             </div>
           )}
@@ -364,32 +362,32 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
 
         {/* ④ 今やるべきこと */}
         <div className="mb-6">
-          <h3 className="text-lg font-bold mb-3">🛠 今すぐやるべきこと</h3>
+          <h3 className="text-lg font-bold mb-3">🛠 {t.whatToDoNow}</h3>
 
 
 
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
               <span className="font-bold">1.</span>
-              <span>{accountName}の契約書・領収書・使用実態資料を準備</span>
+              <span>{t.action1.replace(/\{accountName\}/g, accountName)}</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">2.</span>
-              <span>売上と事業活動との関係性を説明できる資料を作成</span>
+              <span>{t.action2}</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">3.</span>
-              <span>他の経費項目が極端に少ない理由を整理</span>
+              <span>{t.action3}</span>
             </div>
             {growthRate !== null && growthRate !== undefined && growthRate > 30 && (
               <div className="flex items-start gap-2">
                 <span className="font-bold">4.</span>
-                <span>前年比 +{growthRate.toFixed(1)}% となった理由を言語化</span>
+                <span>{t.action4.replace(/\{growthRate\}/g, growthRate.toFixed(1))}</span>
               </div>
             )}
           </div>
           <div className="mt-4 p-3 bg-amber-50 rounded-lg text-xs text-amber-900">
-            ※ これらが説明できない場合、否認リスクが高まります
+            {t.denialRiskNote}
           </div>
         </div>
 
@@ -398,7 +396,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
           onClick={onClose}
           className="w-full bg-gray-600 text-white py-3 rounded-lg font-bold hover:bg-gray-700"
         >
-          閉じる
+          {t.close}
         </button>
       </div>
     </div>

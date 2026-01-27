@@ -320,9 +320,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const getRiskText = (level: 'low' | 'medium' | 'high') => {
     switch (level) {
-      case 'high': return '高';
-      case 'medium': return '中';
-      case 'low': return '低';
+      case 'high': return t.highRisk;
+      case 'medium': return t.mediumRisk;
+      case 'low': return t.lowRisk;
     }
   };
 
@@ -465,7 +465,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition flex items-center gap-1"
                     >
                       <LightBulbIcon className="w-3 h-3" />
-                      推論を見る
+                      {t.reasoning}
                     </button>
                   </div>
                 </div>

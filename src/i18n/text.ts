@@ -34,6 +34,9 @@ export const TEXT = {
     // 年度選択
     selectYear: '年度を選択',
     yearSelection: '年度選択',
+    selectedYearSection: '📅 選択された年度',
+    changeYear: '年度変更',
+    yearDataDescription: '年度（年1月1日〜年12月31日）の取引データを集計しています。',
 
     // 言語切り替え
     language: '言語',
@@ -307,7 +310,7 @@ export const TEXT = {
       経費合計: '経費合計',
       所得金額: '所得金額',
       地代家賃: '地代家賃',
-      給与賃金: '給与賃金',
+      給料賃金: '給料賃金',
       消耗品費: '消耗品費',
       通信費: '通信費',
       旅費交通費: '旅費交通費'
@@ -348,6 +351,9 @@ export const TEXT = {
     // Year Selection
     selectYear: 'Select Year',
     yearSelection: 'Year Selection',
+    selectedYearSection: '📅 Selected Year',
+    changeYear: 'Change Year',
+    yearDataDescription: '{year} ({year} 1/1 - {year} 12/31) transaction data is being aggregated.',
 
     // Language Switcher
     language: 'Language',
@@ -626,7 +632,7 @@ export const TEXT = {
       経費合計: 'Total Expenses',
       所得金額: 'Income Amount',
       地代家賃: 'Rent',
-      給与賃金: 'Salaries and Wages',
+      給料賃金: 'Salaries and Wages',
       消耗品費: 'Consumables',
       通信費: 'Communication Expenses',
       旅費交通費: 'Travel Expenses'

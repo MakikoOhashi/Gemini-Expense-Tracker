@@ -167,7 +167,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
     <div className="p-4 space-y-3 pb-24 lg:p-6 xl:p-8">
       <div className="flex flex-col gap-3 mb-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-700">取引履歴</h2>
+          <h2 className="text-lg font-bold text-gray-700">{text.transactionHistory}</h2>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
             全 {transactions.length} 件
           </span>
@@ -184,9 +184,9 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
               onChange={(e) => setFilterCategory(e.target.value)}
               className="block w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 appearance-none shadow-sm cursor-pointer"
             >
-              <option value="all">すべての科目</option>
+              <option value="all">{text.allCategories}</option>
               {CATEGORIES.map(c => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{text.categories[c]}</option>
               ))}
             </select>
           </div>
@@ -272,7 +272,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
                       onChange={handleInputChange}
                       className="w-full text-sm font-bold p-2 bg-white rounded border border-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
                     >
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {CATEGORIES.map(c => <option key={c} value={c}>{text.categories[c]}</option>)}
                     </select>
                   </div>
                   <div className="col-span-2 mt-2">

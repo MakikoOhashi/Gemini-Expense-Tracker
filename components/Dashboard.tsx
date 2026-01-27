@@ -7,6 +7,7 @@ import { sheetsService } from '../services/sheetsService';
 import { authService } from '../services/authService';
 import AuditReasoningModal from './AuditReasoningModal';
 import { getTodayJSTString } from '../lib/dateUtils';
+import { TEXT, Language } from '../src/i18n/text';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -16,6 +17,7 @@ interface DashboardProps {
   onAuditYearSelect: (year: number) => void;
   availableYears: number[];
   onOpenYearModal: () => void;
+  t: any;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -25,7 +27,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   selectedAuditYear,
   onAuditYearSelect,
   availableYears,
-  onOpenYearModal
+  onOpenYearModal,
+  t
 }) => {
   const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
@@ -399,16 +402,16 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* セクションB：年度選択ブロック */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-slate-800">📅 選択された年度</h3>
+          <h3 className="font-bold text-slate-800">{t.selectedYearSection}</h3>
           <button
             onClick={onOpenYearModal}
             className="px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition"
           >
-            年度変更
+            {t.changeYear}
           </button>
         </div>
         <p className="text-sm text-slate-700">
-          {selectedAuditYear ? `${selectedAuditYear}年度（${selectedAuditYear}年1月1日〜${selectedAuditYear}年12月31日）の取引データを集計しています。` : '年度が選択されていません。'}
+          {selectedAuditYear ? t.yearDataDescription.replace(/{year}/g, selectedAuditYear.toString()) : t.yearNotSelected}
         </p>
       </div>
 

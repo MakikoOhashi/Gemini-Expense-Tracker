@@ -326,6 +326,61 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  // issues を翻訳する関数
+  const translateIssue = (issue: string): string => {
+    // 異常な構成のパターン
+    const abnormalCompositionMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占める異常な構成$/);
+    if (abnormalCompositionMatch) {
+      const [, category, ratio] = abnormalCompositionMatch;
+      return t.abnormalComposition.replace(/\{category\}/g, t.categories[category] || category).replace(/\{ratio\}/g, ratio);
+    }
+
+    // 占めていますのパターン
+    const categoryRatioMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占めています$/);
+    if (categoryRatioMatch) {
+      const [, category, ratio] = categoryRatioMatch;
+      return t.categoryRatio.replace(/\{category\}/g, t.categories[category] || category).replace(/\{ratio\}/g, ratio);
+    }
+
+    // 乖離が疑われやすい状態のパターン
+    if (issue === '→ 事業実態との乖離が疑われやすい状態') {
+      return t.deviationSuspected;
+    }
+
+    // 税務調査時に支出の妥当性確認が必要な水準
+    if (issue === '→ 税務調査時に支出の妥当性確認が必要な水準') {
+      return t.taxAuditConfirmationNeeded;
+    }
+
+    // 大規模支出のため、より詳細な確認が必要
+    if (issue === '大規模支出のため、より詳細な確認が必要') {
+      return t.largeScaleExpenditure;
+    }
+
+    // 外注費の構成比が高めです。業務委託契約の関連性を確認してください
+    if (issue === '外注費の構成比が高めです。業務委託契約の関連性を確認してください') {
+      return t.subcontractorRatioHigh;
+    }
+
+    // 会議費の構成比が目立ちます。支出目的と参加者情報を整理してください
+    if (issue === '会議費の構成比が目立ちます。支出目的と参加者情報を整理してください') {
+      return t.meetingExpenseNotable;
+    }
+
+    // 消耗品費の構成比が高いです。事業規模とのバランスを確認してください
+    if (issue === '消耗品費の構成比が高いです。事業規模とのバランスを確認してください') {
+      return t.consumablesRatioHigh;
+    }
+
+    // 支出根拠資料の整理を推奨
+    if (issue === '→ 支出根拠資料の整理を推奨') {
+      return t.expenditureEvidenceRecommended;
+    }
+
+    // マッチしない場合はそのまま返す
+    return issue;
+  };
+
   return (
     <div className="p-4 pb-24 space-y-6 overflow-x-hidden lg:p-6 xl:p-8">
       {/* タイトル・説明文 */}
@@ -471,7 +526,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="space-y-1">
                   {item.issues.map((issue, index) => (
-                    <p key={index} className="text-xs text-gray-600">• {issue}</p>
+                    <p key={index} className="text-xs text-gray-600">• {translateIssue(issue)}</p>
                   ))}
                 </div>
               </div>

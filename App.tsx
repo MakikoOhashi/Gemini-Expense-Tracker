@@ -41,6 +41,24 @@ const getPreAuthLanguage = (): Language => {
   return lang.startsWith('ja') ? 'ja' : 'en';
 };
 
+// Get initial language for main app (with persistence)
+const getInitialLanguage = (): Language => {
+  // Priority 1: User's saved preference
+  const saved = localStorage.getItem('userLanguage');
+  if (saved === 'ja' || saved === 'en') {
+    return saved as Language;
+  }
+
+  // Priority 2: Auto-detect
+  const lang = navigator.language || (navigator as any).userLanguage;
+  const detected = lang.startsWith('ja') ? 'ja' : 'en';
+
+  // Save the detected language
+  localStorage.setItem('userLanguage', detected);
+
+  return detected;
+};
+
 interface ActivePrefix {
   id: string;
   text: string;
@@ -60,7 +78,7 @@ const App: React.FC = () => {
   const [isHistoryYearSelectionModalOpen, setIsHistoryYearSelectionModalOpen] = useState(false);
 
   // Language state management
-  const [language, setLanguage] = useState<Language>('ja');
+  const [language, setLanguage] = useState<Language>(getInitialLanguage());
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const t = TEXT[language];
 

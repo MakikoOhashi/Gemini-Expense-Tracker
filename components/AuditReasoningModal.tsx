@@ -171,7 +171,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     const compositionMatch = message.match(/^売上に対して(.+?)が([\d.]+)%を占めています$/);
     if (compositionMatch) {
       const [, accountName, ratio] = compositionMatch;
-      return t.anomalyMessageComposition.replace(/\{accountName\}/g, accountName).replace(/\{ratio\}/g, ratio);
+      return t.anomalyMessageComposition.replace(/\{accountName\}/g, t.categories[accountName] || accountName).replace(/\{ratio\}/g, ratio);
     }
 
     // 急変異常: 前年比{growthRate}%と急変
@@ -221,7 +221,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
         {/* ① 総合判定（ファーストビュー） */}
         <div className={`p-6 rounded-lg border-l-4 ${riskColor} mb-6`}>
           <h2 className="text-xl font-bold mb-2">
-            🚨 {t.auditRiskAnalysisResult}（{accountName}）
+            🚨 {t.auditRiskAnalysisResult}（{t.categories[accountName] || accountName}）
           </h2>
           <p className="text-lg font-bold mb-2">
             {t.overallAuditRisk}：{riskLevel === 'high' ? t.highRisk : riskLevel === 'medium' ? t.mediumRisk : t.lowRisk}
@@ -419,7 +419,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
             </div>
 
             <div className="flex justify-between">
-              <span className="text-gray-600">{t.accountRatio.replace(/\{accountName\}/g, accountName)}</span>
+              <span className="text-gray-600">{t.accountRatio.replace(/\{accountName\}/g, t.categories[accountName] || accountName)}</span>
               <span className="font-bold">{ratio.toFixed(1)}%</span>
             </div>
 
@@ -458,7 +458,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
               <span className="font-bold">1.</span>
-              <span>{t.action1.replace(/\{accountName\}/g, accountName)}</span>
+              <span>{t.action1.replace(/\{accountName\}/g, t.categories[accountName] || accountName)}</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-bold">2.</span>

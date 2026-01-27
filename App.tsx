@@ -539,7 +539,7 @@ const [ruleInputData, setRuleInputData] = useState({
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: t.ruleAdded.replace('{keyword}', keyword).replace('{category}', category),
+        content: t.ruleAdded.replace('{keyword}', keyword).replace('{category}', t.categories[category] || category),
         timestamp: Date.now()
       }]);
       setPendingExtraction(null);
@@ -1274,7 +1274,7 @@ const handleRuleInputSubmit = async () => {
                         <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                           <p className="text-sm font-bold text-gray-800 leading-relaxed">
                             「<span className="text-slate-900 font-black">{pendingExtraction.data.keyword}</span>」のときは
-                            「<span className="text-slate-900 font-black">{t.categories[pendingExtraction.data.category]}</span>」に自動分類します。
+                            「<span className="text-slate-900 font-black">{t.categories[pendingExtraction.data.category] || pendingExtraction.data.category}</span>」に自動分類します。
                           </p>
                         </div>
                       )}

@@ -234,7 +234,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
           <div className="bg-gray-50 p-4 rounded-full">
             <ReceiptRefundIcon className="w-8 h-8 text-gray-300" />
           </div>
-          <p className="text-gray-400 font-medium">該当する記録がありません</p>
+          <p className="text-gray-400 font-medium">{text.noRecords}</p>
         </div>
       ) : (
         filteredAndSortedTransactions.map((t) => {

@@ -130,7 +130,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
                   <div key={rule.id} className="flex items-center justify-between bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
                     <div className="overflow-hidden">
                       <p className="text-xs font-bold text-slate-900 mb-0.5">{t.keyword}: {rule.keyword}</p>
-                      <p className="text-sm text-gray-800 font-medium">{t.accountCategory}: {rule.category}</p>
+                      <p className="text-sm text-gray-800 font-medium">{t.accountCategory}: {t.categories[rule.category] || rule.category}</p>
                     </div>
                     <button
                       onClick={() => {

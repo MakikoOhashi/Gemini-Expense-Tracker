@@ -215,6 +215,7 @@ export const TEXT = {
     deleteError: '削除に失敗しました',
 
     // 状態
+    notSet: '未設定',
 
     // ファイルアップロード
     imageUpload: '画像アップロード',
@@ -527,6 +528,7 @@ export const TEXT = {
     deleteError: 'Failed to delete',
 
     // Status
+    notSet: 'Not set',
     processing: 'Processing...',
     loading: 'Loading...',
     saving: 'Saving...',

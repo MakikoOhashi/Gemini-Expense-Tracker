@@ -1249,7 +1249,7 @@ const handleRuleInputSubmit = async () => {
                           {pendingExtraction.data.type !== 'income' && (
                             <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{t.category}</p>
-                              <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category ? t.categories[pendingExtraction.data.category] : '未設定'}</p>
+                              <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.category ? t.categories[pendingExtraction.data.category] : t.notSet}</p>
                             </div>
                           )}
                           <div className="col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -1261,7 +1261,7 @@ const handleRuleInputSubmit = async () => {
                             <>
                               <div className="bg-green-50/50 p-4 rounded-2xl border border-green-50">
                                 <p className="text-[10px] text-green-400 font-bold uppercase mb-1">{t.payerName}</p>
-                                <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.payerName || '未設定'}</p>
+                                <p className="text-sm font-bold text-gray-800">{pendingExtraction.data.payerName || t.notSet}</p>
                               </div>
                               <div className="bg-green-50/50 p-4 rounded-2xl border border-green-50">
                                 <p className="text-[10px] text-green-400 font-bold uppercase mb-1">{t.withholdingTax}</p>
@@ -1353,11 +1353,11 @@ const handleRuleInputSubmit = async () => {
                     console.log("🔎 income sample:", incomeTransactions.slice(0, 3));
                   }
 
-                  const groupedByPayer = incomeTransactions.reduce((acc, t) => {
+                  const groupedByPayer = incomeTransactions.reduce((acc, transaction) => {
                     // 支払人キーを payerName に完全統一
-                    const payer = t.payerName && t.payerName.trim()
-                      ? t.payerName.trim()
-                      : '未設定';
+                    const payer = transaction.payerName && transaction.payerName.trim()
+                      ? transaction.payerName.trim()
+                      : t.notSet;
 
                     if (!acc[payer]) {
                       acc[payer] = {
@@ -1366,8 +1366,8 @@ const handleRuleInputSubmit = async () => {
                         源泉徴収税額: 0
                       };
                     }
-                    acc[payer].収入金額 += t.amount;
-                    acc[payer].源泉徴収税額 += t.withholdingTax || 0;
+                    acc[payer].収入金額 += transaction.amount;
+                    acc[payer].源泉徴収税額 += transaction.withholdingTax || 0;
                     return acc;
                   }, {} as Record<string, { 種目: string; 収入金額: number; 源泉徴収税額: number }>);
 

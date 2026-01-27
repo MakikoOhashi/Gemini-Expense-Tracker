@@ -98,6 +98,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
 
     if (unit === '%') {
       return `${value > 0 ? '+' : ''}${value.toFixed(1)}${unit}`;
+
     }
     if (unit === 'σ') {
       return `${value > 0 ? '+' : ''}${value.toFixed(1)}${unit}`;
@@ -109,6 +110,94 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
     return `${value.toFixed(1)}${unit}`;
   };
 
+  // issues を翻訳する関数
+  const translateIssue = (issue: string): string => {
+    // 異常な構成のパターン
+    const abnormalCompositionMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占める異常な構成$/);
+    if (abnormalCompositionMatch) {
+      const [, category, ratio] = abnormalCompositionMatch;
+      return t.abnormalComposition.replace(/\{category\}/g, category).replace(/\{ratio\}/g, ratio);
+    }
+
+    // 占めていますのパターン
+    const categoryRatioMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占めています$/);
+    if (categoryRatioMatch) {
+      const [, category, ratio] = categoryRatioMatch;
+      return t.categoryRatio.replace(/\{category\}/g, category).replace(/\{ratio\}/g, ratio);
+    }
+
+    // 乖離が疑われやすい状態のパターン
+    if (issue === '→ 事業実態との乖離が疑われやすい状態') {
+      return t.deviationSuspected;
+    }
+
+    // 税務調査時に支出の妥当性確認が必要な水準
+    if (issue === '→ 税務調査時に支出の妥当性確認が必要な水準') {
+      return t.taxAuditConfirmationNeeded;
+    }
+
+    // 大規模支出のため、より詳細な確認が必要
+    if (issue === '大規模支出のため、より詳細な確認が必要') {
+      return t.largeScaleExpenditure;
+    }
+
+    // 外注費の構成比が高めです。業務委託契約の関連性を確認してください
+    if (issue === '外注費の構成比が高めです。業務委託契約の関連性を確認してください') {
+      return t.subcontractorRatioHigh;
+    }
+
+    // 会議費の構成比が目立ちます。支出目的と参加者情報を整理してください
+    if (issue === '会議費の構成比が目立ちます。支出目的と参加者情報を整理してください') {
+      return t.meetingExpenseNotable;
+    }
+
+    // 消耗品費の構成比が高いです。事業規模とのバランスを確認してください
+    if (issue === '消耗品費の構成比が高いです。事業規模とのバランスを確認してください') {
+      return t.consumablesRatioHigh;
+    }
+
+    // 支出根拠資料の整理を推奨
+    if (issue === '→ 支出根拠資料の整理を推奨') {
+      return t.expenditureEvidenceRecommended;
+    }
+
+    // マッチしない場合はそのまま返す
+    return issue;
+  };
+
+  // anomaly.message を翻訳する関数
+  const translateAnomalyMessage = (message: string): string => {
+    // 構成比異常: 売上に対して{accountName}が{ratio}%を占めています
+    const compositionMatch = message.match(/^売上に対して(.+?)が([\d.]+)%を占めています$/);
+    if (compositionMatch) {
+      const [, accountName, ratio] = compositionMatch;
+      return t.anomalyMessageComposition.replace(/\{accountName\}/g, accountName).replace(/\{ratio\}/g, ratio);
+    }
+
+    // 急変異常: 前年比{growthRate}%と急変
+    const suddenChangeMatch = message.match(/^前年比([+-]?[\d.]+)%と急変$/);
+    if (suddenChangeMatch) {
+      const [, growthRate] = suddenChangeMatch;
+      return t.anomalyMessageSuddenChange.replace(/\{growthRate\}/g, growthRate);
+    }
+
+    // 統計的異常: 過去平均から{zScore}σ乖離
+    const statisticalMatch = message.match(/^過去平均から([+-]?[\d.]+)σ乖離$/);
+    if (statisticalMatch) {
+      const [, zScore] = statisticalMatch;
+      return t.anomalyMessageStatistical.replace(/\{zScore\}/g, zScore);
+    }
+
+    // 比率変動異常: 構成比が{diffRatio}pt変動
+    const ratioVariationMatch = message.match(/^構成比が([+-]?[\d.]+)pt変動$/);
+    if (ratioVariationMatch) {
+      const [, diffRatio] = ratioVariationMatch;
+      return t.anomalyMessageRatioVariation.replace(/\{diffRatio\}/g, diffRatio);
+    }
+
+    // マッチしない場合はそのまま返す
+    return message;
+  };
   // 前年度データが存在しないかチェック
   const hasComparisonData = () => {
     return (
@@ -139,7 +228,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
           </p>
           <div className="text-sm text-gray-700 space-y-1">
             {issues.map((issue, idx) => (
-              <p key={idx}>• {issue}</p>
+              <p key={idx}>• {translateIssue(issue)}</p>
             ))}
           </div>
         </div>
@@ -180,7 +269,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
                     <p className="text-xs text-gray-600 mb-1">{desc}</p>
                     {anomaly && (
                       <p className="text-xs text-red-700 font-medium">
-                        {anomaly.message}
+                        {translateAnomalyMessage(anomaly.message)}
                       </p>
                     )}
                   </div>
@@ -323,7 +412,7 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
           <div className="space-y-2 text-sm">
             {/* 数値表示 */}
             <div className="flex justify-between">
-              <span className="text-gray-600">売上前年差</span>
+              <span className="text-gray-600">{t.salesYearOverYearDifference}</span>
               <span className={`font-bold ${formatValue(growthRate, '%') === 'N/A' ? 'text-gray-400' : ''}`}>
                 {formatValue(growthRate, '%')}
               </span>
@@ -335,14 +424,14 @@ const AuditReasoningModal: React.FC<AuditReasoningModalProps> = ({
             </div>
 
             <div className="flex justify-between">
-              <span className="text-gray-600">過去平均との差（σ）</span>
+              <span className="text-gray-600">{t.averageDifference}</span>
               <span className={`font-bold ${formatValue(zScore, 'σ') === 'N/A' ? 'text-gray-400' : ''}`}>
                 {formatValue(zScore, 'σ')}
               </span>
             </div>
 
             <div className="flex justify-between">
-              <span className="text-gray-600">構成比変動</span>
+              <span className="text-gray-600">{t.compositionRatioChange}</span>
               <span className={`font-bold ${formatValue(diffRatio, 'pt') === 'N/A' ? 'text-gray-400' : ''}`}>
                 {formatValue(diffRatio, 'pt')}
               </span>

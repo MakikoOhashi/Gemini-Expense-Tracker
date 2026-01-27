@@ -331,12 +331,12 @@ export const TEXT = {
     withholdingTax: '源泉徴収税額',
 
     // フォルダ競合
-    folderConflictDetected: 'フォルダ名の重複を検出',
-    folderConflictDescription: '複数の同名フォルダが見つかりました',
-    folderConflictResolution: 'Google Drive で「いらない方」のフォルダ名を変更してください。',
-    folderConflictExample: '例：「Gemini Expense Tracker_old」など',
-    folderConflictNote: '名前を変更すると、次回アプリを起動した際にこの警告は表示されなくなります。',
-    useThisFolder: 'このフォルダを使用',
+    folderConflictDetected: '⚠️ フォルダ名の重複が検出されました',
+    folderConflictDescription: '複数の「Gemini Expense Tracker」フォルダが Google Drive 上に見つかりました。どのフォルダを使用するか選択してください。',
+    folderConflictResolution: '不要なフォルダは Google Drive 上で名前を変更してください。',
+    folderConflictExample: '例：「Gemini Expense Tracker_old」',
+    folderConflictNote: '名前を変更すると、次回以降この警告は表示されません。',
+    useThisFolder: '👉 このフォルダを使用',
 
     // 初期ガイド
     firstTimeGuide: 'まず、やりたいことを選んでください',
@@ -729,12 +729,12 @@ export const TEXT = {
     withholdingTax: 'Withholding Tax Amount',
 
     // Folder Conflict
-    folderConflictDetected: 'Folder Name Conflict Detected',
-    folderConflictDescription: 'Multiple folders with the same name found',
-    folderConflictResolution: 'In Google Drive, rename the "unnecessary" folder.',
-    folderConflictExample: 'e.g., "Gemini Expense Tracker_old"',
-    folderConflictNote: 'Renaming will prevent this warning from appearing when you start the app next time.',
-    useThisFolder: 'Use This Folder',
+    folderConflictDetected: '⚠️ Duplicate folders detected',
+    folderConflictDescription: 'Multiple folders named "Gemini Expense Tracker" were found in your Google Drive. Please select the folder you want to use.',
+    folderConflictResolution: 'To resolve this permanently, rename the unnecessary folder in Google Drive.',
+    folderConflictExample: 'Example: `Gemini Expense Tracker_old`',
+    folderConflictNote: 'Once renamed, this warning will no longer appear.',
+    useThisFolder: '👉 Use this folder',
 
     // First Time Guide
     firstTimeGuide: 'First, choose what you want to do',

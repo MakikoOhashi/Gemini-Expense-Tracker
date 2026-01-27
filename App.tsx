@@ -1571,95 +1571,98 @@ const handleRuleInputSubmit = async () => {
 
 
       {/* Folder Conflict Modal */}
-      {folderConflict && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
+      {folderConflict && (() => {
+        const detectedLang = getPreAuthLanguage();
+        const modalText = TEXT[detectedLang];
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
               <div className="flex-shrink-0 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                <div className="flex items-center gap-3 mb-4">
+                  {/* <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div> */}
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">{modalText.folderConflictDetected}</h2>
+                    <p className="text-sm text-gray-500">{modalText.folderConflictDescription}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-800">{t.folderConflictDetected}</h2>
-                  <p className="text-sm text-gray-500">{t.folderConflictDescription}</p>
-                </div>
+
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                <p className="text-amber-800 text-sm font-medium">
-                  {folderConflict.message}
-                </p>
-              </div>
-            </div>
+              <div className="flex-1 overflow-y-auto px-6">
+                <div className="mb-6">
+                  <div className="space-y-3">
+                    {folderConflict.duplicateFolders.map((folder, index) => (
+                      <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-700 font-bold text-sm flex-shrink-0">
+                              {index + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-gray-800 truncate">**{folder.name}**</p>
+                              <p className="text-xs text-gray-500 font-mono truncate">ID: {folder.id}</p>
+                              <p className="text-xs text-gray-400">
+                                {detectedLang === 'ja'
+                                  ? `作成日: ${folder.createdTime ? new Date(folder.createdTime).toLocaleString('ja-JP') : '不明'}`
+                                  : `Created: ${folder.createdTime ? new Date(folder.createdTime).toLocaleDateString('en-US') : 'Unknown'}`
+                                }
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await fetch('http://localhost:3001/api/select-folder', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ userId: authStatus?.userId || 'test-user', folderId: folder.id })
+                                });
+                                console.log(`📁 フォルダ ${folder.id} を選択しました`);
 
-            <div className="flex-1 overflow-y-auto px-6">
-              <div className="mb-6">
-                <p className="text-sm font-bold text-gray-700 mb-3">検出されたフォルダ一覧：</p>
-                <div className="space-y-3">
-                  {folderConflict.duplicateFolders.map((folder, index) => (
-                    <div key={folder.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-700 font-bold text-sm flex-shrink-0">
-                            {index + 1}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-gray-800 truncate">{folder.name}</p>
-                            <p className="text-xs text-gray-500 font-mono truncate">ID: {folder.id}</p>
-                            <p className="text-xs text-gray-400">作成日: {folder.createdTime ? new Date(folder.createdTime).toLocaleString('ja-JP') : '不明'}</p>
-                          </div>
+                                // Clear server cache
+                                await fetch('http://localhost:3001/api/clear-folder-cache', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
+                                });
+
+                                // Close modal
+                                setFolderConflict(null);
+
+                                // Reload transactions directly
+                                loadTransactions();
+                              } catch (e) {
+                                console.error('フォルダ選択エラー:', e);
+                              }
+                            }}
+                            className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
+                          >
+                            {modalText.useThisFolder}
+                          </button>
                         </div>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await fetch('http://localhost:3001/api/select-folder', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ userId: authStatus?.userId || 'test-user', folderId: folder.id })
-                              });
-                              console.log(`📁 フォルダ ${folder.id} を選択しました`);
-
-                              // Clear server cache
-                              await fetch('http://localhost:3001/api/clear-folder-cache', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
-                              });
-
-                              // Close modal
-                              setFolderConflict(null);
-
-                              // Reload transactions directly
-                              loadTransactions();
-                            } catch (e) {
-                              console.error('フォルダ選択エラー:', e);
-                            }
-                          }}
-                          className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
-                        >
-                          {t.useThisFolder}
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <p className="text-blue-800 text-sm">
-                  <span className="font-bold">{t.folderConflictResolution}</span>
-                  <br />
-                  {t.folderConflictExample}
-                  <br />
-                  {t.folderConflictNote}
-                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                  <p className="text-blue-800 text-sm">
+                    <span className="font-bold">{modalText.folderConflictResolution}</span>
+                    <br />
+                    {modalText.folderConflictExample}
+                    <br />
+                    {modalText.folderConflictNote}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

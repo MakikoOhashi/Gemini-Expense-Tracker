@@ -12,3 +12,8 @@
   .form-area { font-size: 16px !important; }
 }
 
+/* Hide extra line in hexagon chart PolarRadiusAxis */
+.recharts-polar-radius-axis line {
+  display: none;
+}
+

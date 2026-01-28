@@ -245,7 +245,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <ResponsiveContainer width="100%" height={250}>
             <RadarChart data={radarData}>
-              <PolarGrid />
+              <PolarGrid gridType="polygon" />
               <PolarAngleAxis dataKey="subject" />
               <PolarRadiusAxis angle={60} domain={[0, 100]} tick={false} />
               <Radar

@@ -1382,6 +1382,15 @@ const handleRuleInputSubmit = async () => {
                 通信費: filteredTransactions.filter(t => t.category === '通信費').reduce((sum, t) => sum + t.amount, 0),
                 旅費交通費: filteredTransactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0),
                 接待交際費: filteredTransactions.filter(t => t.category === '接待交際費').reduce((sum, t) => sum + t.amount, 0),
+                外注工賃: filteredTransactions.filter(t => t.category === '外注工賃').reduce((sum, t) => sum + t.amount, 0),
+                租税公課: filteredTransactions.filter(t => t.category === '租税公課').reduce((sum, t) => sum + t.amount, 0),
+                荷造運賃: filteredTransactions.filter(t => t.category === '荷造運賃').reduce((sum, t) => sum + t.amount, 0),
+                水道光熱費: filteredTransactions.filter(t => t.category === '水道光熱費').reduce((sum, t) => sum + t.amount, 0),
+                広告宣伝費: filteredTransactions.filter(t => t.category === '広告宣伝費').reduce((sum, t) => sum + t.amount, 0),
+                損害保険料: filteredTransactions.filter(t => t.category === '損害保険料').reduce((sum, t) => sum + t.amount, 0),
+                修繕費: filteredTransactions.filter(t => t.category === '修繕費').reduce((sum, t) => sum + t.amount, 0),
+                福利厚生費: filteredTransactions.filter(t => t.category === '福利厚生費').reduce((sum, t) => sum + t.amount, 0),
+                雑費: filteredTransactions.filter(t => t.category === '雑費').reduce((sum, t) => sum + t.amount, 0),
                 // 第二表 所得の内訳データ生成（支払者名ごとに集計）
                 所得の内訳: (() => {
                   const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');

@@ -148,6 +148,110 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
             外注工賃：フリーランス・業者への業務委託費用。<br/>※内容によっては源泉徴収が必要になる場合があります。
           </div>
         </div>
+        {/* 経費 - 租税公課*/}
+        <div className="group absolute" style={POS.expenseTaxes}>
+          <input
+            type="number"
+            value={data.租税公課 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            租税公課：該当しない場合は 0 円のままにしてください。<br/>（※印紙税・固定資産税の一部（家事按分したとき）など：<br/>※ 所得税・住民税・社会保険料はここに入れません）
+          </div>
+        </div>
+        {/* 経費 - 荷造運賃*/}
+        <div className="group absolute" style={POS.expenseShipping}>
+          <input
+            type="number"
+            value={data.荷造運賃 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            荷造運賃：<br/>送料など
+          </div>
+        </div>
+        {/* 経費 - 水道光熱費*/}
+        <div className="group absolute" style={POS.expenseUtilities}>
+          <input
+            type="number"
+            value={data.水道光熱費 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            水道光熱費：<br/>電気代など
+          </div>
+        </div>
+        {/* 経費 - 広告宣伝費欄 */}
+        <div className="group absolute" style={POS.expenseAdvertising}>
+          <input
+            type="number"
+            value={data.広告宣伝費 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            広告宣伝費：<br/>カテゴリの合計金額です
+          </div>
+        </div>
+        {/* 経費 - 損害保険料欄 */}
+        <div className="group absolute" style={POS.expenseInsurance}>
+          <input
+            type="number"
+            value={data.損害保険料 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            損害保険料：<br/>カテゴリの合計金額です<br/>（生命保険・医療保険はここに入れません）
+          </div>
+        </div>
+        {/* 経費 - 修繕費欄 */}
+        <div className="group absolute" style={POS.expenseRepair}>
+          <input
+            type="number"
+            value={data.修繕費 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            修繕費：<br/>カテゴリの合計金額です
+          </div>
+        </div>
+        {/* 経費 - 福利厚生費欄 */}
+        <div className="group absolute" style={POS.expenseWelfare}>
+          <input
+            type="number"
+            value={data.福利厚生費 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            福利厚生費：<br/>カテゴリの合計金額です
+          </div>
+        </div>
+        {/* 経費 - 雑費欄 */}
+        <div className="group absolute" style={POS.expenseMiscellaneous}>
+          <input
+            type="number"
+            value={data.雑費 || 0}
+            readOnly
+            className="w-full border-none bg-transparent font-bold text-red-600 text-right text-lg tracking-[0.10em] pr-0 [appearance:textfield] [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+          />
+          {/* Tooltip */}
+          <div className={TOOLTIP_CLASSES}>
+            雑費：<br/>雑費カテゴリの合計金額です
+          </div>
+        </div>
         {/* 経費 - 減価償却費*/}
         <div className="group absolute" style={POS.expenseDepreciation}>
           <input

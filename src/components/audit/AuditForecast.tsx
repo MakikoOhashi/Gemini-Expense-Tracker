@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { AuditForecastItem } from '../../../types';
 import { TEXT, Language } from '../../i18n/text';
 
@@ -19,6 +19,83 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   language = 'ja'
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // 異常パターンの説明定数
+  const ANOMALY_DESCRIPTIONS: Record<string, { ja: string; en: string }> = {
+    'compositionAnomaly': {
+      ja: '構成比異常：支出構成の歪み',
+      en: 'Composition Ratio Anomaly: Distortion in expense structure'
+    },
+    'rapidChangeAnomaly': {
+      ja: '急変異常：前年比の急激な変化',
+      en: 'Rapid Change Anomaly: Sudden year-over-year changes'
+    },
+    'statisticalDeviation': {
+      ja: '統計的乖離：業界平均からの乖離',
+      en: 'Statistical Deviation: Deviation from industry average'
+    },
+    'ratioFluctuation': {
+      ja: '比率変動異常：構成比の変動',
+      en: 'Ratio Fluctuation Anomaly: Changes in composition ratio'
+    },
+    'highTransactionDensity': {
+      ja: '高額取引密度：大規模支出の集中',
+      en: 'High Transaction Density: Concentration of large expenses'
+    },
+    'crossCategoryMatch': {
+      ja: 'クロスカテゴリ一致：科目間の関連性',
+      en: 'Cross-Category Match: Inter-category relationships'
+    }
+  };
+
+  // 軸ラベルから異常パターンキーへのマッピング
+  const ANOMALY_KEY_MAP: Record<string, string> = {
+    // 日本語
+    '構成比異常': 'compositionAnomaly',
+    '急変異常': 'rapidChangeAnomaly',
+    '統計的乖離': 'statisticalDeviation',
+    '比率変動': 'ratioFluctuation',
+    '高額取引密度': 'highTransactionDensity',
+    'クロスカテゴリ一致': 'crossCategoryMatch',
+    // 英語
+    'Composition': 'compositionAnomaly',
+    'Rapid Change': 'rapidChangeAnomaly',
+    'Statistical': 'statisticalDeviation',
+    'Ratio Shift': 'ratioFluctuation',
+    'High Density': 'highTransactionDensity',
+    'Cross-Match': 'crossCategoryMatch'
+  };
+
+  // カスタムツールチップコンポーネント
+  const CustomRadarTooltip = ({ active, payload, language }: {
+    active?: boolean;
+    payload?: readonly any[];
+    language: string;
+  }) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
+    }
+
+    const data = payload[0].payload;
+    const subject = data.subject;
+    
+    // 軸ラベルから異常パターンキーを取得
+    const key = ANOMALY_KEY_MAP[subject];
+    
+    // 説明文を取得
+    const description = key 
+      ? ANOMALY_DESCRIPTIONS[key][language as 'ja' | 'en']
+      : subject;
+
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded shadow-lg max-w-xs">
+        <p className="font-semibold text-sm">{description}</p>
+        <p className="text-xs text-gray-600 mt-1">
+          {language === 'ja' ? 'リスクスコア' : 'Risk Score'}: {data.A}
+        </p>
+      </div>
+    );
+  };
 
   // スコア計算ロジック（既存のものを再利用）
   const calculateAnomalyScores = (item: AuditForecastItem) => {
@@ -78,25 +155,29 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
 
   // AI総評の生成ロジック
   const generateOverallAssessment = (item: AuditForecastItem) => {
+    console.log('generateOverallAssessment called with language:', language);
     const scores = calculateAnomalyScores(item);
     const maxScore = Math.max(...Object.values(scores));
     const maxScoreKey = Object.keys(scores).find(key => scores[key as keyof typeof scores] === maxScore);
 
     if (maxScore === 0) {
+      console.log('No abnormal pattern detected for language:', language);
       return t.noAbnormalPatternDetected;
     }
 
-    const patternMap: Record<string, string> = {
-      composition: t.compositionAbnormality,
-      suddenChange: t.suddenChangeAbnormality,
-      statisticalDeviation: t.statisticalDeviation,
-      ratioFluctuation: t.ratioFluctuation,
-      highAmountDensity: t.highAmountDensity,
-      crossCategoryMatch: t.crossCategoryMatch
+    // 翻訳キーのマッピング
+    const ANOMALY_KEY_TO_TRANSLATION: Record<string, string> = {
+      composition: 'compositionAbnormality',
+      suddenChange: 'suddenChangeAbnormality',
+      statisticalDeviation: 'statisticalDeviation',
+      ratioFluctuation: 'ratioFluctuation',
+      highAmountDensity: 'highAmountDensity',
+      crossCategoryMatch: 'crossCategoryMatch'
     };
 
-    const patternName = patternMap[maxScoreKey || ''] || t.abnormalPattern;
-    
+    const translationKey = ANOMALY_KEY_TO_TRANSLATION[maxScoreKey || ''] || 'compositionAbnormality';
+    const patternName = t[translationKey];
+
     // リスクパターンの判定
     let riskPattern = t.singleSubjectConcentrationRisk;
     if (maxScore > 70) {
@@ -105,14 +186,22 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       riskPattern = t.singleSubjectConcentrationRisk;
     }
 
-    return `${patternName}が突出した${riskPattern}`;
+    console.log('Abnormal pattern assessment for language:', language, 'pattern:', patternName, 'risk:', riskPattern);
+    
+    // 英語の場合、リスクパターンがundefinedになるのを防ぐ
+    if (language === 'en') {
+      const riskText = riskPattern === 'undefined' || !riskPattern ? 'high risk' : riskPattern;
+      return `${patternName} stands out with ${riskText}.`;
+    }
+    
+    return t.abnormalPatternAssessment.replace('{pattern}', patternName).replace('{type}', riskPattern);
   };
 
   // レーダーチャート用データ
   const getRadarChartData = (item: AuditForecastItem) => {
     const scores = calculateAnomalyScores(item);
     
-    return [
+    const radarData = [
       { subject: t.compositionAbnormality, A: scores.composition, fullMark: 100 },
       { subject: t.suddenChangeAbnormality, A: scores.suddenChange, fullMark: 100 },
       { subject: t.statisticalDeviation, A: scores.statisticalDeviation, fullMark: 100 },
@@ -120,6 +209,16 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       { subject: t.highAmountDensity, A: scores.highAmountDensity, fullMark: 100 },
       { subject: t.crossCategoryMatch, A: scores.crossCategoryMatch, fullMark: 100 }
     ];
+
+    // デバッグログを追加
+    console.log('[radarData生成]', {
+      language,
+      dataLength: radarData.length,
+      subjects: radarData.map(d => d.subject),
+      scores: radarData.map(d => d.A)
+    });
+
+    return radarData;
   };
 
   // リスクレベルに応じた色
@@ -147,56 +246,61 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
 
   // issues を翻訳する関数
   const translateIssue = (issue: string): string => {
-    // 異常な構成のパターン
-    const abnormalCompositionMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占める異常な構成$/);
-    if (abnormalCompositionMatch) {
-      const [, category, ratio] = abnormalCompositionMatch;
-      return t.abnormalComposition.replace(/\{category\}/g, t.categories[category] || category).replace(/\{ratio\}/g, ratio);
+    // 日本語のパターンを英語に翻訳
+    if (language === 'en') {
+      // 異常な構成のパターン
+      const abnormalCompositionMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占める異常な構成$/);
+      if (abnormalCompositionMatch) {
+        const [, category, ratio] = abnormalCompositionMatch;
+        const categoryEn = t.categories[category] || category;
+        return `${categoryEn} accounts for ${ratio}% of total expenses, which is an abnormal composition`;
+      }
+
+      // 占めていますのパターン
+      const categoryRatioMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占めています$/);
+      if (categoryRatioMatch) {
+        const [, category, ratio] = categoryRatioMatch;
+        const categoryEn = t.categories[category] || category;
+        return `${categoryEn} accounts for ${ratio}% of total expenses`;
+      }
+
+      // 乖離が疑われやすい状態のパターン
+      if (issue === '→ 事業実態との乖離が疑われやすい状態') {
+        return '→ State where deviation from actual business operations is likely to be suspected';
+      }
+
+      // 税務調査時に支出の妥当性確認が必要な水準
+      if (issue === '→ 税務調査時に支出の妥当性確認が必要な水準') {
+        return '→ Level where expenditure validity needs to be confirmed during tax audit';
+      }
+
+      // 大規模支出のため、より詳細な確認が必要
+      if (issue === '大規模支出のため、より詳細な確認が必要') {
+        return 'Detailed confirmation required due to large-scale expenditure';
+      }
+
+      // 外注費の構成比が高めです。業務委託契約の関連性を確認してください
+      if (issue === '外注費の構成比が高めです。業務委託契約の関連性を確認してください') {
+        return 'Subcontractor expense ratio is relatively high. Please verify the relevance of the subcontract agreement';
+      }
+
+      // 会議費の構成比が目立ちます。支出目的と参加者情報を整理してください
+      if (issue === '会議費の構成比が目立ちます。支出目的と参加者情報を整理してください') {
+        return 'Meeting expense ratio is notable. Please organize expenditure purpose and participant information';
+      }
+
+      // 消耗品費の構成比が高いです。事業規模とのバランスを確認してください
+      if (issue === '消耗品費の構成比が高いです。事業規模とのバランスを確認してください') {
+        return 'Consumables expense ratio is high. Please check balance with business scale';
+      }
+
+      // 支出根拠資料の整理を推奨
+      if (issue === '→ 支出根拠資料の整理を推奨') {
+        return '→ Organization of expenditure basis documents is recommended';
+      }
     }
 
-    // 占めていますのパターン
-    const categoryRatioMatch = issue.match(/^(.+?)が総支出の([\d.]+)%を占めています$/);
-    if (categoryRatioMatch) {
-      const [, category, ratio] = categoryRatioMatch;
-      return t.categoryRatio.replace(/\{category\}/g, t.categories[category] || category).replace(/\{ratio\}/g, ratio);
-    }
-
-    // 乖離が疑われやすい状態のパターン
-    if (issue === '→ 事業実態との乖離が疑われやすい状態') {
-      return t.deviationSuspected;
-    }
-
-    // 税務調査時に支出の妥当性確認が必要な水準
-    if (issue === '→ 税務調査時に支出の妥当性確認が必要な水準') {
-      return t.taxAuditConfirmationNeeded;
-    }
-
-    // 大規模支出のため、より詳細な確認が必要
-    if (issue === '大規模支出のため、より詳細な確認が必要') {
-      return t.largeScaleExpenditure;
-    }
-
-    // 外注費の構成比が高めです。業務委託契約の関連性を確認してください
-    if (issue === '外注費の構成比が高めです。業務委託契約の関連性を確認してください') {
-      return t.subcontractorRatioHigh;
-    }
-
-    // 会議費の構成比が目立ちます。支出目的と参加者情報を整理してください
-    if (issue === '会議費の構成比が目立ちます。支出目的と参加者情報を整理してください') {
-      return t.meetingExpenseNotable;
-    }
-
-    // 消耗品費の構成比が高いです。事業規模とのバランスを確認してください
-    if (issue === '消耗品費の構成比が高いです。事業規模とのバランスを確認してください') {
-      return t.consumablesRatioHigh;
-    }
-
-    // 支出根拠資料の整理を推奨
-    if (issue === '→ 支出根拠資料の整理を推奨') {
-      return t.expenditureEvidenceRecommended;
-    }
-
-    // マッチしない場合はそのまま返す
+    // 日本語の場合はそのまま返す
     return issue;
   };
 
@@ -243,10 +347,29 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       <div className="space-y-4">
         {/* レーダーチャート */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <ResponsiveContainer width="100%" height={250}>
-            <RadarChart data={radarData}>
-              <PolarGrid gridType="polygon" />
-              <PolarAngleAxis dataKey="subject" />
+          <ResponsiveContainer width="100%" height={400}>
+            <RadarChart 
+              cx="50%" 
+              cy="50%" 
+              outerRadius="80%" 
+              data={radarData}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+            >
+              <PolarGrid gridType="polygon" radialLines={true} />
+              <PolarAngleAxis 
+                dataKey="subject"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => {
+                  // 10文字以上の場合は改行
+                  if (value.length > 10) {
+                    const words = value.split(' ');
+                    if (words.length > 1) {
+                      return words.join('\n');  // スペースで改行
+                    }
+                  }
+                  return value;
+                }}
+              />
               <PolarRadiusAxis angle={60} domain={[0, 100]} tick={false} />
               <Radar
                 name={t.categories[item.accountName] || item.accountName}
@@ -254,6 +377,11 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
                 stroke={getRiskColor(item.riskLevel)}
                 fill={getRiskColor(item.riskLevel)}
                 fillOpacity={0.6}
+              />
+              <Tooltip 
+                content={(props) => (
+                  <CustomRadarTooltip {...props} language={language} />
+                )}
               />
             </RadarChart>
           </ResponsiveContainer>
@@ -306,7 +434,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
                     {anomaly.detected ? '✔' : '✖'} {anomaly.name}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {anomaly.detected ? `${Math.round(anomaly.score)}点` : t.noAbnormality}
+                    {anomaly.detected ? `${Math.round(anomaly.score)}${language === 'en' ? ' pts' : '点'}` : t.noAbnormality}
                   </span>
                 </div>
               ))}
@@ -360,7 +488,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
               {item.diffRatio !== null && (
                 <div>
                   <p className="text-gray-600 mb-1">{t.ratioDifference}</p>
-                  <p className="font-semibold">{item.diffRatio.toFixed(1)}ポイント</p>
+                  <p className="font-semibold">{language === 'en' ? `${item.diffRatio.toFixed(1)} pts` : `${item.diffRatio.toFixed(1)}ポイント`}</p>
                 </div>
               )}
             </div>
@@ -387,7 +515,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
               {item.issues.map((issue, index) => (
                 <div key={index} className="flex items-start gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <p>{translateIssue(issue)}</p>
+                  <p className={language === 'en' ? 'leading-relaxed' : ''}>{translateIssue(issue)}</p>
                 </div>
               ))}
             </div>

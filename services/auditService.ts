@@ -97,6 +97,13 @@ ${enrichedStructuredData && enrichedStructuredData.some(item =>
 
 **重要**: 上記の形式で全勘定科目について記載してください。JSONやマークダウンコードブロックは不要です。`;
 
+    console.log('[AI呼び出し直前]', {
+      科目数: forecastItems.length,
+      科目リスト: forecastItems.map(i => i.accountName),
+      プロンプト長: systemInstruction.length,
+      プロンプトプレビュー: systemInstruction.substring(0, 500)
+    });
+
     try {
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
@@ -120,6 +127,15 @@ ${enrichedStructuredData && enrichedStructuredData.some(item =>
 
     // テキストレスポンスをパース（区切り文字で分割）
     const results = this.parseAITextResponse(responseText, forecastItems);
+
+    console.log('[パース後]', {
+      パース成功科目数: results.length,
+      パース成功科目: results.map(r => r.accountName),
+      未パース科目: forecastItems
+        .filter(i => !results.find(r => r.accountName === i.accountName))
+        .map(i => i.accountName)
+    });
+
     return results;
 
   } catch (error: any) {
@@ -209,6 +225,19 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
       const response: any = await Promise.race([generatePromise, timeoutPromise]);
       const responseText = response.text;
+
+      console.log('[AI応答受信]', {
+        応答長: responseText.length,
+        応答プレビュー: responseText.substring(0, 1000),
+        JSON判定: (() => {
+          try {
+            JSON.parse(responseText);
+            return 'valid';
+          } catch {
+            return 'invalid';
+          }
+        })()
+      });
 
       if (!responseText) {
         throw new Error("AIから空の応答が返されました。");
@@ -749,6 +778,23 @@ ${JSON.stringify(transactionSummary, null, 2)}
           item.aiPreparationAdvice = aiResult.aiPreparationAdvice;
         }
       }
+
+      // AI分析結果が得られなかった科目にデフォルトメッセージをセット
+      for (const item of auditForecastItems) {
+        if (item.aiSuspicionView === undefined) {
+          item.aiSuspicionView = 'AI解釈を取得できませんでした。検知された異常構造について、支出の妥当性を説明できる資料の準備が重要です。';
+          item.aiPreparationAdvice = `${item.accountName}の契約書・領収書・使用実態を示す資料を整理し、事業との関連性を明確に説明できるよう準備してください。`;
+        }
+      }
+
+      console.log('[統合後]', {
+        aiSuspicionView設定済み: auditForecastItems.filter(i => i.aiSuspicionView).length,
+        aiSuspicionView未設定: auditForecastItems.filter(i => !i.aiSuspicionView).length,
+        未設定科目: auditForecastItems
+          .filter(i => !i.aiSuspicionView)
+          .map(i => i.accountName)
+      });
+
       console.log('✅ AI analysis completed and integrated');
     } catch (aiError) {
       console.warn('⚠️ AI analysis failed, continuing without AI interpretation:', aiError.message);

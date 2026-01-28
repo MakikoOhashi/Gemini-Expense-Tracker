@@ -5,7 +5,7 @@ import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem }
 import { auditService } from '../services/auditService';
 import { sheetsService } from '../services/sheetsService';
 import { authService } from '../services/authService';
-import AuditReasoningModal from './AuditReasoningModal';
+import AuditForecast from '../src/components/audit/AuditForecast';
 import { getTodayJSTString } from '../lib/dateUtils';
 import { TEXT, Language } from '../src/i18n/text';
 
@@ -36,7 +36,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
-  const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [lastSummaryUpdated, setLastSummaryUpdated] = useState<string | null>(null);
@@ -250,9 +249,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     loadSummaryMeta();
   }, [selectedAuditYear]);
 
-  const handleViewReasoning = () => {
-    setIsReasoningModalOpen(true);
-  };
 
   const handleGenerateSummary = async () => {
     if (isGeneratingSummary) return;
@@ -472,71 +468,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* セクションB：監査予報（全体） */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-700 mb-4">
-          {t.todayAuditForecast.replace('{date}', getTodayJSTString())}
-        </h3>
-
-        {/* Gemini AI Audit Risk Summary */}
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🧠</span>
-            <h4 className="font-bold text-blue-800">{t.geminiAIAuditRiskSummary}</h4>
-          </div>
-          <p className="text-sm text-blue-700">
-            {t.mostLikelyItem} 「{(() => {
-              // リスクレベルでソート（high -> medium -> low）
-              const sortedByRisk = [...auditForecast].sort((a, b) => {
-                const riskOrder = { high: 3, medium: 2, low: 1 };
-                return riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
-              });
-              const accountName = sortedByRisk[0]?.accountName || 'なし';
-              return t.categories[accountName] || accountName;
-            })()}」
-          </p>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-3 text-slate-600">
-              <ArrowPathIcon className="w-5 h-5 animate-spin" />
-              <span className="text-sm font-medium">{loadingMessage}</span>
-            </div>
-          </div>
-        ) : auditForecast.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">{t.noAuditData}</p>
-        ) : (
-          <div className="space-y-3">
-            {auditForecast.slice(0, 1).map((item) => (
-              <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">{t.categories[item.accountName] || item.accountName}</p>
-                    <p className="text-xs text-gray-500">
-                      ¥{(item.totalAmount || 0).toLocaleString()} ({item.ratio.toFixed(1)}%)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm font-bold">{getRiskEmoji(item.riskLevel)} {getRiskText(item.riskLevel)}</p>
-                    <button
-                      onClick={handleViewReasoning}
-                      className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition flex items-center gap-1"
-                    >
-                      <LightBulbIcon className="w-3 h-3" />
-                      {t.reasoning}
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  {item.issues.map((issue, index) => (
-                    <p key={index} className="text-xs text-gray-600">• {translateIssue(issue)}</p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <AuditForecast
+        auditForecast={auditForecast}
+        isLoading={isLoading}
+        loadingMessage={loadingMessage}
+        t={t}
+        language={language}
+      />
 
       {/* セクションA：記帳チェック（個別） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
@@ -570,15 +508,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
-
-      {/* AI Audit Reasoning Modal */}
-      <AuditReasoningModal
-        isOpen={isReasoningModalOpen}
-        onClose={() => setIsReasoningModalOpen(false)}
-        auditData={auditForecast[0]}  // 最もリスクが高い項目
-        year={selectedAuditYear ? selectedAuditYear.toString() : ''}
-        t={t}
-      />
     </div>
   );
 };

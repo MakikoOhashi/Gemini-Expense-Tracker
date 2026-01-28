@@ -1381,6 +1381,7 @@ const handleRuleInputSubmit = async () => {
                 消耗品費: filteredTransactions.filter(t => t.category === '消耗品費').reduce((sum, t) => sum + t.amount, 0),
                 通信費: filteredTransactions.filter(t => t.category === '通信費').reduce((sum, t) => sum + t.amount, 0),
                 旅費交通費: filteredTransactions.filter(t => t.category === '旅費交通費').reduce((sum, t) => sum + t.amount, 0),
+                接待交際費: filteredTransactions.filter(t => t.category === '接待交際費').reduce((sum, t) => sum + t.amount, 0),
                 // 第二表 所得の内訳データ生成（支払者名ごとに集計）
                 所得の内訳: (() => {
                   const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');

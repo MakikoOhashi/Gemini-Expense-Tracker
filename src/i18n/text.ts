@@ -36,7 +36,7 @@ export const TEXT = {
     yearSelection: '年度選択',
     selectedYearSection: '📅 選択された年度',
     changeYear: '年度変更',
-    yearDataDescription: '年度（年1月1日〜年12月31日）の取引データを集計しています。',
+    yearDataDescription: '{year}年度（{year}年1月1日〜{year}年12月31日）の取引データを集計しています。',
 
     // 言語切り替え
     language: '言語',

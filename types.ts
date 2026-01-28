@@ -57,13 +57,19 @@ export interface AuditPrediction {
 
 // 異常検知情報
 export interface AnomalyDetection {
-  dimension: '構成比異常' | '急変異常' | '統計的異常' | '比率変動異常';
+  dimension: string;
   accountName: string;
   value: number;
   severity: 'low' | 'medium' | 'high';
-  message: string;          // 既存: UI表示用の説明文
-  fact?: string;            // 🆕 事実の簡潔な記述（AI用）
-  ruleDescription?: string; // 🆕 検知ルールの説明（AI用）
+  message: string;
+  fact: string;
+  ruleDescription: string;
+  crossCategoryMatches?: Array<{
+    relatedAccount: string;
+    sameAmount: number;
+    dateGap: string;
+    merchant: string;
+  }>;
 }
 
 // 監査予報（全体）- 勘定科目合計・比率ベースの論点

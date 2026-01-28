@@ -164,15 +164,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         const forecastData = await auditService.generateAuditForecast(filteredTransactions);
         setAuditForecast(forecastData);
 
-        // 生成した予報をサーバーAPI経由でFirestoreに保存（最重要リスク1件のみ）
-        console.log('🔍 Saving to Firebase:', forecastData[0]);
-        console.log('🔍 detectedAnomalies:', forecastData[0]?.detectedAnomalies);
+        // 生成した予報をサーバーAPI経由でFirestoreに保存（全ての結果を保存）
+        console.log('🔍 Saving to Firebase:', forecastData.length, 'items');
+        console.log('🔍 First item detectedAnomalies:', forecastData[0]?.detectedAnomalies);
 
         const requestBody = {
           googleId,
           year,
           date: today,
-          forecastResults: forecastData.length > 0 ? [forecastData[0]] : []
+          forecastResults: forecastData
         };
 
         // ガード: dateに "/" が含まれていたらエラー

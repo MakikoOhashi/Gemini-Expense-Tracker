@@ -10,9 +10,18 @@ export interface TaxAuditResponse {
   nextActions: string[];
 }
 
+// クロスカテゴリーマッチインターフェース
+interface CrossCategoryMatch {
+  accountName: string;
+  amount: number;
+  date: string;
+  merchant: string;
+  daysDifference: number;
+}
+
 export class AuditService {
   // 異常検知済み構造データをAIに渡して解釈させる
-  async analyzeAuditForecastWithStructure(forecastItems: AuditForecastItem[]): Promise<{
+  async analyzeAuditForecastWithStructure(forecastItems: AuditForecastItem[], enrichedStructuredData?: any[]): Promise<{
     accountName: string;
     aiSuspicionView: string;
     aiPreparationAdvice: string;
@@ -38,7 +47,7 @@ export class AuditService {
       }))
     }));
 
-    const systemInstruction = `あなたは税務調査の専門家です。
+    const systemInstruction = `あなたは経験豊富な税務調査官です。
 
 以下のデータは、会計システムが自動検出した「異常構造の事実」です。
 あなたの役割は、この事実が税務調査でどう見られやすいかを「文章として説明すること」だけです。
@@ -49,31 +58,41 @@ export class AuditService {
 - あなたは「この事実がどう見られるか」を言葉にするだけです
 - 断定は避け、「〜の可能性があります」「〜と見られやすい」など可能性を示す表現を使ってください
 - 「架空計上」「私的利用」などの断定的な用語は避け、「説明が求められやすい」「確認されやすい」など中立的な表現を使ってください
-- 抽象的な一般論ではなく、必ず与えられたfactとruleに紐づけて説明してください。
-- 与えられた異常（detectedAnomalies）以外の論点は新たに追加しないでください。
+- **抽象的な一般論ではなく、必ず与えられたfactとruleに紐づけて説明してください**
+- **detectedAnomalies以外の論点は新たに追加しないでください**
 
+## 最重要指示：勘定科目横断の視点
+**複数の勘定科目にまたがって、金額・日付・取引先が一致または近接している取引が検出されている場合、
+それは最も重要な税務リスクシグナルです。**
 
-## データ
+このような科目横断の一致は：
+- 単一科目の異常よりも優先して説明してください
+- 「なぜ同じ取引先・同じ金額が別の勘定科目に計上されているのか」という疑問を中心に説明してください
+- 取引の実在性や経理処理の妥当性が特に確認されやすいことを明示してください
+
+crossCategoryMatchesフィールドがある場合、必ずそれを最優先で言及してください。
+
 ${JSON.stringify(structuredData, null, 2)}
 
-## 各勘定科目について以下2つを生成してください
-
-1. **税務署からの見られ方** (100-150文字)
-検出された異常構造（fact と ruleDescription）を踏まえ、税務調査でどのように見られる可能性があるかを説明してください。
-
-2. **準備すべきことの説明** (150-200文字)
-この構造に対して、どのような説明や資料を準備すべきかを具体的に述べてください。
-
 ## 出力形式
+
 勘定科目ごとに、以下の形式で回答してください：
 
 ---
 【勘定科目】地代家賃
-【税務署からの見られ方】
-（ここに文章）
 
-【準備すべきこと】
-（ここに文章）
+${enrichedStructuredData && enrichedStructuredData.some(item => 
+  item.detectedAnomalies?.some(a => a.crossCategoryMatches?.length > 0)
+) ? `
+【🔍 勘定科目横断で検出された重要事項】（最優先）
+複数の勘定科目にまたがる取引の一致がある場合、ここで必ず説明してください。
+` : ''}
+
+【税務署からの見られ方】（100-150文字）
+検出された異常構造を踏まえ、税務調査でどのように見られる可能性があるかを説明してください。
+
+【準備すべきこと】（150-200文字）
+この構造に対して、どのような説明や資料を準備すべきかを具体的に述べてください。
 ---
 
 **重要**: 上記の形式で全勘定科目について記載してください。JSONやマークダウンコードブロックは不要です。`;
@@ -88,7 +107,7 @@ ${JSON.stringify(structuredData, null, 2)}
         contents: [{ role: 'user', parts: [{ text: `上記の異常検知済みデータを分析し、各勘定科目について税務調査の観点から解釈してください。` }] }],
         config: {
           systemInstruction,
-          temperature: 0.3,
+          temperature: 1.0  // CRITICAL for cross-category reasoning
         },
       });
 
@@ -625,15 +644,15 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
     // ① 構成比異常チェック
     for (const item of auditForecastItems) {
-      if (item.ratio > 60) {
+      if (item.ratio > 40) {
         anomalies.push({
           dimension: '構成比異常',
           accountName: item.accountName,
           value: item.ratio,
-          severity: item.ratio > 80 ? 'high' : 'medium',
+          severity: item.ratio > 60 ? 'high' : 'medium',
           message: `売上に対して${item.accountName}が${item.ratio.toFixed(1)}%を占めています`,
           fact: `構成比${item.ratio.toFixed(1)}%`,                    // 🆕 事実のみ
-          ruleDescription: '単一科目が総支出の60%を超過'              // 🆕 ルール説明
+          ruleDescription: item.ratio > 60 ? '単一科目が総支出の60%を超過' : '単一科目が総支出の40%を超過'              // 🆕 ルール説明
         });
       }
     }
@@ -689,9 +708,37 @@ ${JSON.stringify(transactionSummary, null, 2)}
       item.anomalyCount = item.detectedAnomalies.length;
     }
 
+    // ===== クロスカテゴリーアノマリー検出 =====
+    const crossMatches = this.detectCrossCategoryAnomalies(transactions, auditForecastItems);
+    
+    // ===== クロスカテゴリーマッチをdetectedAnomaliesに注入 =====
+    console.log('🔄 Injecting cross-category matches into detected anomalies...');
+    for (const item of auditForecastItems) {
+      const crosses = crossMatches.get(item.accountName) || [];
+      
+        // 構成比異常がある場合はcrossCategoryMatchesを追加
+        if (crosses.length > 0) {
+          if (item.detectedAnomalies) {
+            item.detectedAnomalies = item.detectedAnomalies.map(anomaly => ({
+              ...anomaly,
+              // 構成比異常にのみcrossCategoryMatchesを追加
+              ...(anomaly.dimension === '構成比異常' ? {
+                crossCategoryMatches: crosses.map(c => ({
+                  relatedAccount: c.accountName,
+                  sameAmount: c.amount,
+                  dateGap: `${Math.round(c.daysDifference)}日差`,
+                  merchant: c.merchant
+                }))
+              } : {})
+            }));
+          }
+        }
+    }
+    
     // ===== AI分析: 異常検知済みデータをAIに渡して解釈させる =====
     try {
       console.log('🤖 Starting AI analysis of detected anomalies...');
+      
       const aiAnalysisResults = await this.analyzeAuditForecastWithStructure(auditForecastItems);
 
       // AI分析結果を各AuditForecastItemに統合
@@ -867,6 +914,64 @@ ${JSON.stringify(transactionSummary, null, 2)}
     // チェック項目を優先順位でソート（不足 -> 確認 -> 推奨）
     const typeOrder = { '不足': 3, '確認': 2, '推奨': 1, 'Deficiency': 3, 'Confirmation': 2, 'Recommendation': 1 };
     return checks.sort((a, b) => typeOrder[b.type] - typeOrder[a.type]);
+  }
+
+  // クロスカテゴリーアノマリー検出関数
+  private detectCrossCategoryAnomalies(
+    transactions: any[], 
+    forecastItems: AuditForecastItem[]
+  ): Map<string, CrossCategoryMatch[]> {
+    
+    const crossMatches = new Map<string, CrossCategoryMatch[]>();
+    
+    // 取引をmerchant+amount+date proximityでグループ化
+    const transactionGroups = new Map<string, any[]>();
+    
+    transactions.forEach(tx => {
+      if (!tx.memo || tx.amount < 100000) return; // 高額取引のみチェック
+      
+      // ファジィキーを作成: merchant name (最初の10文字) + amount
+      const merchant = tx.memo.substring(0, 10);
+      const key = `${merchant}_${tx.amount}`;
+      
+      if (!transactionGroups.has(key)) {
+        transactionGroups.set(key, []);
+      }
+      transactionGroups.get(key)!.push(tx);
+    });
+    
+    // 複数カテゴリがあるグループを検出
+    transactionGroups.forEach((txs, key) => {
+      const categories = new Set(txs.map(t => t.category));
+      
+      // クロスカテゴリーマッチ検出！
+      if (categories.size >= 2) {
+        txs.forEach(tx => {
+          const matches = txs
+            .filter(other => other.category !== tx.category)
+            .map(other => ({
+              accountName: other.category || '不明',
+              amount: other.amount,
+              date: other.date,
+              merchant: other.memo || '',
+              daysDifference: Math.abs(
+                (new Date(tx.date).getTime() - new Date(other.date).getTime()) 
+                / (1000 * 60 * 60 * 24)
+              )
+            }));
+          
+          if (matches.length > 0) {
+            const category = tx.category || '不明';
+            if (!crossMatches.has(category)) {
+              crossMatches.set(category, []);
+            }
+            crossMatches.get(category)!.push(...matches);
+          }
+        });
+      }
+    });
+    
+    return crossMatches;
   }
 
   // 税務調査対応アシスタント - 検知済み異常データから税務署の観点・質問・準備事項を生成

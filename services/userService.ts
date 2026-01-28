@@ -320,7 +320,33 @@ export class UserService {
         result.issues === undefined ||
         // 配列内のundefinedチェック
         (Array.isArray(result.issues) && result.issues.some(item => item === undefined)) ||
-        (Array.isArray(result.detectedAnomalies) && result.detectedAnomalies.some(item => item === undefined))
+        (Array.isArray(result.detectedAnomalies) && result.detectedAnomalies.some(item => {
+          // 検知された異常の検証
+          if (!item) return true;
+          
+          // 必須フィールドのチェック
+          const hasRequiredUndefined = item.dimension === undefined ||
+                                       item.accountName === undefined ||
+                                       item.value === undefined ||
+                                       item.severity === undefined ||
+                                       item.message === undefined ||
+                                       item.fact === undefined ||
+                                       item.ruleDescription === undefined;
+          
+          if (hasRequiredUndefined) return true;
+          
+          // crossCategoryMatchesの検証（オプショナル）
+          if (item.crossCategoryMatches && Array.isArray(item.crossCategoryMatches)) {
+            return item.crossCategoryMatches.some(match => {
+              return match.relatedAccount === undefined ||
+                     match.sameAmount === undefined ||
+                     match.dateGap === undefined ||
+                     match.merchant === undefined;
+            });
+          }
+          
+          return false;
+        }))
       );
 
       if (hasUndefined) {
@@ -339,6 +365,18 @@ export class UserService {
         anomalyCount: result.anomalyCount !== undefined ? result.anomalyCount : null,
         aiSuspicionView: result.aiSuspicionView !== undefined ? result.aiSuspicionView : null,
         aiPreparationAdvice: result.aiPreparationAdvice !== undefined ? result.aiPreparationAdvice : null,
+        // detectedAnomaliesの正規化（crossCategoryMatchesを含む）
+        detectedAnomalies: result.detectedAnomalies ? result.detectedAnomalies.map(anomaly => ({
+          ...anomaly,
+          // crossCategoryMatchesの正規化
+          crossCategoryMatches: anomaly.crossCategoryMatches ? anomaly.crossCategoryMatches.map(match => ({
+            ...match,
+            relatedAccount: match.relatedAccount !== undefined ? match.relatedAccount : null,
+            sameAmount: match.sameAmount !== undefined ? match.sameAmount : null,
+            dateGap: match.dateGap !== undefined ? match.dateGap : null,
+            merchant: match.merchant !== undefined ? match.merchant : null,
+          })) : null
+        })) : null
       }));
 
       // 6. 正規化されたフォーマットで保存

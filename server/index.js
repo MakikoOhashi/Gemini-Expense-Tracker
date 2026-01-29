@@ -2718,6 +2718,26 @@ app.post('/api/audit-forecast-update', async (req, res) => {
 
     console.log(`🔮 監査予報更新を開始: ユーザー=${userId}, 年=${year}`);
 
+    // JSTで今日の日付を取得（YYYY-MM-DD形式）: 1日1回制限に利用
+    const now = new Date();
+    const todayJST = new Date(now.getTime() + (now.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+    const todayString = todayJST.toISOString().split('T')[0];
+
+    // Firestoreから最終生成日時を取得して1日1回制限をチェック
+    try {
+      const lastGeneratedAt = await userService.getLastSummaryGeneratedAt(googleId);
+      if (lastGeneratedAt === todayString) {
+        return res.status(429).json({
+          error: '本日すでに横断集計済みです',
+          message: '本日すでに横断集計済みです',
+          lastSummaryGeneratedAt: lastGeneratedAt
+        });
+      }
+    } catch (limitError) {
+      // 制限チェックに失敗しても、集計自体は継続可能（ログのみ）
+      console.warn('⚠️ Daily summary limit check failed (continuing):', limitError.message);
+    }
+
     // Get or create the base Gemini_Expenses spreadsheet
     const rootFolderId = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
     const { spreadsheetId } = await createOrUpdateSpreadsheetWithYearTabs(rootFolderId, year, userId);
@@ -2943,6 +2963,14 @@ app.post('/api/audit-forecast-update', async (req, res) => {
 
     console.log(`🎉 監査予報更新完了: ${createdSheets.length} つのシートが準備完了、Summary_Baseに${summaryRows.length}行、Summary_Account_Historyに${historyRows.length}行の関数を設定`);
 
+    // Firestoreに最終生成日時を保存（JSTの日付文字列）
+    try {
+      await userService.updateLastSummaryGeneratedAt(googleId, todayString);
+    } catch (updateMetaError) {
+      // ここで失敗してもSummary自体は成功しているので、結果は返す（ログのみ）
+      console.warn('⚠️ Failed to update lastSummaryGeneratedAt (continuing):', updateMetaError.message);
+    }
+
     res.json({
       success: true,
       sheets: createdSheets,
@@ -2952,6 +2980,7 @@ app.post('/api/audit-forecast-update', async (req, res) => {
       expenseCategories: expenseCategories,
       years: years,
       accountList: accountList,
+      lastSummaryGeneratedAt: todayString,
       message: `3 つのSummaryシートが準備完了し、Summary_Baseに${summaryRows.length}行、Summary_Account_Historyに${historyRows.length}行の関数を設定しました`
     });
 
@@ -2959,6 +2988,59 @@ app.post('/api/audit-forecast-update', async (req, res) => {
     console.error('Audit Forecast Update Error:', error);
     res.status(500).json({
       error: '監査予報更新に失敗しました',
+      details: error.message
+    });
+  }
+});
+
+// Get latest forecast results for a specific year (normalized format only; ignores date)
+app.get('/api/user/forecast-latest/:googleId/:year', async (req, res) => {
+  try {
+    const { googleId, year } = req.params;
+
+    if (!googleId || !year) {
+      return res.status(400).json({ error: 'googleId、yearは必須です' });
+    }
+
+    const parsedYear = Number(year);
+    if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+      return res.status(400).json({
+        error: `yearは2000-2100の有効な整数である必要があります`,
+        received: year,
+        parsed: parsedYear
+      });
+    }
+
+    console.log(`🔍 API: Getting latest forecast for ${googleId}, year: ${parsedYear}`);
+
+    const userDoc = await userService.getUserDocument(googleId);
+    // 構造検証（レガシー形式を検出）
+    userService.validateForecastStructure?.(userDoc); // 互換: privateの場合は実行されない
+
+    const forecastKey = `forecasts.${parsedYear.toString()}`;
+    const forecastData = userDoc?.[forecastKey];
+
+    if (forecastData && typeof forecastData === 'object' && !Array.isArray(forecastData) && Array.isArray(forecastData.results)) {
+      return res.json({
+        success: true,
+        googleId,
+        year: parsedYear.toString(),
+        date: forecastData.date || null,
+        forecastResults: forecastData.results
+      });
+    }
+
+    return res.json({
+      success: true,
+      googleId,
+      year: parsedYear.toString(),
+      date: null,
+      forecastResults: []
+    });
+  } catch (error) {
+    console.error('Get Latest Forecast Results Error:', error);
+    res.status(500).json({
+      error: '最新の予報結果の取得に失敗しました',
       details: error.message
     });
   }

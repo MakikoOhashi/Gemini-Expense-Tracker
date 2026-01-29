@@ -26,7 +26,11 @@ export class AuditService {
     aiSuspicionView: string;
     aiPreparationAdvice: string;
   }[]> {
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    console.log('🔑 GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY);
+    console.log('🔑 API_KEY exists:', !!process.env.API_KEY);
+    console.log('🔑 Using API key:', !!apiKey);
+    console.log('🔑 API key length:', apiKey?.length);
     if (!apiKey) {
       throw new Error("APIキーが設定されていません。環境変数を確認してください。");
     }
@@ -459,6 +463,9 @@ ${JSON.stringify(transactionSummary, null, 2)}
     aiSuspicionView: string;
     aiPreparationAdvice: string;
   }[] {
+    console.log('📝 [parseAITextResponse] 入力テキスト長:', responseText.length);
+    console.log('📝 [parseAITextResponse] 入力テキストプレビュー:', responseText.substring(0, 500));
+    
     const results: {
       accountName: string;
       aiSuspicionView: string;
@@ -467,17 +474,27 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
     // レスポンスを --- で分割
     const sections = responseText.split('---').filter(section => section.trim());
+    console.log('📝 [parseAITextResponse] セクション数:', sections.length);
 
     for (const section of sections) {
       const lines = section.trim().split('\n').filter(line => line.trim());
+      console.log('📝 [parseAITextResponse] セクション行数:', lines.length);
+      console.log('📝 [parseAITextResponse] 最初の行:', lines[0]);
 
-      if (lines.length < 3) continue;
+      if (lines.length < 3) {
+        console.log('⚠️ [parseAITextResponse] セクションが短すぎる、スキップ');
+        continue;
+      }
 
       // 勘定科目名の抽出
       const accountNameMatch = lines[0].match(/【勘定科目】(.+)/);
-      if (!accountNameMatch) continue;
+      if (!accountNameMatch) {
+        console.log('⚠️ [parseAITextResponse] 勘定科目名が見つからない、スキップ');
+        continue;
+      }
 
       const accountName = accountNameMatch[1].trim();
+      console.log('✅ [parseAITextResponse] 勘定科目名:', accountName);
 
       // 税務署からの見られ方と準備すべきことの説明を抽出
       let suspicionView = '';
@@ -507,9 +524,17 @@ ${JSON.stringify(transactionSummary, null, 2)}
       });
     }
 
+    console.log('📝 [parseAITextResponse] 最終結果数:', results.length);
+    console.log('📝 [parseAITextResponse] 結果:', results.map(r => r.accountName));
+
     // forecastItems に含まれない勘定科目は除外
     const validAccountNames = forecastItems.map(item => item.accountName);
-    return results.filter(result => validAccountNames.includes(result.accountName));
+    const filteredResults = results.filter(result => validAccountNames.includes(result.accountName));
+    
+    console.log('📝 [parseAITextResponse] フィルタリング後結果数:', filteredResults.length);
+    console.log('📝 [parseAITextResponse] フィルタリング後結果:', filteredResults.map(r => r.accountName));
+
+    return filteredResults;
   }
 
   // Summary_Account_History からデータ取得

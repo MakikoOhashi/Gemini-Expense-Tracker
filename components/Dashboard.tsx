@@ -36,10 +36,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
-  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
-  const [lastSummaryUpdated, setLastSummaryUpdated] = useState<string | null>(null);
-  const [summaryStatusMessage, setSummaryStatusMessage] = useState<string | null>(null);
+  const [forecastLastUpdated, setForecastLastUpdated] = useState<string | null>(null);
 
   // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
@@ -47,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       if (transactions.length === 0) {
         setAuditForecast([]);
         setBookkeepingChecks([]);
+        setForecastLastUpdated(null);
         return;
       }
 
@@ -59,6 +57,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       if (filteredTransactions.length === 0) {
         setAuditForecast([]);
         setBookkeepingChecks([]);
+        setForecastLastUpdated(null);
         return;
       }
 
@@ -84,16 +83,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         const today = getTodayJSTString(); // "2026-01-21" 形式
 
         try {
-          // 最終アクセス日を確認（サーバーAPI経由）
-          const lastAccessResponse = await fetch(`http://localhost:3001/api/user/last-access/${googleId}?year=${year}`);
-          const lastAccessData = await lastAccessResponse.json();
-
-          if (!lastAccessResponse.ok) {
-            throw new Error(lastAccessData.details || '最終アクセス日の取得に失敗しました');
-          }
-
-          const lastAccessDate = lastAccessData.lastAccessDate?.[year];
-
           // キャッシュ判定ロジック：forecasts[year]が存在し、dateが今日の日付と一致する場合
           console.log('🔄 キャッシュ判定: サーバーから監査予報を取得します');
           setLoadingMessage('保存された予報を読み込み中...');
@@ -111,19 +100,28 @@ const Dashboard: React.FC<DashboardProps> = ({
               diffRatio: item.diffRatio === 0 && item.zScore === 0 && item.growthRate === 0 ? null : item.diffRatio
             }));
             setAuditForecast(fixedForecastResults);
+            setForecastLastUpdated(`${today} 00:00`);
             console.log('✅ キャッシュから監査予報データを読み込みました（データ修正済み）');
           } else {
-            // キャッシュが存在しない場合は新規生成
+            // キャッシュが存在しない場合は新規生成（処理順序: ①スプシ→②関数→③AI→④Firestore）
             console.log('🆕 キャッシュミスまたは初回アクセス: 監査予報を新規生成します');
-            setLoadingMessage('監査予報を生成中...');
-            await generateAndCacheForecast(filteredTransactions, googleId, year, today);
+            setLoadingMessage('監査予報を更新中...');
+            await refreshForecastOncePerDay(filteredTransactions, googleId, year, today, idToken);
           }
         } catch (cacheError) {
           console.error('❌ キャッシュチェックエラー:', cacheError);
-          // キャッシュエラーの場合は新規生成
-          console.log('🔄 キャッシュエラー: 新規生成にフォールバックします');
-          setLoadingMessage('監査予報を生成中...');
-          await generateAndCacheForecast(filteredTransactions, googleId, year, today);
+          // キャッシュエラーの場合は “最新の古いキャッシュ” を試してから新規生成へ
+          console.log('🔄 キャッシュエラー: 最新の古いキャッシュにフォールバックします');
+          const latestResponse = await fetch(`http://localhost:3001/api/user/forecast-latest/${googleId}/${year}`);
+          const latestData = await latestResponse.json();
+          if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
+            setAuditForecast(latestData.forecastResults);
+            setForecastLastUpdated(`${latestData.date} 00:00`);
+          } else {
+            console.log('🔄 古いキャッシュも無い/取得失敗: 新規生成にフォールバックします');
+            setLoadingMessage('監査予報を更新中...');
+            await refreshForecastOncePerDay(filteredTransactions, googleId, year, today, idToken);
+          }
         }
 
         // 記帳チェックデータは常に新規生成（キャッシュ不要）
@@ -141,27 +139,62 @@ const Dashboard: React.FC<DashboardProps> = ({
           ]);
           setAuditForecast(forecastData);
           setBookkeepingChecks(checksData);
+          setForecastLastUpdated(null);
         } catch (fallbackError) {
           console.error('❌ フォールバック処理も失敗:', fallbackError);
           setAuditForecast([]);
           setBookkeepingChecks([]);
+          setForecastLastUpdated(null);
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    // 監査予報生成・保存処理
-    const generateAndCacheForecast = async (
+    /**
+     * 監査予報の更新（1日1回）
+     * 処理順序:
+     * ① スプシからSummaryデータ最新取得
+     * ② 関数で異常判定・スコア計算
+     * ③ AIで文言生成
+     * ④ Firestoreにキャッシュ保存
+     *
+     * 失敗時: 古いキャッシュがあれば返す
+     */
+    const refreshForecastOncePerDay = async (
       filteredTransactions: Transaction[],
       googleId: string,
       year: string,
-      today: string
+      today: string,
+      idToken: string
     ) => {
       try {
-        // 監査予報を生成
+        // ① Summaryを最新化（サーバー側で1日1回制限・lastSummaryGeneratedAt更新）
+        try {
+          setLoadingMessage('横断集計を更新中...');
+          const summaryResponse = await fetch('http://localhost:3001/api/audit-forecast-update', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ year: Number(year) })
+          });
+          const summaryData = await summaryResponse.json();
+          if (!summaryResponse.ok) {
+            throw new Error(summaryData.details || summaryData.error || '横断集計の更新に失敗しました');
+          }
+          console.log('✅ Summary updated for audit forecast:', summaryData);
+        } catch (summaryError) {
+          // Summary更新に失敗しても、予報生成自体は継続可能（ただし要求によりログは明確に）
+          console.error('❌ Summary update failed (continuing):', summaryError);
+        }
+
+        // ②③ 監査予報を生成（関数判定 + AI文言）
+        setLoadingMessage('監査予報を生成中...');
         const forecastData = await auditService.generateAuditForecast(filteredTransactions);
         setAuditForecast(forecastData);
+        setForecastLastUpdated(`${today} 00:00`);
 
         // 生成した予報をサーバーAPI経由でFirestoreに保存（全ての結果を保存）
         console.log('🔍 Saving to Firebase:', forecastData.length, 'items');
@@ -221,84 +254,28 @@ const Dashboard: React.FC<DashboardProps> = ({
         console.log('💾 監査予報データをFirestoreに保存しました');
       } catch (error) {
         console.error('❌ 監査予報生成・保存エラー:', error);
-        throw error;
+        // 失敗時: 古いキャッシュがあればそれを返す
+        try {
+          const latestResponse = await fetch(`http://localhost:3001/api/user/forecast-latest/${googleId}/${year}`);
+          const latestData = await latestResponse.json();
+          if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
+            setAuditForecast(latestData.forecastResults);
+            setForecastLastUpdated(`${latestData.date} 00:00`);
+            return;
+          }
+        } catch (fallbackCacheError) {
+          console.error('❌ Latest cache fallback failed:', fallbackCacheError);
+        }
+
+        // 最終フォールバック: ローカル生成（Firestore保存はしない）
+        const fallbackForecast = await auditService.generateAuditForecast(filteredTransactions);
+        setAuditForecast(fallbackForecast);
+        setForecastLastUpdated(null);
       }
     };
 
     loadAuditData();
   }, [transactions, selectedAuditYear, language]);
-
-  // Summaryメタデータを取得（ページロード時）
-  useEffect(() => {
-    const loadSummaryMeta = async () => {
-      try {
-        const meta = await sheetsService.getSummaryMeta(selectedAuditYear);
-        setLastSummaryUpdated(meta.lastUpdated);
-        if (!meta.hasSummary) {
-          setSummaryStatusMessage(t.generateCrossTabulationFirst);
-        } else {
-          setSummaryStatusMessage(null);
-        }
-      } catch (error) {
-        console.error('❌ Summary meta loading error:', error);
-        setLastSummaryUpdated(null);
-        setSummaryStatusMessage(t.summaryMetadataFetchFailed);
-      }
-    };
-
-    loadSummaryMeta();
-  }, [selectedAuditYear]);
-
-
-  const handleGenerateSummary = async () => {
-    if (isGeneratingSummary) return;
-
-    setIsGeneratingSummary(true);
-    setSummaryError(null);
-
-    try {
-      const result = await sheetsService.generateSummary(selectedAuditYear);
-
-      if (result.success) {
-        console.log('✅ Summary generated successfully');
-
-        // 成功時は最終更新日時を現在時刻に設定（バックエンドがlastSummaryGeneratedAtを更新しないため）
-        const now = new Date();
-        const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-        setLastSummaryUpdated(formattedDate);
-        setSummaryStatusMessage(null);
-
-        // メタデータを再読み込みして最新の状態を反映（バックエンドのタイミング問題対策）
-        // ただし、バックエンドがlastSummaryGeneratedAtを更新しない場合は現在時刻を維持
-        try {
-          const meta = await sheetsService.getSummaryMeta(selectedAuditYear);
-          if (meta.lastUpdated) {
-            setLastSummaryUpdated(meta.lastUpdated);
-          }
-          // messageはクリアしたまま維持（生成成功済みのため）
-        } catch (metaError) {
-          console.error('❌ Summary meta refresh error:', metaError);
-          // メタデータの読み込みに失敗しても、現在時刻を維持
-        }
-      } else {
-        setSummaryError('集計生成に失敗しました');
-      }
-    } catch (error: any) {
-      console.error('❌ Summary generation error:', error);
-
-      // エラーメッセージの処理
-      if (error.message?.includes('429') || error.message?.includes('明日再実行')) {
-        setSummaryError('本日の集計はすでに生成されています。明日再実行してください。');
-      } else if (error.message?.includes('認証')) {
-        setSummaryError('認証が必要です。再度ログインしてください。');
-      } else {
-        setSummaryError(error.message || '集計生成中にエラーが発生しました');
-      }
-    } finally {
-      setIsGeneratingSummary(false);
-    }
-  };
 
   const getCheckTypeLabel = (type: '不足' | '確認' | '推奨') => {
     switch (type) {
@@ -392,64 +369,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </p>
       </div>
 
-      {/* セクションA：監査用横断集計を更新 */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            📊
-            {t.updateCrossTabulation}
-          </h3>
-
-          {/* ボタン */}
-          <button
-            onClick={handleGenerateSummary}
-            disabled={isGeneratingSummary}
-            className={`px-6 py-2 text-white font-semibold rounded-lg transition flex items-center gap-2 text-sm ${
-              isGeneratingSummary
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-slate-900 hover:bg-slate-800 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {isGeneratingSummary ? (
-              <>
-                <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                {t.updating}
-              </>
-            ) : (
-              <>
-                <ArrowPathIcon className="w-4 h-4" />
-                {t.update}
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* 説明文 */}
-        <p className="text-sm text-gray-600 leading-relaxed mb-3">
-          {t.crossTabulationDescription}
-        </p>
-
-        {/* 最終更新日時表示 */}
-        <div className="mb-3">
-          {lastSummaryUpdated ? (
-            <p className="text-sm text-gray-700 font-medium">
-              {t.lastUpdated}{lastSummaryUpdated} JST
-            </p>
-          ) : summaryStatusMessage ? (
-            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
-              {summaryStatusMessage}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500">
-              {t.loadingSummaryData}
-            </p>
-          )}
-        </div>
-
-        {summaryError && (
-          <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3">{summaryError}</p>
-        )}
-      </div>
+      {/* 削除: Update Cross Tabulation セクション */}
 
       {/* セクションB：年度選択ブロック */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -475,6 +395,14 @@ const Dashboard: React.FC<DashboardProps> = ({
         t={t}
         language={language}
       />
+
+      {/* 監査予報の最終更新日時（UIに残す） */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <p className="text-sm text-gray-700 font-medium">
+          {language === 'ja' ? '最終更新: ' : 'Last updated: '}
+          {forecastLastUpdated ? `${forecastLastUpdated} JST` : (language === 'ja' ? '不明（キャッシュ未使用）' : 'Unknown (no cache)')}
+        </p>
+      </div>
 
       {/* セクションA：記帳チェック（個別） */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">

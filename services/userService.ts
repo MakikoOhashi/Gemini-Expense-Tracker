@@ -292,7 +292,8 @@ export class UserService {
     googleId: string,
     year: string,
     date: string,
-    forecastResults: AuditForecastItem[]
+    forecastResults: AuditForecastItem[],
+    taxAuthorityPerspective: string | null = null
   ): Promise<void> {
     try {
       console.log(`💾 Starting forecast save for ${googleId}, year: ${year}, date: ${date}`);
@@ -363,8 +364,6 @@ export class UserService {
         diffRatio: result.diffRatio !== undefined ? result.diffRatio : null,
         anomalyRisk: result.anomalyRisk !== undefined ? result.anomalyRisk : null,
         anomalyCount: result.anomalyCount !== undefined ? result.anomalyCount : null,
-        aiSuspicionView: result.aiSuspicionView !== undefined ? result.aiSuspicionView : null,
-        aiPreparationAdvice: result.aiPreparationAdvice !== undefined ? result.aiPreparationAdvice : null,
         // detectedAnomaliesの正規化（crossCategoryMatchesを含む）
         detectedAnomalies: result.detectedAnomalies ? result.detectedAnomalies.map(anomaly => ({
           ...anomaly,
@@ -385,6 +384,8 @@ export class UserService {
         [updatePath]: {
           date: date,
           results: normalizedForecastResults,
+          // 日次総括（resultsと同階層）
+          taxAuthorityPerspective: taxAuthorityPerspective,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }
       };

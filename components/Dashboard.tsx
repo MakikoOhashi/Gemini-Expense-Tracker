@@ -37,6 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
   const [forecastLastUpdated, setForecastLastUpdated] = useState<string | null>(null);
+  const [taxAuthorityPerspective, setTaxAuthorityPerspective] = useState<string | null>(null);
 
   // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
@@ -45,6 +46,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setAuditForecast([]);
         setBookkeepingChecks([]);
         setForecastLastUpdated(null);
+        setTaxAuthorityPerspective(null);
         return;
       }
 
@@ -58,6 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setAuditForecast([]);
         setBookkeepingChecks([]);
         setForecastLastUpdated(null);
+        setTaxAuthorityPerspective(null);
         return;
       }
 
@@ -101,6 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             }));
             setAuditForecast(fixedForecastResults);
             setForecastLastUpdated(`${today} 00:00`);
+            setTaxAuthorityPerspective(forecastData.taxAuthorityPerspective || null);
             console.log('✅ キャッシュから監査予報データを読み込みました（データ修正済み）');
           } else {
             // キャッシュが存在しない場合は新規生成（処理順序: ①スプシ→②関数→③AI→④Firestore）
@@ -117,6 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
             setForecastLastUpdated(`${latestData.date} 00:00`);
+            setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
           } else {
             console.log('🔄 古いキャッシュも無い/取得失敗: 新規生成にフォールバックします');
             setLoadingMessage('監査予報を更新中...');
@@ -134,17 +139,19 @@ const Dashboard: React.FC<DashboardProps> = ({
         try {
           console.log('🔄 Firestoreエラー: 既存処理にフォールバックします');
           const [forecastData, checksData] = await Promise.all([
-            auditService.generateAuditForecast(filteredTransactions),
+            auditService.generateAuditForecast(filteredTransactions, selectedAuditYear || undefined),
             auditService.generateBookkeepingChecks(filteredTransactions, language, t.categories)
           ]);
           setAuditForecast(forecastData);
           setBookkeepingChecks(checksData);
           setForecastLastUpdated(null);
+          setTaxAuthorityPerspective(null);
         } catch (fallbackError) {
           console.error('❌ フォールバック処理も失敗:', fallbackError);
           setAuditForecast([]);
           setBookkeepingChecks([]);
           setForecastLastUpdated(null);
+          setTaxAuthorityPerspective(null);
         }
       } finally {
         setIsLoading(false);
@@ -190,13 +197,18 @@ const Dashboard: React.FC<DashboardProps> = ({
           console.error('❌ Summary update failed (continuing):', summaryError);
         }
 
-        // ②③ 監査予報を生成（関数判定 + AI文言）
+        // ② 関数で異常判定・スコア計算（Summary優先）
         setLoadingMessage('監査予報を生成中...');
-        const forecastData = await auditService.generateAuditForecast(filteredTransactions);
+        const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year));
         setAuditForecast(forecastData);
         setForecastLastUpdated(`${today} 00:00`);
 
-        // 生成した予報をサーバーAPI経由でFirestoreに保存（全ての結果を保存）
+        // ③ AIで日次総括（taxAuthorityPerspectiveのみ生成）
+        setLoadingMessage('税務署視点の総括を生成中...');
+        const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
+        setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
+
+        // ④ 生成した予報をサーバーAPI経由でFirestoreに保存（不要フィールドは保存しない）
         console.log('🔍 Saving to Firebase:', forecastData.length, 'items');
         console.log('🔍 First item detectedAnomalies:', forecastData[0]?.detectedAnomalies);
 
@@ -204,7 +216,8 @@ const Dashboard: React.FC<DashboardProps> = ({
           googleId,
           year,
           date: today,
-          forecastResults: forecastData
+          forecastResults: forecastData,
+          taxAuthorityPerspective: generatedTaxAuthorityPerspective
         };
 
         // ガード: dateに "/" が含まれていたらエラー
@@ -261,6 +274,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
             setForecastLastUpdated(`${latestData.date} 00:00`);
+            setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
             return;
           }
         } catch (fallbackCacheError) {
@@ -268,9 +282,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         // 最終フォールバック: ローカル生成（Firestore保存はしない）
-        const fallbackForecast = await auditService.generateAuditForecast(filteredTransactions);
+        const fallbackForecast = await auditService.generateAuditForecast(filteredTransactions, Number(year));
         setAuditForecast(fallbackForecast);
         setForecastLastUpdated(null);
+        setTaxAuthorityPerspective(null);
       }
     };
 
@@ -394,6 +409,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         loadingMessage={loadingMessage}
         t={t}
         language={language}
+        taxAuthorityPerspective={taxAuthorityPerspective}
       />
 
       {/* 監査予報の最終更新日時（UIに残す） */}

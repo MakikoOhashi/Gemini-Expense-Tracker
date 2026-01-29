@@ -2258,11 +2258,19 @@ app.post('/api/user/forecast', async (req, res) => {
       console.log('📊 First forecast result sample:', JSON.stringify(req.body.forecastResults[0], null, 2));
     }
 
-    const { googleId, year, date, forecastResults } = req.body;
+    const { googleId, year, date, forecastResults, taxAuthorityPerspective } = req.body;
 
     if (!googleId || !year || !date || !forecastResults) {
       console.log('❌ Missing required fields:', { googleId: !!googleId, year: !!year, date: !!date, forecastResults: !!forecastResults });
       return res.status(400).json({ error: 'googleId、year、date、forecastResultsは必須です' });
+    }
+
+    // taxAuthorityPerspective: optional string (daily overview)
+    if (taxAuthorityPerspective !== undefined && typeof taxAuthorityPerspective !== 'string') {
+      return res.status(400).json({ error: 'taxAuthorityPerspective は文字列である必要があります' });
+    }
+    if (typeof taxAuthorityPerspective === 'string' && taxAuthorityPerspective.length > 10000) {
+      return res.status(400).json({ error: 'taxAuthorityPerspective が長すぎます（10000文字まで）' });
     }
 
     // Validate and parse year (accept both string and number)
@@ -2415,7 +2423,13 @@ app.post('/api/user/forecast', async (req, res) => {
     console.log(`✅ Validated and normalized ${normalizedForecastResults.length} forecast results`);
 
     // 正規化されたデータを使用
-    await userService.saveForecast(googleId, parsedYear.toString(), date, normalizedForecastResults);
+    await userService.saveForecast(
+      googleId,
+      parsedYear.toString(),
+      date,
+      normalizedForecastResults,
+      typeof taxAuthorityPerspective === 'string' ? taxAuthorityPerspective.trim() : null
+    );
 
     console.log(`🔮 Saved forecast results for user ${googleId}, year ${year}, date ${date}: ${forecastResults.length} results`);
 
@@ -2468,7 +2482,19 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
 
     console.log(`🔍 API: Getting forecast for ${googleId}, year: ${parsedYear}, date: ${date}`);
 
-    const forecastResults = await userService.getForecast(googleId, parsedYear.toString(), date);
+    // 予報結果（配列）＋日次総括（taxAuthorityPerspective）を返す
+    const userDoc = await userService.getUserDocument(googleId);
+    const forecastKey = `forecasts.${parsedYear.toString()}`;
+    const forecastData = userDoc?.[forecastKey];
+
+    let forecastResults = null;
+    let taxAuthorityPerspective = null;
+    if (forecastData && typeof forecastData === 'object' && !Array.isArray(forecastData)) {
+      if (forecastData.date === date && Array.isArray(forecastData.results)) {
+        forecastResults = forecastData.results;
+        taxAuthorityPerspective = forecastData.taxAuthorityPerspective || null;
+      }
+    }
 
     // Validate response structure (normalized format only)
     if (forecastResults !== null && !Array.isArray(forecastResults)) {
@@ -2486,7 +2512,8 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
       googleId,
       year: parsedYear.toString(),
       date,
-      forecastResults
+      forecastResults,
+      taxAuthorityPerspective
     });
 
   } catch (error) {
@@ -3026,7 +3053,8 @@ app.get('/api/user/forecast-latest/:googleId/:year', async (req, res) => {
         googleId,
         year: parsedYear.toString(),
         date: forecastData.date || null,
-        forecastResults: forecastData.results
+        forecastResults: forecastData.results,
+        taxAuthorityPerspective: forecastData.taxAuthorityPerspective || null
       });
     }
 
@@ -3075,33 +3103,87 @@ app.get('/api/user/:googleId', async (req, res) => {
 // Summary_Account_History のデータを返すエンドポイント
 app.get('/api/summary-account-history', async (req, res) => {
   try {
-    const userId = getAuthenticatedGoogleId(req);
-    if (!userId) {
-      return res.status(401).json({ error: '認証が必要です' });
+    // 認証: Bearer IDトークンがあればそれを優先（googleId=sub を userId として扱う）
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const idToken = authHeader.substring(7);
+      const googleId = userService.extractSubFromIdToken(idToken);
+      if (googleId) userId = googleId;
     }
+    if (!userId) {
+      // 互換: 従来の userId クエリ/ボディ方式
+      userId = getAuthenticatedGoogleId(req);
+    }
+    if (!userId) return res.status(401).json({ error: '認証が必要です' });
 
+    // yearは「どの年度のスプレッドシートを開くか」用途（シート内には複数年度の列がある）
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
 
     const { spreadsheetId } = await getOrCreateSpreadsheetForYear(year, userId);
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Summary_Account_History からデータ取得
+    // Summary_Account_History はクロス表:
+    // A1=勘定科目, B1..=年度, A2..=勘定科目名, B2..=年度ごとの合計金額
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Summary_Account_History!A:D',  // 全行取得（ヘッダー含む）
+      range: 'Summary_Account_History!A1:ZZ1000',
     });
 
     const rows = response.data.values || [];
-    // ヘッダー行を除去し、各行の最初の4列を取得
-    const historyData = rows.slice(1).map(row => ({
-      year: parseInt(row[0]) || 0,
-      accountName: row[1] || '',
-      amount: parseFloat(row[2]) || 0,
-      count: parseInt(row[3]) || 0,
-      // 追加の列がある場合はratioも取得（5列目）
-      ratio: row[4] ? parseFloat(row[4]) : 0
-    }));
+    if (rows.length < 2 || (rows[0] || []).length < 2) {
+      return res.json([]);
+    }
+
+    const header = rows[0];
+    const yearHeaders = header.slice(1).map(v => parseInt(String(v), 10));
+    const validYearCols = [];
+    yearHeaders.forEach((y, idx) => {
+      if (!isNaN(y) && y >= 2000 && y <= 2100) {
+        validYearCols.push({ colIndex: idx + 1, year: y }); // +1 because header[0] is "勘定科目"
+      }
+    });
+
+    // 年度別の総支出（売上を除く）を算出 → ratio計算に使う
+    const totalExpenseByYear = {};
+    for (const { colIndex, year } of validYearCols) {
+      let total = 0;
+      for (let r = 1; r < rows.length; r++) {
+        const accountName = rows[r]?.[0] || '';
+        if (!accountName || accountName === '売上') continue;
+        const raw = rows[r]?.[colIndex];
+        const amount = typeof raw === 'number' ? raw : parseFloat(String(raw || '0'));
+        if (typeof amount === 'number' && isFinite(amount)) total += amount;
+      }
+      totalExpenseByYear[year] = total;
+    }
+
+    // 縦持ちに変換して返却: { year, accountName, amount, ratio, count }
+    const historyData = [];
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r] || [];
+      const accountName = row[0] || '';
+      if (!accountName) continue;
+
+      for (const { colIndex, year } of validYearCols) {
+        const raw = row[colIndex];
+        const amount = typeof raw === 'number' ? raw : parseFloat(String(raw || '0'));
+        const safeAmount = typeof amount === 'number' && isFinite(amount) ? amount : 0;
+        const totalExpense = totalExpenseByYear[year] || 0;
+        const ratio = accountName === '売上'
+          ? 0
+          : (totalExpense > 0 ? (safeAmount / totalExpense) * 100 : 0);
+
+        historyData.push({
+          year,
+          accountName,
+          amount: safeAmount,
+          count: null, // クロス表には件数が無いのでnull
+          ratio: Math.round(ratio * 10) / 10
+        });
+      }
+    }
 
     res.json(historyData);
   } catch (error) {

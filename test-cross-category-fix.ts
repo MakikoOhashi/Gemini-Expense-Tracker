@@ -44,7 +44,7 @@ async function testCrossCategoryFix() {
   try {
     // Generate audit forecast with cross-category detection
     console.log('📊 Generating audit forecast with cross-category detection...');
-    const forecast = await auditService.generateAuditForecast(testTransactions);
+    const forecast = await auditService.generateAuditForecast(testTransactions, new Date().getFullYear());
     
     console.log('📋 Audit Forecast Results:');
     let hasCrossCategoryData = false;

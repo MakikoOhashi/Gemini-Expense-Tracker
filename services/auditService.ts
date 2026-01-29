@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, AnomalyDetection } from "../types.ts";
 import { sheetsService } from "./sheetsService.ts";
+import { authService } from "./authService.ts";
 
 // 税務調査対応アシスタントの出力形式
 export interface TaxAuditResponse {
@@ -20,6 +21,87 @@ interface CrossCategoryMatch {
 }
 
 export class AuditService {
+  /**
+   * 日次総括（taxAuthorityPerspective）をAIに生成させる
+   * - 勘定科目ごとの文言生成はしない（この関数の返り値のみ）
+   */
+  async generateTaxAuthorityPerspective(
+    forecastItems: AuditForecastItem[],
+    language: 'ja' | 'en' = 'ja'
+  ): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。環境変数を確認してください。");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const modelName = 'gemini-2.5-flash-lite';
+
+    const structuredData = forecastItems.map(item => ({
+      accountName: item.accountName,
+      totalAmount: item.totalAmount,
+      ratio: item.ratio,
+      detectedAnomalies: (item.detectedAnomalies || []).map(anomaly => ({
+        dimension: anomaly.dimension,
+        severity: anomaly.severity,
+        fact: anomaly.fact || `値: ${anomaly.value}`,
+        ruleDescription: anomaly.ruleDescription || '基準値超過',
+        crossCategoryMatches: anomaly.crossCategoryMatches || null
+      }))
+    }));
+
+    const systemInstruction = language === 'en'
+      ? `You are an experienced tax auditor.
+
+You are given facts detected by an accounting system (already classified anomalies).
+Write ONLY a daily overview text (taxAuthorityPerspective) describing how tax authorities are likely to interpret these facts.
+
+Constraints:
+- Do NOT re-classify or add new topics. Use only detectedAnomalies facts.
+- No extra calculations. Be neutral and non-accusatory.
+- If crossCategoryMatches exist, mention them first as the strongest risk signal.
+
+Data:
+${JSON.stringify(structuredData, null, 2)}
+
+Output: plain text only (no JSON/markdown). Length: ~200-450 chars.`
+      : `あなたは経験豊富な税務調査官です。
+
+以下は会計システムが自動検出した「異常構造の事実」です（分類は完了済み）。
+あなたはこの事実が税務調査でどう見られやすいかを、日次の総括（taxAuthorityPerspective）として1つの文章で説明してください。
+
+制約:
+- 異常の再分類・再評価や追加の計算は不要です
+- 断定は避け、中立的に「説明が求められやすい」観点で述べてください
+- detectedAnomalies以外の論点を新規追加しないでください
+- crossCategoryMatchesがあれば最優先で言及してください
+
+データ:
+${JSON.stringify(structuredData, null, 2)}
+
+出力: プレーンテキストのみ（JSON/マークダウン禁止）。200〜450文字程度。`;
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+    );
+
+    const generatePromise = ai.models.generateContent({
+      model: modelName,
+      contents: [{ role: 'user', parts: [{ text: language === 'en'
+        ? 'Generate the daily taxAuthorityPerspective overview.'
+        : '日次の税務署視点の総括（taxAuthorityPerspective）を生成してください。' }] }],
+      config: {
+        systemInstruction,
+        temperature: 0.7
+      },
+    });
+
+    const response: any = await Promise.race([generatePromise, timeoutPromise]);
+    const responseText = response.text;
+    if (!responseText) throw new Error("AIから空の応答が返されました。");
+    return String(responseText).trim();
+  }
+
   // 異常検知済み構造データをAIに渡して解釈させる
   async analyzeAuditForecastWithStructure(forecastItems: AuditForecastItem[], enrichedStructuredData?: any[]): Promise<{
     accountName: string;
@@ -539,45 +621,75 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
   // Summary_Account_History からデータ取得
   async fetchSummaryAccountHistory(year: number): Promise<any[]> {
-    const response = await fetch(`/api/summary-account-history?year=${year}`);
-    if (!response.ok) throw new Error('Failed to fetch account history');
+    const idToken = await authService.getIdToken();
+    if (!idToken) throw new Error('認証されていません');
+
+    const response = await fetch(`http://localhost:3001/api/summary-account-history?year=${year}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      }
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || err.details || 'Failed to fetch account history');
+    }
     return response.json();
   }
 
   // 監査予報（全体）- 勘定科目合計・比率ベースの論点を生成
-  async generateAuditForecast(transactions: any[], userId?: string): Promise<AuditForecastItem[]> {
-    // NaN/無効値対策: 安全な数値加算関数
-    const safeAdd = (accumulator: number, transaction: any): number => {
-      const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
-        ? transaction.amount
-        : 0;
-      return accumulator + safeAmount;
-    };
+  async generateAuditForecast(transactions: any[], targetYear?: number): Promise<AuditForecastItem[]> {
+    const year = targetYear || new Date().getFullYear();
 
-    const totalAmount = transactions.reduce(safeAdd, 0);
+    // Summary（スプシ関数結果）を優先して使う：②の関数判定を本当にSummaryベースにする
+    let historyData: Array<{ year: number; accountName: string; amount: number; ratio: number | null }> = [];
+    try {
+      historyData = await this.fetchSummaryAccountHistory(year);
+    } catch (e: any) {
+      console.warn('⚠️ Summary account history fetch failed (fallback to transaction-based totals):', e?.message || e);
+      historyData = [];
+    }
 
-    // 勘定科目ごとに集計
-    const categoryTotals: Record<string, { total: number; count: number }> = transactions.reduce((acc, transaction) => {
-      const category = (transaction.category as string) || 'その他';
-      if (!acc[category]) {
-        acc[category] = { total: 0, count: 0 };
+    // Summaryベースの集計（売上は除外して「総支出」を作る）
+    const yearHistory = historyData.filter(h => h.year === year && h.accountName && h.accountName !== '売上');
+    const hasSummaryTotals = yearHistory.length > 0;
+
+    const categoryTotals: Record<string, { total: number; count: number }> = {};
+    let totalAmount = 0;
+
+    if (hasSummaryTotals) {
+      for (const h of yearHistory) {
+        const amt = typeof h.amount === 'number' && isFinite(h.amount) ? h.amount : 0;
+        categoryTotals[h.accountName] = { total: amt, count: 0 };
+        totalAmount += amt;
       }
+    } else {
+      // フォールバック: 取引データから集計（従来どおり）
+      const safeAdd = (accumulator: number, transaction: any): number => {
+        const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
+          ? transaction.amount
+          : 0;
+        return accumulator + safeAmount;
+      };
+      totalAmount = transactions.reduce(safeAdd, 0);
 
-      // NaN/無効値対策: 必ず安全な数値を使用
-      const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
-        ? transaction.amount
-        : 0;
-
-      acc[category].total += safeAmount;
-      acc[category].count += 1;
-      return acc;
-    }, {} as Record<string, { total: number; count: number }>);
-
-    // 現在の年度を特定
-    const currentYear = new Date().getFullYear();
-
-    // Summary_Account_History からデータ取得
-    const historyData = userId ? await this.fetchSummaryAccountHistory(currentYear) : [];
+      Object.assign(
+        categoryTotals,
+        transactions.reduce((acc, transaction) => {
+          const category = (transaction.category as string) || 'その他';
+          if (!acc[category]) {
+            acc[category] = { total: 0, count: 0 };
+          }
+          const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
+            ? transaction.amount
+            : 0;
+          acc[category].total += safeAmount;
+          acc[category].count += 1;
+          return acc;
+        }, {} as Record<string, { total: number; count: number }>)
+      );
+    }
 
     // 各勘定科目をAuditForecastItemに変換
     const auditForecastItems: AuditForecastItem[] = Object.entries(categoryTotals)
@@ -638,14 +750,16 @@ ${JSON.stringify(transactionSummary, null, 2)}
       });
 
     // Summary_Account_History からデータを取得・計算
-    if (userId && historyData.length > 0) {
+    if (historyData.length > 0) {
       for (const item of auditForecastItems) {
-        const accountHistory = historyData.filter((h: any) => h.accountName === item.accountName);
+        const accountHistory = historyData
+          .filter((h: any) => h.accountName === item.accountName)
+          .sort((a: any, b: any) => (b.year || 0) - (a.year || 0));
 
         if (accountHistory.length >= 2) {
           // 現年度と前年度のデータ
-          const currentYearData = accountHistory.find((h: any) => h.year === currentYear);
-          const previousYearData = accountHistory.find((h: any) => h.year === currentYear - 1);
+          const currentYearData = accountHistory.find((h: any) => h.year === year);
+          const previousYearData = accountHistory.find((h: any) => h.year === year - 1);
 
           if (currentYearData && previousYearData) {
             // 1. growthRate 計算
@@ -654,8 +768,11 @@ ${JSON.stringify(transactionSummary, null, 2)}
             // 2. diffRatio 計算（支出比率の差）
             item.diffRatio = currentYearData.ratio - previousYearData.ratio;
 
-            // 3. zScore 計算（過去3年平均との差）
-            const pastAmounts = accountHistory.slice(0, 3).map((h: any) => h.amount);
+            // 3. zScore 計算（直近3年平均との差）: currentYearは除外して平均との差を作る
+            const pastAmounts = accountHistory
+              .filter((h: any) => h.year !== year)
+              .slice(0, 3)
+              .map((h: any) => h.amount);
             if (pastAmounts.length >= 2) {  // 少なくとも2つのデータが必要
               const mean = pastAmounts.reduce((a: number, b: number) => a + b, 0) / pastAmounts.length;
               const variance = pastAmounts.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / pastAmounts.length;
@@ -789,46 +906,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
         }
     }
     
-    // ===== AI分析: 異常検知済みデータをAIに渡して解釈させる =====
-    try {
-      console.log('🤖 Starting AI analysis of detected anomalies...');
-      
-      const aiAnalysisResults = await this.analyzeAuditForecastWithStructure(auditForecastItems);
-
-      // AI分析結果を各AuditForecastItemに統合
-      for (const aiResult of aiAnalysisResults) {
-        const item = auditForecastItems.find(item => item.accountName === aiResult.accountName);
-        if (item) {
-          item.aiSuspicionView = aiResult.aiSuspicionView;
-          item.aiPreparationAdvice = aiResult.aiPreparationAdvice;
-        }
-      }
-
-      // AI分析結果が得られなかった科目にデフォルトメッセージをセット
-      for (const item of auditForecastItems) {
-        if (item.aiSuspicionView === undefined) {
-          item.aiSuspicionView = 'AI解釈を取得できませんでした。検知された異常構造について、支出の妥当性を説明できる資料の準備が重要です。';
-          item.aiPreparationAdvice = `${item.accountName}の契約書・領収書・使用実態を示す資料を整理し、事業との関連性を明確に説明できるよう準備してください。`;
-        }
-      }
-
-      console.log('[統合後]', {
-        aiSuspicionView設定済み: auditForecastItems.filter(i => i.aiSuspicionView).length,
-        aiSuspicionView未設定: auditForecastItems.filter(i => !i.aiSuspicionView).length,
-        未設定科目: auditForecastItems
-          .filter(i => !i.aiSuspicionView)
-          .map(i => i.accountName)
-      });
-
-      console.log('✅ AI analysis completed and integrated');
-    } catch (aiError) {
-      console.warn('⚠️ AI analysis failed, continuing without AI interpretation:', aiError.message);
-      // AI分析が失敗しても処理を継続（フォールバック）
-      for (const item of auditForecastItems) {
-        item.aiSuspicionView = 'AI解釈を取得できませんでした。検知された異常構造について、支出の妥当性を説明できる資料の準備が重要です。';
-        item.aiPreparationAdvice = `${item.accountName}の契約書・領収書・使用実態を示す資料を整理し、事業との関連性を明確に説明できるよう準備してください。`;
-      }
-    }
+    // NOTE: taxAuthorityPerspective（日次総括）のAI生成はDashboard側で1回だけ実行する
 
     // 異常検知数でソート（第1優先）、同点の場合は riskLevel でソート（第2優先）
     return auditForecastItems.sort((a, b) => {

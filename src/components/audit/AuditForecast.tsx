@@ -9,6 +9,7 @@ interface AuditForecastProps {
   loadingMessage: string;
   t: any;
   language?: 'ja' | 'en';
+  taxAuthorityPerspective?: string | null;
 }
 
 const AuditForecast: React.FC<AuditForecastProps> = ({
@@ -16,7 +17,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   isLoading,
   loadingMessage,
   t,
-  language = 'ja'
+  language = 'ja',
+  taxAuthorityPerspective = null
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -448,8 +450,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
               <h4 className="font-bold text-gray-800">{t.meaningFromTaxAuthorityPerspective}</h4>
             </div>
             <div className="space-y-3 text-sm text-gray-700">
-              {item.aiSuspicionView ? (
-                item.aiSuspicionView.split('\n').map((paragraph, index) => (
+              {taxAuthorityPerspective ? (
+                taxAuthorityPerspective.split('\n').map((paragraph, index) => (
                   <p key={index} className="leading-relaxed">{paragraph}</p>
                 ))
               ) : (

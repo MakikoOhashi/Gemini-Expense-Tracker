@@ -41,7 +41,7 @@ async function testAIAnalysis() {
   
   try {
     // Generate audit forecast which includes AI analysis
-    const forecast = await auditService.generateAuditForecast(testTransactions, 'test-user');
+    const forecast = await auditService.generateAuditForecast(testTransactions, new Date().getFullYear());
     
     console.log('✅ AI Analysis completed successfully!');
     console.log('📈 Forecast results:', forecast.map(item => ({

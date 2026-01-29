@@ -43,7 +43,7 @@ async function testCrossCategoryDetection() {
   
   try {
     // Generate audit forecast
-    const forecast = await auditService.generateAuditForecast(testTransactions);
+    const forecast = await auditService.generateAuditForecast(testTransactions, new Date().getFullYear());
     
     console.log('📊 Audit Forecast Results:');
     forecast.forEach(item => {

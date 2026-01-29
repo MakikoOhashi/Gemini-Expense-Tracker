@@ -580,6 +580,7 @@ export const TEXT = {
     // 新しい監査予報UI用の翻訳
     taxAuthorityPerspective: 'Tax Authority Perspective',
     primaryFocus: 'Primary Focus',
+    contextAcrossAllAccounts: 'Context across all accounts:',
     evidenceForPrimaryAccount: 'Evidence for Primary Account',
     whyThisAccountIsLikelyToBeInvestigated: 'Why this account is likely to be investigated',
     aiOverallAssessment: 'AI Overall Assessment',

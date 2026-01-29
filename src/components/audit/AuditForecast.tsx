@@ -347,6 +347,32 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
 
       {/* 常時表示部分 */}
       <div className="space-y-4">
+        {/* AI総評 */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">💬</span>
+            <h4 className="font-bold text-blue-800 text-sm">{t.aiOverallAssessment}</h4>
+          </div>
+          <p className="text-sm text-blue-700">{generateOverallAssessment(item)}</p>
+        </div>
+
+        {/* 税務署視点での意味 */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🔍</span>
+            <h4 className="font-bold text-gray-800">{t.meaningFromTaxAuthorityPerspective}</h4>
+          </div>
+          <div className="space-y-3 text-sm text-gray-700">
+            {taxAuthorityPerspective ? (
+              taxAuthorityPerspective.split('\n').map((paragraph, index) => (
+                <p key={index} className="leading-relaxed">{paragraph}</p>
+              ))
+            ) : (
+              <p>{t.aiSuspicionViewNotAvailable}</p>
+            )}
+          </div>
+        </div>
+
         {/* レーダーチャート */}
         <div className="bg-gray-50 rounded-lg p-4">
           <ResponsiveContainer width="100%" height={400}>
@@ -387,15 +413,6 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
               />
             </RadarChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* AI総評 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">💬</span>
-            <h4 className="font-bold text-blue-800 text-sm">{t.aiOverallAssessment}</h4>
-          </div>
-          <p className="text-sm text-blue-700">{generateOverallAssessment(item)}</p>
         </div>
 
         {/* 折りたたみトグル */}
@@ -440,23 +457,6 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
                   </span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* 税務署視点での意味 */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">🔍</span>
-              <h4 className="font-bold text-gray-800">{t.meaningFromTaxAuthorityPerspective}</h4>
-            </div>
-            <div className="space-y-3 text-sm text-gray-700">
-              {taxAuthorityPerspective ? (
-                taxAuthorityPerspective.split('\n').map((paragraph, index) => (
-                  <p key={index} className="leading-relaxed">{paragraph}</p>
-                ))
-              ) : (
-                <p>{t.aiSuspicionViewNotAvailable}</p>
-              )}
             </div>
           </div>
 

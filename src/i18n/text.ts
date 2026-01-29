@@ -232,6 +232,7 @@ export const TEXT = {
     meetingExpenseNotable: '会議費の構成比が目立ちます。支出目的と参加者情報を整理してください',
     consumablesRatioHigh: '消耗品費の構成比が高いです。事業規模とのバランスを確認してください',
     expenditureEvidenceRecommended: '→ 支出根拠資料の整理を推奨',
+    comparisonDataInsufficient: '比較データが不足しています',
     anomalyMessageComposition: '売上に対して{accountName}が{ratio}%を占めています',
     anomalyMessageSuddenChange: '前年比{growthRate}%と急変',
     anomalyMessageStatistical: '過去平均から{zScore}σ乖離',
@@ -317,6 +318,10 @@ export const TEXT = {
 
     // 状態
     notSet: '未設定',
+    processing: '処理中...',
+    loading: '読み込み中...',
+    saving: '保存中...',
+    deleting: '削除中...',
 
     // ファイルアップロード
     imageUpload: '画像アップロード',

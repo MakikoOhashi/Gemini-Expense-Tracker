@@ -417,7 +417,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
             <div className="space-y-2 text-sm text-gray-700">
               <p>• {t.overallAuditRisk}: {t.riskLevels[item.riskLevel]}</p>
               <p>• {t.mostLikelyItem}: {t.categories[item.accountName] || item.accountName} (¥{(item.totalAmount || 0).toLocaleString()} / {item.ratio.toFixed(1)}%)</p>
-              <p>• {t.reason}: {t.expenseCompositionDistortion}</p>
+              <p>• {t.reason}: {item.issues && item.issues.length > 0 ? item.issues[0] : t.expenseCompositionDistortion}</p>
             </div>
           </div>
 

@@ -15,7 +15,10 @@ async function testUserService() {
       totalAmount: 1000000,
       ratio: 45.5,
       riskLevel: 'medium' as const,
-      issues: ['売上高の妥当性', '取引先の確認']
+      issues: ['売上高の妥当性', '取引先の確認'],
+      zScore: null,
+      growthRate: null,
+      diffRatio: null
     },
     {
       id: '2',
@@ -23,7 +26,10 @@ async function testUserService() {
       totalAmount: 300000,
       ratio: 13.6,
       riskLevel: 'high' as const,
-      issues: ['外注先の実在性', '業務内容の確認']
+      issues: ['外注先の実在性', '業務内容の確認'],
+      zScore: null,
+      growthRate: null,
+      diffRatio: null
     }
   ];
 
@@ -67,7 +73,10 @@ async function testUserService() {
         totalAmount: 1200000,
         ratio: 50.0,
         riskLevel: 'low' as const,
-        issues: ['売上高の妥当性（更新）']
+        issues: ['売上高の妥当性（更新）'],
+        zScore: null,
+        growthRate: null,
+        diffRatio: null
       },
       {
         id: '3',
@@ -75,7 +84,10 @@ async function testUserService() {
         totalAmount: 150000,
         ratio: 6.3,
         riskLevel: 'medium' as const,
-        issues: ['広告費の内容確認']
+        issues: ['広告費の内容確認'],
+        zScore: null,
+        growthRate: null,
+        diffRatio: null
       }
     ];
     await userService.saveForecast(testGoogleId, testYear, testForecastDate, updatedForecastResults);
@@ -96,7 +108,10 @@ async function testUserService() {
         totalAmount: 80000,
         ratio: 3.4,
         riskLevel: 'high' as const,
-        issues: ['接待費の合理性']
+        issues: ['接待費の合理性'],
+        zScore: null,
+        growthRate: null,
+        diffRatio: null
       }
     ];
     await userService.saveForecast(testGoogleId, testYear, differentDate, differentDateResults);

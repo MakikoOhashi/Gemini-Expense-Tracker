@@ -347,13 +347,16 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
 
       {/* 常時表示部分 */}
       <div className="space-y-4">
-        {/* AI総評 */}
+        {/* Tax Authority Perspective */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">💬</span>
-            <h4 className="font-bold text-blue-800 text-sm">{t.aiOverallAssessment}</h4>
+            <h4 className="font-bold text-blue-800 text-sm">{t.taxAuthorityPerspective}</h4>
           </div>
-          <p className="text-sm text-blue-700">{generateOverallAssessment(item)}</p>
+          <div className="space-y-2">
+            <p className="text-sm text-blue-700 font-semibold">
+              {t.primaryFocus}: {t.categories[item.accountName] || item.accountName}
+            </p>
+          </div>
         </div>
 
         {/* 税務署視点での意味 */}
@@ -373,62 +376,59 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
           </div>
         </div>
 
-        {/* レーダーチャート */}
+        {/* Evidence for Primary Account Section */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <ResponsiveContainer width="100%" height={400}>
-            <RadarChart 
-              cx="50%" 
-              cy="50%" 
-              outerRadius="80%" 
-              data={radarData}
-              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-            >
-              <PolarGrid gridType="polygon" radialLines={true} />
-              <PolarAngleAxis 
-                dataKey="subject"
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => {
-                  // 10文字以上の場合は改行
-                  if (value.length > 10) {
-                    const words = value.split(' ');
-                    if (words.length > 1) {
-                      return words.join('\n');  // スペースで改行
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">📊</span>
+            <h4 className="font-bold text-gray-800">
+              {t.evidenceForPrimaryAccount}: {t.categories[item.accountName] || item.accountName}
+            </h4>
+          </div>
+          
+          {/* Hexagon Chart */}
+          <div className="mb-6">
+            <ResponsiveContainer width="100%" height={400}>
+              <RadarChart 
+                cx="50%" 
+                cy="50%" 
+                outerRadius="80%" 
+                data={radarData}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              >
+                <PolarGrid gridType="polygon" radialLines={true} />
+                <PolarAngleAxis 
+                  dataKey="subject"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    // 10文字以上の場合は改行
+                    if (value.length > 10) {
+                      const words = value.split(' ');
+                      if (words.length > 1) {
+                        return words.join('\n');  // スペースで改行
+                      }
                     }
-                  }
-                  return value;
-                }}
-              />
-              <PolarRadiusAxis angle={60} domain={[0, 100]} tick={false} />
-              <Radar
-                name={t.categories[item.accountName] || item.accountName}
-                dataKey="A"
-                stroke={getRiskColor(item.riskLevel)}
-                fill={getRiskColor(item.riskLevel)}
-                fillOpacity={0.6}
-              />
-              <Tooltip 
-                content={(props) => (
-                  <CustomRadarTooltip {...props} language={language} />
-                )}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
+                    return value;
+                  }}
+                />
+                <PolarRadiusAxis angle={60} domain={[0, 100]} tick={false} />
+                <Radar
+                  name={t.categories[item.accountName] || item.accountName}
+                  dataKey="A"
+                  stroke={getRiskColor(item.riskLevel)}
+                  fill={getRiskColor(item.riskLevel)}
+                  fillOpacity={0.6}
+                />
+                <Tooltip 
+                  content={(props) => (
+                    <CustomRadarTooltip {...props} language={language} />
+                  )}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
 
-        {/* 折りたたみトグル */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          {isExpanded ? '▲' : '▼'} {isExpanded ? t.hideDetails : t.showDetails}
-        </button>
-      </div>
-
-      {/* 展開後の詳細部分 */}
-      {isExpanded && (
-        <div className="mt-4 space-y-4 border-t border-gray-200 pt-4 animate-in slide-in-from-top-2 duration-200">
-          {/* AI監査リスク分析 */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          {/* AI Audit Risk Analysis */}
+          <div className="mb-6 pb-6 border-b border-gray-300">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">🧠</span>
               <h4 className="font-bold text-gray-800">{t.aiAuditRiskAnalysis}</h4>
@@ -440,28 +440,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
             </div>
           </div>
 
-          {/* 検知された異常パターン */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">🎯</span>
-              <h4 className="font-bold text-gray-800">{t.detectedAbnormalPatterns}</h4>
-            </div>
-            <div className="space-y-2">
-              {anomalyStatus.map((anomaly, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    {anomaly.detected ? '✔' : '✖'} {anomaly.name}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {anomaly.detected ? `${Math.round(anomaly.score)}${language === 'en' ? ' pts' : '点'}` : t.noAbnormality}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 数値的根拠 */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          {/* Numerical Evidence */}
+          <div className="mb-6 pb-6 border-b border-gray-300">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">📊</span>
               <h4 className="font-bold text-gray-800">{t.numericalEvidence}</h4>
@@ -496,10 +476,10 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
             </div>
           </div>
 
-          {/* データ制約 */}
+          {/* Data Constraints */}
           {maxScore === 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="mb-6 pb-6 border-b border-gray-300">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">⚠️</span>
                 <h4 className="font-bold text-yellow-800 text-sm">{t.dataConstraints}</h4>
               </div>
@@ -507,8 +487,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
             </div>
           )}
 
-          {/* 今すぐやるべきこと */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          {/* Immediate Actions Required */}
+          <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">✅</span>
               <h4 className="font-bold text-green-800">{t.immediateActionsRequired}</h4>
@@ -523,7 +503,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

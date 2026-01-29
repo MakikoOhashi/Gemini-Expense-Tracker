@@ -578,6 +578,10 @@ export const TEXT = {
     ratioVariation: 'Ratio variation',
 
     // 新しい監査予報UI用の翻訳
+    taxAuthorityPerspective: 'Tax Authority Perspective',
+    primaryFocus: 'Primary Focus',
+    evidenceForPrimaryAccount: 'Evidence for Primary Account',
+    whyThisAccountIsLikelyToBeInvestigated: 'Why this account is likely to be investigated',
     aiOverallAssessment: 'AI Overall Assessment',
     showDetails: 'Show Details',
     hideDetails: 'Hide Details',

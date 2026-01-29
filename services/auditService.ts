@@ -620,7 +620,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
   }
 
   // Summary_Account_History からデータ取得
-  async fetchSummaryAccountHistory(year: number): Promise<any[]> {
+  async fetchSummaryAccountHistory(year: number): Promise<{ usable: boolean; reason?: string; data: any[] }> {
     const idToken = await authService.getIdToken();
     if (!idToken) throw new Error('認証されていません');
 
@@ -642,54 +642,53 @@ ${JSON.stringify(transactionSummary, null, 2)}
   async generateAuditForecast(transactions: any[], targetYear?: number): Promise<AuditForecastItem[]> {
     const year = targetYear || new Date().getFullYear();
 
-    // Summary（スプシ関数結果）を優先して使う：②の関数判定を本当にSummaryベースにする
-    let historyData: Array<{ year: number; accountName: string; amount: number; ratio: number | null }> = [];
+    // Summary（スプシ関数結果）を補助情報として使う：常に取引データを主軸にする
+    let summaryData: Array<{ year: number; accountName: string; amount: number; ratio: number | null }> = [];
+    let summaryUsable = false;
+    
     try {
-      historyData = await this.fetchSummaryAccountHistory(year);
+      const summaryResponse = await this.fetchSummaryAccountHistory(year);
+      // Check if summary is usable (has valid data structure)
+      if (summaryResponse && typeof summaryResponse === 'object' && 'usable' in summaryResponse) {
+        if (summaryResponse.usable === true && Array.isArray(summaryResponse.data)) {
+          summaryData = summaryResponse.data;
+          summaryUsable = true;
+          console.log(`✅ Summary_Account_History が使用可能です: ${summaryData.length}件のデータ`);
+        } else {
+          console.log(`⚠️ Summary_Account_History が使用できません: ${summaryResponse.reason || '不明な理由'}`);
+        }
+      } else {
+        console.warn('⚠️ Summary response format is invalid, using transactions only');
+      }
     } catch (e: any) {
-      console.warn('⚠️ Summary account history fetch failed (fallback to transaction-based totals):', e?.message || e);
-      historyData = [];
+      console.warn('⚠️ Summary account history fetch failed (using transactions only):', e?.message || e);
     }
 
-    // Summaryベースの集計（売上は除外して「総支出」を作る）
-    const yearHistory = historyData.filter(h => h.year === year && h.accountName && h.accountName !== '売上');
-    const hasSummaryTotals = yearHistory.length > 0;
+    // 常に取引データを主軸にして集計（Summaryは補助情報として後で使用）
+    const safeAdd = (accumulator: number, transaction: any): number => {
+      const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
+        ? transaction.amount
+        : 0;
+      return accumulator + safeAmount;
+    };
+    const totalAmount = transactions.reduce(safeAdd, 0);
 
     const categoryTotals: Record<string, { total: number; count: number }> = {};
-    let totalAmount = 0;
-
-    if (hasSummaryTotals) {
-      for (const h of yearHistory) {
-        const amt = typeof h.amount === 'number' && isFinite(h.amount) ? h.amount : 0;
-        categoryTotals[h.accountName] = { total: amt, count: 0 };
-        totalAmount += amt;
-      }
-    } else {
-      // フォールバック: 取引データから集計（従来どおり）
-      const safeAdd = (accumulator: number, transaction: any): number => {
+    Object.assign(
+      categoryTotals,
+      transactions.reduce((acc, transaction) => {
+        const category = (transaction.category as string) || 'その他';
+        if (!acc[category]) {
+          acc[category] = { total: 0, count: 0 };
+        }
         const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
           ? transaction.amount
           : 0;
-        return accumulator + safeAmount;
-      };
-      totalAmount = transactions.reduce(safeAdd, 0);
-
-      Object.assign(
-        categoryTotals,
-        transactions.reduce((acc, transaction) => {
-          const category = (transaction.category as string) || 'その他';
-          if (!acc[category]) {
-            acc[category] = { total: 0, count: 0 };
-          }
-          const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
-            ? transaction.amount
-            : 0;
-          acc[category].total += safeAmount;
-          acc[category].count += 1;
-          return acc;
-        }, {} as Record<string, { total: number; count: number }>)
-      );
-    }
+        acc[category].total += safeAmount;
+        acc[category].count += 1;
+        return acc;
+      }, {} as Record<string, { total: number; count: number }>)
+    );
 
     // 各勘定科目をAuditForecastItemに変換
     const auditForecastItems: AuditForecastItem[] = Object.entries(categoryTotals)
@@ -749,10 +748,10 @@ ${JSON.stringify(transactionSummary, null, 2)}
         };
       });
 
-    // Summary_Account_History からデータを取得・計算
-    if (historyData.length > 0) {
+    // Summary_Account_History からデータを取得・計算（Summaryが使用可能な場合のみ）
+    if (summaryUsable && summaryData.length > 0) {
       for (const item of auditForecastItems) {
-        const accountHistory = historyData
+        const accountHistory = summaryData
           .filter((h: any) => h.accountName === item.accountName)
           .sort((a: any, b: any) => (b.year || 0) - (a.year || 0));
 

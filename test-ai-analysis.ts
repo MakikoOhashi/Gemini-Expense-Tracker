@@ -33,7 +33,7 @@ const testTransactions = [
 
 // Mock the fetchSummaryAccountHistory method to avoid API calls
 const originalFetchSummaryAccountHistory = auditService.fetchSummaryAccountHistory;
-auditService.fetchSummaryAccountHistory = async () => [];
+auditService.fetchSummaryAccountHistory = async () => ({ usable: false, reason: 'Test mock', data: [] });
 
 async function testAIAnalysis() {
   console.log('🧪 Testing AI Analysis with Cross-Category Anomalies');

@@ -1084,7 +1084,19 @@ async function createSpreadsheetUnderParent(spreadsheetName, parentFolderId, yea
 
 app.post('/api/initialize', async (req, res) => {
   try {
-    const userId = getAuthenticatedGoogleId(req);
+    // 認証: Bearer IDトークンがあればそれを優先（googleId=sub を userId として扱う）
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const decoded = jwt.decode(token, { complete: true });
+      if (decoded && decoded.payload && decoded.payload.sub) {
+        userId = decoded.payload.sub;
+      }
+    }
+    if (!userId) {
+      userId = getAuthenticatedGoogleId(req);
+    }
     if (!userId) {
       return res.status(401).json({ error: '認証が必要です' });
     }
@@ -3124,26 +3136,65 @@ app.get('/api/summary-account-history', async (req, res) => {
     const client = await getAuthenticatedClient(userId);
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // Summary_Account_History はクロス表:
-    // A1=勘定科目, B1..=年度, A2..=勘定科目名, B2..=年度ごとの合計金額
+    // Step 1: Check if Summary_Account_History sheet exists
+    const spreadsheetResponse = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets.properties'
+    });
+
+    const existingSheets = spreadsheetResponse.data.sheets || [];
+    const summarySheet = existingSheets.find(s => s.properties?.title === 'Summary_Account_History');
+
+    if (!summarySheet) {
+      console.log(`⚠️ Summary_Account_History シートが存在しません`);
+      return res.json({
+        usable: false,
+        reason: 'Summary_Account_History シートが存在しません',
+        data: []
+      });
+    }
+
+    console.log(`✅ Summary_Account_History シートが存在します: ${summarySheet.properties?.sheetId}`);
+
+    // Step 2: Get the data from Summary_Account_History
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: 'Summary_Account_History!A1:ZZ1000',
     });
 
     const rows = response.data.values || [];
+    
+    // Step 3: Validate that we have valid data structure
     if (rows.length < 2 || (rows[0] || []).length < 2) {
-      return res.json([]);
+      console.log(`⚠️ Summary_Account_History シートに有効なデータがありません`);
+      return res.json({
+        usable: false,
+        reason: 'シートに有効なデータがありません（ヘッダー行またはデータ行が不足）',
+        data: []
+      });
     }
 
     const header = rows[0];
     const yearHeaders = header.slice(1).map(v => parseInt(String(v), 10));
     const validYearCols = [];
+    
+    // Step 4: Validate that we can parse annual columns
     yearHeaders.forEach((y, idx) => {
       if (!isNaN(y) && y >= 2000 && y <= 2100) {
-        validYearCols.push({ colIndex: idx + 1, year: y }); // +1 because header[0] is "勘定科目"
+        validYearCols.push({ colIndex: idx + 1, year: y });
       }
     });
+
+    if (validYearCols.length === 0) {
+      console.log(`⚠️ Summary_Account_History シートに有効な年度列が見つかりません`);
+      return res.json({
+        usable: false,
+        reason: '年度列が1つも取得できません（年度列が存在しないか、解析できません）',
+        data: []
+      });
+    }
+
+    console.log(`✅ Summary_Account_History シートが使用可能です: ${validYearCols.length}年度列`);
 
     // 年度別の総支出（売上を除く）を算出 → ratio計算に使う
     const totalExpenseByYear = {};
@@ -3185,10 +3236,28 @@ app.get('/api/summary-account-history', async (req, res) => {
       }
     }
 
-    res.json(historyData);
+    res.json({
+      usable: true,
+      reason: undefined,
+      data: historyData
+    });
+
   } catch (error) {
     console.error('Get Account History Error:', error);
-    res.status(500).json({ error: error.message });
+  
+    if (error?.isFolderAmbiguous) {
+      return res.json({
+        usable: false,
+        reason: '同名フォルダが複数存在するため Summary を特定できません',
+        data: []
+      });
+    }
+  
+    res.status(500).json({
+      usable: false,
+      reason: `サーバーエラー: ${error.message}`,
+      data: []
+    });
   }
 });
 

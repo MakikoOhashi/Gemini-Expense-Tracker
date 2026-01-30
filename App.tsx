@@ -917,12 +917,22 @@ const handleRuleInputSubmit = async () => {
               <p className="text-gray-600 mb-6">
                 {preAuthText.googleAuthDescription}
               </p>
+              <div className="pb-4">
               <button
                 onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
               >
                 {preAuthText.googleAuthButton}
               </button>
+              </div>
+              <div className="">
+              <button
+                onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+              >
+                DEMO
+              </button>
+              </div>
             </div>
           </div>
         );

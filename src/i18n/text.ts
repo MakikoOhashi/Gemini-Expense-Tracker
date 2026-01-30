@@ -295,7 +295,7 @@ export const TEXT = {
 
     // 認証
     googleAuthRequired: 'Google Sheets 連携が必要です',
-    googleAuthDescription: 'アプリを使用するには Google アカウントでの認証が必須です。',
+    googleAuthDescription: 'アプリの全機能を使用するには Google アカウントでの認証が必須です。',
     googleAuthButton: 'Google で連携する',
     googleAuthSuccess: 'Google アカウントとの連携が完了しました！',
     googleAuthFailed: 'Google アカウントとの連携に失敗しました。',
@@ -733,7 +733,7 @@ export const TEXT = {
 
     // Authentication
     googleAuthRequired: 'Google Sheets Integration Required',
-    googleAuthDescription: 'Authentication with Google account is required to use the app.',
+    googleAuthDescription: 'Authentication with Google account is required to use the full app.',
     googleAuthButton: 'Connect with Google',
     googleAuthSuccess: 'Google account integration completed!',
     googleAuthFailed: 'Google account integration failed.',

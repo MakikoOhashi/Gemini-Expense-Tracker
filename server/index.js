@@ -41,7 +41,34 @@ const SCOPES = [
 // In-memory token storage (in production, use a database)
 let userTokens = {};
 
-// Helper function to get authenticated Google ID
+// Helper function to get user context from request
+function getUserContext(req) {
+  // Check for demo session
+  if (req.session?.isDemo) {
+    return { id: 'demo-user', isDemo: true };
+  }
+
+  // Check for Bearer token in Authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const idToken = authHeader.substring(7);
+  try {
+    const decoded = jwt.decode(idToken, { complete: true });
+    if (!decoded || typeof decoded.payload !== 'object' || !decoded.payload.sub) {
+      return null;
+    }
+    const googleId = decoded.payload.sub;
+    return { id: googleId, isDemo: false };
+  } catch (error) {
+    console.error('Error decoding ID token:', error.message);
+    return null;
+  }
+}
+
+// Helper function to get authenticated Google ID (legacy, for backward compatibility)
 function getAuthenticatedGoogleId(req) {
   const userId = req.body.userId || req.query.userId;
   if (!userId || !userTokens[userId]) {

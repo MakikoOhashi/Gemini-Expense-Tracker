@@ -55,7 +55,7 @@ let demoAuthClient = null;
 function getDemoSheetsClient() {
   if (!demoSheetsClient) {
     const auth = new google.auth.GoogleAuth({
-      keyFile: 'server/config/demo-service-account.json',
+      credentials: JSON.parse(process.env.DEMO_SERVICE_ACCOUNT_JSON),
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 

@@ -77,6 +77,9 @@ const App: React.FC = () => {
   const [isAuditYearSelectionModalOpen, setIsAuditYearSelectionModalOpen] = useState(false);
   const [isHistoryYearSelectionModalOpen, setIsHistoryYearSelectionModalOpen] = useState(false);
 
+  // Check if user is in demo mode
+  const isDemo = authStatus?.isDemo === true;
+
   // Language state management
   const [language, setLanguage] = useState<Language>(getInitialLanguage());
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
@@ -581,6 +584,10 @@ const [ruleInputData, setRuleInputData] = useState({
     const currentInput = inputText.trim();
     if (isProcessing || isConvertingImage) {
       console.log('⚠️ 処理中のためスキップ: isProcessing=', isProcessing, 'isConvertingImage=', isConvertingImage);
+      return;
+    }
+    if (isDemo) {
+      console.log('⚠️ Demo mode: chat is disabled');
       return;
     }
     if (!currentInput && !selectedImage && activePrefixes.length === 0) return;
@@ -1498,10 +1505,15 @@ const handleRuleInputSubmit = async () => {
                 </div>
               )}
 
+              {isDemo && (
+                <div className="text-sm text-gray-400 mb-2">
+                  Chat is disabled in Demo mode.
+                </div>
+              )}
               <div className="flex items-end gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isProcessing || activePrefixes.length === 0 || !['経費：', '売上：'].includes(activePrefixes[0]?.text) || activePrefixes[0]?.text === 'ルール：'}
+                  disabled={isDemo || isProcessing || activePrefixes.length === 0 || !['経費：', '売上：'].includes(activePrefixes[0]?.text) || activePrefixes[0]?.text === 'ルール：'}
                   className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
                 >
                   <CameraIcon className="w-6 h-6" />
@@ -1511,13 +1523,13 @@ const handleRuleInputSubmit = async () => {
                   ref={textareaRef}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={activePrefixes.length === 0 ? t.selectOperation : t.chatPlaceholder}
+                  placeholder={isDemo ? 'Chat is disabled in Demo mode' : (activePrefixes.length === 0 ? t.selectOperation : t.chatPlaceholder)}
                   className="flex-1 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-300 resize-none max-h-32 text-sm p-3.5 placeholder:text-slate-700 placeholder:font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   rows={1}
-                  disabled={activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'}
+                  disabled={isDemo || activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { if (e.nativeEvent.isComposing) return; e.preventDefault(); handleSendMessage(); } }}
                 />
-                <button onClick={handleSendMessage} disabled={isProcessing || (!inputText.trim() && !selectedImage) || activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition">
+                <button onClick={handleSendMessage} disabled={isDemo || isProcessing || (!inputText.trim() && !selectedImage) || activePrefixes.length === 0 || activePrefixes[0]?.text === 'ルール：'} className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed active:scale-90 transition">
                   <PaperAirplaneIcon className="w-6 h-6" />
                 </button>
               </div>

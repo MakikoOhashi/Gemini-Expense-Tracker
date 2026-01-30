@@ -18,6 +18,14 @@
 
 ---
 
+## Demo Mode Notice
+
+**Demo mode disables AI chat intentionally to reduce API cost and risk.**
+
+Production will remove demo branches entirely.
+
+---
+
 ## TL;DR (Understand in 1 Minute)
 
 Audit Risk Forecast Tracker is not a "receipt management app."  

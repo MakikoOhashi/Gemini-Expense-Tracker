@@ -2,6 +2,7 @@ export interface AuthStatus {
   authenticated: boolean;
   userId: string;
   idToken?: string | null;
+  isDemo?: boolean;
 }
 
 export class AuthService {

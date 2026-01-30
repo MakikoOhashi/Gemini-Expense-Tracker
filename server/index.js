@@ -41,6 +41,12 @@ const SCOPES = [
 // In-memory token storage (in production, use a database)
 let userTokens = {};
 
+// DEMO ONLY: Helper to check if user is in demo mode
+// TODO: remove demo mode before production
+function isDemoUser(userId) {
+  return userId === 'demo-user';
+}
+
 // Helper function to get user context from request
 function getUserContext(req) {
   // Check for demo session
@@ -2106,10 +2112,15 @@ app.get('/auth/status', (req, res) => {
   const tokens = userTokens[userId];
   const idToken = tokens?.id_token || null;
 
+  // DEMO ONLY: Check if this is a demo user
+  // TODO: remove demo mode before production
+  const isDemo = isDemoUser(userId);
+
   res.json({
     authenticated: isAuthenticated,
     userId: userId,
-    idToken: idToken
+    idToken: idToken,
+    isDemo: isDemo
   });
 });
 
@@ -2181,6 +2192,35 @@ app.get('/api/test/create-folders-only', async (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Chat API endpoint with demo mode guard
+// DEMO ONLY: Chat is disabled in demo mode to reduce API cost and risk
+// TODO: remove demo mode before production
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // DEMO ONLY: Demo mode guard - chat is disabled for demo users
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Chat disabled in demo mode' });
+    }
+
+    // TODO: Implement actual chat processing with Gemini API
+    // For now, return a placeholder response
+    res.json({
+      success: true,
+      reply: 'Chat processing would happen here',
+      actions: []
+    });
+
+  } catch (error) {
+    console.error('Chat API Error:', error);
+    res.status(500).json({
+      error: 'Chat processing failed',
+      details: error.message
+    });
+  }
 });
 
 // Vision API OCR endpoint (multipart file upload)

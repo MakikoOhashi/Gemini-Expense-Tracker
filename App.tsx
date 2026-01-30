@@ -1655,14 +1655,10 @@ const handleRuleInputSubmit = async () => {
                     ))}
                   </div>
                 </div>
-
+          
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                   <p className="text-blue-800 text-sm">
-                    <span className="font-bold">{modalText.folderConflictResolution}</span>
-                    <br />
-                    {modalText.folderConflictExample}
-                    <br />
-                    {modalText.folderConflictNote}
+                  フォルダをリネームした後は、画面を更新して変更を反映してください。
                   </p>
                 </div>
               </div>

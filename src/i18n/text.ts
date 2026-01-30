@@ -365,6 +365,7 @@ export const TEXT = {
     folderConflictResolution: '不要なフォルダは Google Drive 上で名前を変更してください。',
     folderConflictExample: '例：「Gemini Expense Tracker_old」',
     folderConflictNote: '名前を変更すると、次回以降この警告は表示されません。',
+    folderConflictRefresh: '⚠️ フォルダをリネームした後は、アプリ画面をリフレッシュ・更新して変更を反映してください。',
     renameFolder: '🔧 フォルダ名を変更',
 
     // 初期ガイド
@@ -801,9 +802,10 @@ export const TEXT = {
     // Folder Conflict
     folderConflictDetected: '⚠️ Duplicate folders detected',
     folderConflictDescription: 'Multiple folders named "Gemini Expense Tracker" were found in your Google Drive. Please rename the unnecessary folder.',
-    folderConflictResolution: 'To resolve this permanently, rename the unnecessary folder in Google Drive.',
+    folderConflictResolution: 'To resolve this, rename the unnecessary folder in Google Drive.',
     folderConflictExample: 'Example: `Gemini Expense Tracker_old`',
     folderConflictNote: 'Once renamed, this warning will no longer appear.',
+    folderConflictRefresh: '⚠️ After renaming the folder, please refresh the app to apply the changes.',
     renameFolder: '🔧 Rename Folder',
 
     // First Time Guide

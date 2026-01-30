@@ -341,8 +341,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
 
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-      <h3 className="text-sm font-bold text-gray-700 mb-4">
-        📊 {t.todayAuditForecast.replace('{date}', new Date().toISOString().split('T')[0])}
+      <h3 className="text-lg font-bold text-gray-700 mb-4">
+        ☂️ {t.todayAuditForecast.replace('{date}', new Date().toISOString().split('T')[0])}
       </h3>
 
       {/* 常時表示部分 */}
@@ -350,8 +350,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
         {/* Tax Authority Perspective */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">🧾</span>
-            <h4 className="font-bold text-blue-800 text-sm">{t.taxAuthorityPerspective}</h4>
+            <span className="text-lg">🏢</span>
+            <h4 className="font-bold text-blue-800 text-lg">{t.taxAuthorityPerspective}</h4>
           </div>
           <div className="space-y-3 text-sm text-blue-700">
             <p className="font-semibold">
@@ -422,21 +422,21 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
 
           {/* AI Audit Risk Analysis */}
           <div className="mb-6 pb-6 border-b border-gray-300">
-            <div className="flex items-center gap-2 mb-3">
+            {/* <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">🧠</span>
               <h4 className="font-bold text-gray-800">{t.aiAuditRiskAnalysis}</h4>
-            </div>
+            </div> */}
             <div className="space-y-2 text-sm text-gray-700">
               <p>• {t.overallAuditRisk}: {t.riskLevels[item.riskLevel]}</p>
               <p>• {t.mostLikelyItem}: {t.categories[item.accountName] || item.accountName} (¥{(item.totalAmount || 0).toLocaleString()} / {item.ratio.toFixed(1)}%)</p>
-              <p>• {t.reason}: {item.issues && item.issues.length > 0 ? item.issues[0] : t.expenseCompositionDistortion}</p>
+              {/* <p>• {t.reason}: {item.issues && item.issues.length > 0 ? item.issues[0] : t.expenseCompositionDistortion}</p> */}
             </div>
           </div>
 
           {/* Numerical Evidence */}
           <div className="mb-6 pb-6 border-b border-gray-300">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">📊</span>
+              <span className="text-lg">🧮</span>
               <h4 className="font-bold text-gray-800">{t.numericalEvidence}</h4>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">

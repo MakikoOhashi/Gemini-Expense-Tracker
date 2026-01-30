@@ -197,10 +197,15 @@ export const TEXT = {
     concernDefault: '支出の妥当性を説明できる資料を準備してください',
 
     // 新しい監査予報UI用の翻訳
+    taxAuthorityPerspective: '税務署の視点',
+    primaryFocus: '主な焦点',
+    contextAcrossAllAccounts: 'Context across all accounts:',
+    evidenceForPrimaryAccount: 'Evidence for Primary Account',
+    whyThisAccountIsLikelyToBeInvestigated: 'この勘定科目が調査される可能性が高い理由',
     aiOverallAssessment: 'AI総評',
     showDetails: '詳細を見る',
     hideDetails: '詳細を隠す',
-    aiAuditRiskAnalysis: 'AI監査リスク分析',
+    // aiAuditRiskAnalysis: 'AI監査リスク分析',
     detectedAbnormalPatterns: '検知された異常パターン',
     meaningFromTaxAuthorityPerspective: '税務署視点での意味',
     numericalEvidence: '数値的根拠',
@@ -363,7 +368,7 @@ export const TEXT = {
     folderConflictDetected: '⚠️ フォルダ名の重複が検出されました',
     folderConflictDescription: '複数の「Gemini Expense Tracker」フォルダが Google Drive 上に見つかりました。不要なフォルダの名前を変更してください。',
     folderConflictResolution: '不要なフォルダは Google Drive 上で名前を変更してください。',
-    folderConflictRefresh: '⚠️ フォルダをリネームした後は、アプリ画面を更新して変更を反映してください。',
+    folderConflictRefresh: 'フォルダをリネームした後は、アプリ画面を更新して変更を反映してください。',
     renameFolder: '🔧 フォルダ名を変更',
 
     // 初期ガイド
@@ -585,7 +590,7 @@ export const TEXT = {
     aiOverallAssessment: 'AI Overall Assessment',
     showDetails: 'Show Details',
     hideDetails: 'Hide Details',
-    aiAuditRiskAnalysis: 'AI Audit Risk Analysis',
+    // aiAuditRiskAnalysis: 'AI Audit Risk Analysis',
     detectedAbnormalPatterns: 'Detected Abnormal Patterns',
     meaningFromTaxAuthorityPerspective: 'Meaning from Tax Authority Perspective',
     numericalEvidence: 'Numerical Evidence',
@@ -800,7 +805,7 @@ export const TEXT = {
     // Folder Conflict
     folderConflictDetected: '⚠️ Duplicate folders detected',
     folderConflictDescription: 'Multiple folders named "Gemini Expense Tracker" were found in your Google Drive. Please rename the unnecessary folder.',
-    folderConflictRefresh: '⚠️ After renaming the folder, please refresh the app to apply the changes.',
+    folderConflictRefresh: 'After renaming the folder, please refresh the app to apply the changes.',
     renameFolder: '🔧 Rename Folder',
 
     // First Time Guide

@@ -9,6 +9,12 @@ import AuditForecast from '../src/components/audit/AuditForecast';
 import { getTodayJSTString } from '../lib/dateUtils';
 import { TEXT, Language } from '../src/i18n/text';
 
+// DEMO ONLY: Helper to check if user is in demo mode
+// TODO: remove demo mode before production
+function isDemoUser(userId: string): boolean {
+  return userId === 'demo-user';
+}
+
 interface DashboardProps {
   transactions: Transaction[];
   onAuditQuery?: (query: string) => void;
@@ -19,6 +25,8 @@ interface DashboardProps {
   onOpenYearModal: () => void;
   t: any;
   language?: 'ja' | 'en';
+  userId?: string;
+  isDemo?: boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -30,7 +38,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   availableYears,
   onOpenYearModal,
   t,
-  language = 'ja'
+  language = 'ja',
+  userId,
+  isDemo = false
 }) => {
   const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
@@ -67,6 +77,40 @@ const Dashboard: React.FC<DashboardProps> = ({
       setIsLoading(true);
 
       try {
+        // DEMO ONLY: Demo mode - skip authentication and Firestore cache
+        // TODO: remove demo mode before production
+        if (isDemo || isDemoUser(userId || '')) {
+          console.log('📊 Demo mode: skipping authentication, generating forecast directly from transactions');
+          setLoadingMessage('監査予報を生成中...');
+          
+          if (!selectedAuditYear) return;
+          const year = selectedAuditYear.toString();
+          const today = getTodayJSTString();
+          
+          // Generate forecast directly from transactions (no Firestore cache)
+          const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year), userId || 'demo-user');
+          setAuditForecast(forecastData);
+          setForecastLastUpdated(`${today} 00:00`);
+          
+          // Generate tax authority perspective with AI
+          try {
+            setLoadingMessage('税務署視点の総括を生成中...');
+            const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
+            setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
+          } catch (aiError) {
+            console.warn('⚠️ Demo mode: AI perspective generation failed:', aiError);
+            setTaxAuthorityPerspective(null);
+          }
+          
+          // Generate bookkeeping checks
+          const checksData = await auditService.generateBookkeepingChecks(filteredTransactions, language, t.categories);
+          setBookkeepingChecks(checksData);
+          
+          console.log('✅ Demo mode: audit forecast generated directly from transactions');
+          setIsLoading(false);
+          return;
+        }
+
         // Get real Google ID from authentication
         const idToken = await authService.getIdToken();
         if (!idToken) {
@@ -84,6 +128,36 @@ const Dashboard: React.FC<DashboardProps> = ({
         if (!selectedAuditYear) return; // null の場合は処理しない
         const year = selectedAuditYear.toString();
         const today = getTodayJSTString(); // "2026-01-21" 形式
+
+        // DEMO ONLY: Demo mode check (fallback for safety)
+        // TODO: remove demo mode before production
+        if (isDemoUser(googleId)) {
+          console.log('📊 Demo mode: skipping Firestore cache, generating forecast directly from transactions');
+          setLoadingMessage('監査予報を生成中...');
+          
+          // Generate forecast directly from transactions (no Firestore cache)
+          const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year), googleId);
+          setAuditForecast(forecastData);
+          setForecastLastUpdated(`${today} 00:00`);
+          
+          // Generate tax authority perspective with AI
+          try {
+            setLoadingMessage('税務署視点の総括を生成中...');
+            const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
+            setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
+          } catch (aiError) {
+            console.warn('⚠️ Demo mode: AI perspective generation failed:', aiError);
+            setTaxAuthorityPerspective(null);
+          }
+          
+          // Generate bookkeeping checks
+          const checksData = await auditService.generateBookkeepingChecks(filteredTransactions, language, t.categories);
+          setBookkeepingChecks(checksData);
+          
+          console.log('✅ Demo mode: audit forecast generated directly from transactions');
+          setIsLoading(false);
+          return;
+        }
 
         try {
           // キャッシュ判定ロジック：forecasts[year]が存在し、dateが今日の日付と一致する場合

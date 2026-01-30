@@ -620,16 +620,25 @@ ${JSON.stringify(transactionSummary, null, 2)}
   }
 
   // Summary_Account_History からデータ取得
-  async fetchSummaryAccountHistory(year: number): Promise<{ usable: boolean; reason?: string; data: any[] }> {
+  async fetchSummaryAccountHistory(year: number, userId?: string): Promise<{ usable: boolean; reason?: string; data: any[] }> {
+    // DEMO ONLY: Skip authentication for demo users
+    // TODO: remove demo mode before production
+    const isDemo = userId === 'demo-user';
+    
     const idToken = await authService.getIdToken();
-    if (!idToken) throw new Error('認証されていません');
+    if (!idToken && !isDemo) throw new Error('認証されていません');
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
 
     const response = await fetch(`http://localhost:3001/api/summary-account-history?year=${year}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      }
+      headers
     });
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -639,15 +648,22 @@ ${JSON.stringify(transactionSummary, null, 2)}
   }
 
   // 監査予報（全体）- 勘定科目合計・比率ベースの論点を生成
-  async generateAuditForecast(transactions: any[], targetYear?: number): Promise<AuditForecastItem[]> {
+  async generateAuditForecast(transactions: any[], targetYear?: number, userId?: string): Promise<AuditForecastItem[]> {
     const year = targetYear || new Date().getFullYear();
+
+    // DEMO ONLY: Check if demo user
+    // TODO: remove demo mode before production
+    const isDemo = userId === 'demo-user';
+    if (isDemo) {
+      console.log('📊 Demo mode: generating audit forecast without Firestore cache');
+    }
 
     // Summary（スプシ関数結果）を補助情報として使う：常に取引データを主軸にする
     let summaryData: Array<{ year: number; accountName: string; amount: number; ratio: number | null }> = [];
     let summaryUsable = false;
     
     try {
-      const summaryResponse = await this.fetchSummaryAccountHistory(year);
+      const summaryResponse = await this.fetchSummaryAccountHistory(year, userId);
       // Check if summary is usable (has valid data structure)
       if (summaryResponse && typeof summaryResponse === 'object' && 'usable' in summaryResponse) {
         if (summaryResponse.usable === true && Array.isArray(summaryResponse.data)) {

@@ -3,6 +3,12 @@ import admin from 'firebase-admin';
 import jwt from 'jsonwebtoken';
 import { AuditForecastItem } from '../types.ts';
 
+// DEMO ONLY: Helper to check if user is in demo mode
+// TODO: remove demo mode before production
+function isDemoUser(userId: string): boolean {
+  return userId === 'demo-user';
+}
+
 export interface UserDocument {
   last_access: { [year: string]: string }; // { "2025": "2026-01-19", "2026": "2026-01-18" }
   forecasts: { [year: string]: { date: string; results: AuditForecastItem[]; updatedAt: admin.firestore.FieldValue } }; // NORMALIZED FORMAT ONLY: { "2025": { date: "2026-01-19", results: [...], updatedAt: Timestamp } }
@@ -232,6 +238,13 @@ export class UserService {
    * 指定された年度の最終アクセス日を更新
    */
   async updateLastAccessDate(googleId: string, year: string, accessDate: string): Promise<void> {
+    // DEMO ONLY: Skip Firestore writes for demo users
+    // TODO: remove demo mode before production
+    if (isDemoUser(googleId)) {
+      console.log(`📊 Demo mode: skipping updateLastAccessDate for ${googleId}`);
+      return;
+    }
+
     try {
       const userDoc = await this.getUserDocument(googleId);
       const lastAccess = userDoc?.last_access || {};
@@ -295,6 +308,13 @@ export class UserService {
     forecastResults: AuditForecastItem[],
     taxAuthorityPerspective: string | null = null
   ): Promise<void> {
+    // DEMO ONLY: Skip Firestore writes for demo users
+    // TODO: remove demo mode before production
+    if (isDemoUser(googleId)) {
+      console.log(`📊 Demo mode: skipping saveForecast for ${googleId}`);
+      return;
+    }
+
     try {
       console.log(`💾 Starting forecast save for ${googleId}, year: ${year}, date: ${date}`);
 
@@ -419,6 +439,13 @@ export class UserService {
    * 最後の集計生成日時を更新（JSTベース）
    */
   async updateLastSummaryGeneratedAt(googleId: string, generatedAt: string): Promise<void> {
+    // DEMO ONLY: Skip Firestore writes for demo users
+    // TODO: remove demo mode before production
+    if (isDemoUser(googleId)) {
+      console.log(`📊 Demo mode: skipping updateLastSummaryGeneratedAt for ${googleId}`);
+      return;
+    }
+
     try {
       await this.createOrUpdateUserDocument(googleId, {
         lastSummaryGeneratedAt: generatedAt

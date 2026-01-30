@@ -1382,6 +1382,8 @@ const handleRuleInputSubmit = async () => {
             }}
             t={t}
             language={language}
+            userId={authStatus?.userId}
+            isDemo={isDemo}
           />
         ) : activeTab === 'tax' ? (() => {
           const filteredTransactions = getFilteredTransactions();

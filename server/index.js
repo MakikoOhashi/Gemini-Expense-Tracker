@@ -17,8 +17,26 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
+// CORS設定
+const allowedOrigins = [
+  'https://gemini-expense-tracker-pied.vercel.app', // 本番ドメイン
+  'http://localhost:3000' // ローカル開発用
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // origin が undefined の場合はブラウザ外からのアクセス（curl など）なので許可
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' })); // 10MBに増加（画像対応）
 
 // Google OAuth 2.0 setup

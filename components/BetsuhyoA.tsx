@@ -735,7 +735,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
                 key={payerName}
                 className="absolute text-xs font-bold text-red-600"
                 style={{
-                  top: POS.incomeBreakdownTable.top + ((index - 4) * 25), // indexを調整して5件目から0として配置
+                  top: POS.incomeBreakdownTable.top + ((index - 4) * 40), // indexを調整して5件目から0として配置
                   left: POS.incomeBreakdownTable.left - 150,
                   width: 560
                 }}

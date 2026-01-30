@@ -1,4 +1,4 @@
-process.env.GOOGLE_APPLICATION_CREDENTIALS = '/Users/makiko/Documents/dev/gemini-expense-tracker/gemini-expense-tracker-483604-7a0c4df6eb04.json';
+//process.env.GOOGLE_APPLICATION_CREDENTIALS = '/Users/makiko/Documents/dev/gemini-expense-tracker/gemini-expense-tracker-483604-7a0c4df6eb04.json';
 
 import express from 'express';
 import cors from 'cors';

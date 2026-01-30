@@ -1642,34 +1642,13 @@ const handleRuleInputSubmit = async () => {
                             </div>
                           </div>
                           <button
-                            onClick={async () => {
-                              try {
-                                await fetch('http://localhost:3001/api/select-folder', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ userId: authStatus?.userId || 'test-user', folderId: folder.id })
-                                });
-                                console.log(`📁 フォルダ ${folder.id} を選択しました`);
-
-                                // Clear server cache
-                                await fetch('http://localhost:3001/api/clear-folder-cache', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ userId: authStatus?.userId || 'test-user' })
-                                });
-
-                                // Close modal
-                                setFolderConflict(null);
-
-                                // Reload transactions directly
-                                loadTransactions();
-                              } catch (e) {
-                                console.error('フォルダ選択エラー:', e);
-                              }
+                            onClick={() => {
+                              // Open Google Drive folder in new tab for renaming
+                              window.open(`https://drive.google.com/drive/folders/${folder.id}`, '_blank');
                             }}
-                            className="flex-shrink-0 px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-900 active:scale-95 transition"
+                            className="flex-shrink-0 px-3 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 active:scale-95 transition"
                           >
-                            {modalText.useThisFolder}
+                            {modalText.renameFolder}
                           </button>
                         </div>
                       </div>

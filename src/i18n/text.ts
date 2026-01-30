@@ -361,11 +361,11 @@ export const TEXT = {
 
     // フォルダ競合
     folderConflictDetected: '⚠️ フォルダ名の重複が検出されました',
-    folderConflictDescription: '複数の「Gemini Expense Tracker」フォルダが Google Drive 上に見つかりました。どのフォルダを使用するか選択してください。',
+    folderConflictDescription: '複数の「Gemini Expense Tracker」フォルダが Google Drive 上に見つかりました。不要なフォルダの名前を変更してください。',
     folderConflictResolution: '不要なフォルダは Google Drive 上で名前を変更してください。',
     folderConflictExample: '例：「Gemini Expense Tracker_old」',
     folderConflictNote: '名前を変更すると、次回以降この警告は表示されません。',
-    useThisFolder: '👉 このフォルダを使用',
+    renameFolder: '🔧 フォルダ名を変更',
 
     // 初期ガイド
     firstTimeGuide: 'まず、やりたいことを選んでください',
@@ -800,11 +800,11 @@ export const TEXT = {
 
     // Folder Conflict
     folderConflictDetected: '⚠️ Duplicate folders detected',
-    folderConflictDescription: 'Multiple folders named "Gemini Expense Tracker" were found in your Google Drive. Please select the folder you want to use.',
+    folderConflictDescription: 'Multiple folders named "Gemini Expense Tracker" were found in your Google Drive. Please rename the unnecessary folder.',
     folderConflictResolution: 'To resolve this permanently, rename the unnecessary folder in Google Drive.',
     folderConflictExample: 'Example: `Gemini Expense Tracker_old`',
     folderConflictNote: 'Once renamed, this warning will no longer appear.',
-    useThisFolder: '👉 Use this folder',
+    renameFolder: '🔧 Rename Folder',
 
     // First Time Guide
     firstTimeGuide: 'First, choose what you want to do',

@@ -299,6 +299,12 @@ const [ruleInputData, setRuleInputData] = useState({
       // Only check if user is authenticated
       if (!authStatus?.authenticated) return;
 
+      // Skip folder conflict check in demo mode (no Drive access)
+      if (authStatus?.isDemo) {
+        console.log('📁 Demo mode: skipping folder conflict check');
+        return;
+      }
+
       try {
         const userId = authStatus?.userId || 'test-user';
         console.log('🔍 フォルダ競合チェック開始...');

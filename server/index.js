@@ -50,6 +50,7 @@ function isDemoUser(userId) {
 // DEMO ONLY: Service Account Sheets Client for Demo Mode
 // TODO: remove demo mode before production
 let demoSheetsClient = null;
+let demoAuthClient = null;
 
 function getDemoSheetsClient() {
   if (!demoSheetsClient) {
@@ -59,8 +60,18 @@ function getDemoSheetsClient() {
     });
 
     demoSheetsClient = google.sheets({ version: 'v4', auth });
+    demoAuthClient = auth;
   }
   return demoSheetsClient;
+}
+
+// DEMO ONLY: Get the auth client for Demo mode
+// TODO: remove demo mode before production
+function getDemoAuthClient() {
+  if (!demoAuthClient) {
+    getDemoSheetsClient(); // Initialize both
+  }
+  return demoAuthClient;
 }
 
 // DEMO ONLY: Safety check for DEMO_SHEET_ID
@@ -125,7 +136,17 @@ function createUserOAuthClient(tokens) {
 }
 
 // Helper function to get authenticated client for user
+// DEMO ONLY: Returns demo auth client for demo users
+// TODO: remove demo mode before production
 function getAuthenticatedClient(userId) {
+  // DEMO ONLY: Demo mode handling - use Service Account instead of OAuth
+  if (isDemoUser(userId)) {
+    console.log(`📊 Demo mode: using Service Account auth for ${userId}`);
+    const demoSheets = getDemoSheetsClient();
+    // Return the auth instance from the sheets client
+    return Promise.resolve(demoSheets.context._options.auth);
+  }
+
   if (!userTokens[userId]) {
     throw new Error('User not authenticated');
   }
@@ -219,6 +240,13 @@ async function createFolder(folderName, parentFolderId, userId) {
 
 // Helper function to get Gemini Expense Tracker root folder (returns array for conflict detection)
 async function getGeminiExpenseTrackerRootFolderInfo(userId) {
+  // DEMO ONLY: Demo mode - skip Drive API, return empty (no folder conflicts in demo)
+  // TODO: remove demo mode before production
+  if (isDemoUser(userId)) {
+    console.log(`📁 Demo mode: skipping folder conflict check for ${userId}`);
+    return [];
+  }
+
   const folderName = 'Gemini Expense Tracker';
   
   const client = await getAuthenticatedClient(userId);
@@ -226,6 +254,7 @@ async function getGeminiExpenseTrackerRootFolderInfo(userId) {
 
   // My Drive直下のフォルダを検索
   const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
+  
   
   const searchResponse = await drive.files.list({
     q: query,
@@ -245,10 +274,16 @@ async function getGeminiExpenseTrackerRootFolderInfo(userId) {
   
   return [];
 }
-
 // Helper function to get or create Gemini Expense Tracker root folder
 // Returns: string (folderId) if single folder exists, or object with conflict info
 async function getOrCreateGeminiExpenseTrackerRootFolder(userId) {
+  // DEMO ONLY: Demo mode - return dummy folder ID (Drive operations not needed in demo)
+  // TODO: remove demo mode before production
+  if (isDemoUser(userId)) {
+    console.log(`📁 Demo mode: returning dummy folder ID for ${userId}`);
+    return 'demo-folder-id';
+  }
+
   const folderName = 'Gemini Expense Tracker';
   
   // ユーザーが選択したフォルダIDがあれば、それを優先使用
@@ -1468,6 +1503,49 @@ app.get('/api/expenses', async (req, res) => {
     const userId = req.query.userId || 'test-user';
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
 
+    // DEMO ONLY: Demo mode handling - use fixed sheet ID with Service Account
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      console.log(`📊 Demo mode: fetching expenses from fixed sheet for ${userId}`);
+      const demoSheetId = process.env.DEMO_SHEET_ID;
+      if (!demoSheetId) {
+        console.error('Demo mode: DEMO_SHEET_ID is not configured');
+        return res.status(500).json({ error: 'Demo mode: DEMO_SHEET_ID is not configured' });
+      }
+
+      try {
+        const sheetsClient = getDemoSheetsClient();
+        const yearExpenseTabName = `${year}_Expenses`;
+        const response = await sheetsClient.spreadsheets.values.get({
+          spreadsheetId: demoSheetId,
+          range: `${yearExpenseTabName}!A2:E`,
+        });
+
+        const rows = response.data.values || [];
+        console.log(`📊 Demo mode: ${rows.length} expenses fetched`);
+
+        const expenses = rows.map((row, index) => ({
+          id: `${year}exp-${index + 2}`,
+          date: row[0] || '',
+          amount: parseFloat(row[1]) || 0,
+          category: row[2] || '',
+          memo: row[3] || '',
+          receiptUrl: row[4] || '',
+          type: 'expense',
+          createdAt: Date.now()
+        }));
+
+        return res.json({
+          expenses,
+          isFolderAmbiguous: false,
+          folderConflict: null
+        });
+      } catch (error) {
+        console.error('Demo mode: failed to get expenses', error);
+        return res.status(500).json({ error: 'Failed to get demo expenses' });
+      }
+    }
+
     // Check for folder conflicts first
     const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
 
@@ -1556,6 +1634,77 @@ app.get('/api/income', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+
+    // DEMO ONLY: Demo mode handling - use fixed sheet ID with Service Account
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      console.log(`📊 Demo mode: fetching income from fixed sheet for ${userId}`);
+      const demoSheetId = process.env.DEMO_SHEET_ID;
+      if (!demoSheetId) {
+        console.error('Demo mode: DEMO_SHEET_ID is not configured');
+        return res.status(500).json({ error: 'Demo mode: DEMO_SHEET_ID is not configured' });
+      }
+
+      try {
+        const sheetsClient = getDemoSheetsClient();
+        const yearIncomeTabName = `${year}_Income`;
+        const response = await sheetsClient.spreadsheets.values.get({
+          spreadsheetId: demoSheetId,
+          range: `${yearIncomeTabName}!A2:F`,
+        });
+
+        const rows = response.data.values || [];
+        console.log(`📊 Demo mode: ${rows.length} income entries fetched`);
+
+        // Income データの正規化（バグ防止策）
+        const normalizedRows = rows.map(row => {
+          if (Array.isArray(row)) {
+            return {
+              date: row[0],
+              amount: Number(row[1] || 0),
+              payerName: row[2]?.trim() || '',
+              withholding: Number(row[3] || 0),
+              memo: row[4] || '',
+              receiptUrl: row[5] || ''
+            };
+          }
+          return {
+            date: row.date,
+            amount: Number(row.amount || 0),
+            payerName: row.payerName?.trim() || '',
+            withholding: Number(row.withholding || 0),
+            memo: row.memo || '',
+            receiptUrl: row.receiptUrl || ''
+          };
+        });
+
+        const income = normalizedRows.map((row, index) => {
+          let { payerName } = row;
+          if (!payerName) payerName = '未設定';
+
+          return {
+            id: `${year}inc-${index + 2}`,
+            date: row.date,
+            amount: row.amount,
+            payerName: payerName,
+            withholding: row.withholding,
+            memo: row.memo,
+            receiptUrl: row.receiptUrl,
+            type: 'income',
+            createdAt: Date.now()
+          };
+        });
+
+        return res.json({
+          income,
+          isFolderAmbiguous: false,
+          folderConflict: null
+        });
+      } catch (error) {
+        console.error('Demo mode: failed to get income', error);
+        return res.status(500).json({ error: 'Failed to get demo income' });
+      }
+    }
 
     // Check for folder conflicts first
     const folderResult = await getOrCreateGeminiExpenseTrackerRootFolder(userId);
@@ -2065,6 +2214,15 @@ app.post('/api/clear-folder-cache', async (req, res) => {
 app.get('/api/check-folder-conflict', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
+    
+    // Demo mode: skip folder conflict check (no Drive access in demo mode)
+    if (isDemoUser(userId)) {
+      console.log(`📁 Demo mode: skipping folder conflict check for ${userId}`);
+      return res.json({
+        isFolderAmbiguous: false,
+        folderConflict: null
+      });
+    }
     
     // Check if user has already selected a folder - if so, no conflict
     if (userSelectedFolder.has(userId)) {
@@ -2758,10 +2916,13 @@ app.post('/api/generate-summary', async (req, res) => {
       return res.status(403).json({ error: 'Operation disabled in demo mode' });
     }
 
-    const tokens = userTokens[userId];
-
-    if (!tokens) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    // DEMO ONLY: Skip token check for demo users (they use Service Account)
+    // TODO: remove demo mode before production
+    if (!isDemoUser(userId)) {
+      const tokens = userTokens[userId];
+      if (!tokens) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
     }
 
     // JSTで今日の日付を取得（YYYY-MM-DD形式）
@@ -2778,16 +2939,13 @@ app.post('/api/generate-summary', async (req, res) => {
       });
     }
 
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials(tokens);
-
     const year = now.getFullYear().toString();
 
     // ユーザー設定からフォルダIDを取得
     const userDoc = await userService.getUserDocument(googleId);
     const folderId = userDoc?.settings?.folderId || null;
 
-    console.log('� Using folderId:', folderId); // デバッグ用
+    console.log('📁 Using folderId:', folderId); // デバッグ用
 
     // スプレッドシート作成/更新 (folderIdは文字列またはnull)
     await createOrUpdateSpreadsheetWithYearTabs(folderId, year, googleId);
@@ -2934,10 +3092,13 @@ app.post('/api/audit-forecast-update', async (req, res) => {
       return res.status(403).json({ error: 'Operation disabled in demo mode' });
     }
 
-    const tokens = userTokens[userId];
-
-    if (!tokens) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    // DEMO ONLY: Skip token check for demo users (they use Service Account)
+    // TODO: remove demo mode before production
+    if (!isDemoUser(userId)) {
+      const tokens = userTokens[userId];
+      if (!tokens) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
     }
 
     const year = req.body.year ? parseInt(req.body.year) : new Date().getFullYear();

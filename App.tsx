@@ -934,10 +934,18 @@ const handleRuleInputSubmit = async () => {
               </div>
               <div className="">
               <button
-                onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+                onClick={() => {
+                  setAuthStatus({
+                    authenticated: true,
+                    userId: 'demo-user',
+                    isDemo: true,
+                    idToken: null
+                  });
+                  sheetsService.setUserId('demo-user');
+                }}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition"
               >
-                DEMO
+                {preAuthText.demoMode}
               </button>
               </div>
             </div>

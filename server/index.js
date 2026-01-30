@@ -47,6 +47,30 @@ function isDemoUser(userId) {
   return userId === 'demo-user';
 }
 
+// DEMO ONLY: Service Account Sheets Client for Demo Mode
+// TODO: remove demo mode before production
+let demoSheetsClient = null;
+
+function getDemoSheetsClient() {
+  if (!demoSheetsClient) {
+    const auth = new google.auth.GoogleAuth({
+      keyFile: 'server/config/demo-service-account.json',
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    demoSheetsClient = google.sheets({ version: 'v4', auth });
+  }
+  return demoSheetsClient;
+}
+
+// DEMO ONLY: Safety check for DEMO_SHEET_ID
+// TODO: remove demo mode before production
+if (!process.env.DEMO_SHEET_ID) {
+  console.warn('⚠️  WARNING: DEMO_SHEET_ID is not set. Demo mode will not work properly.');
+} else {
+  console.log(`📊 DEMOモード設定: DEMO_SHEET_ID = ${process.env.DEMO_SHEET_ID}`);
+}
+
 // Helper function to get user context from request
 function getUserContext(req) {
   // Check for demo session
@@ -354,6 +378,21 @@ async function uploadFileToDrive(fileBuffer, fileName, mimeType, parentFolderId,
 
 // Helper function to get or create spreadsheet for a specific year
 async function getOrCreateSpreadsheetForYear(year, userId) {
+  // DEMO ONLY: Use fixed sheet ID in Demo Mode
+  // TODO: remove demo mode before production
+  if (isDemoUser(userId)) {
+    const demoSheetId = process.env.DEMO_SHEET_ID;
+    if (!demoSheetId) {
+      throw new Error('DEMO_SHEET_ID is not configured');
+    }
+    console.log(`📊 DEMOモード: 固定シートIDを使用 - ${demoSheetId}`);
+    return {
+      spreadsheetId: demoSheetId,
+      spreadsheetName: `${year}_Expenses`,
+      isNew: false
+    };
+  }
+
   const client = await getAuthenticatedClient(userId);
   const drive = google.drive({ version: 'v3', auth: client });
   const sheets = google.sheets({ version: 'v4', auth: client });
@@ -617,6 +656,13 @@ app.post('/api/spreadsheet/:year', async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: '認証が必要です' });
     }
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     if (isNaN(year) || year < 2000 || year > 2100) {
       return res.status(400).json({ error: '無効な年度です' });
     }
@@ -691,6 +737,21 @@ let initializationLock = null;
 
 // Helper function to create or update spreadsheet with year-specific tabs
 async function createOrUpdateSpreadsheetWithYearTabs(parentFolderId, year, userId) {
+  // DEMO ONLY: Use fixed sheet ID in Demo Mode
+  // TODO: remove demo mode before production
+  if (isDemoUser(userId)) {
+    const demoSheetId = process.env.DEMO_SHEET_ID;
+    if (!demoSheetId) {
+      throw new Error('DEMO_SHEET_ID is not configured');
+    }
+    console.log(`📊 DEMOモード: 固定シートIDを使用 - ${demoSheetId}`);
+    return {
+      spreadsheetId: demoSheetId,
+      spreadsheetName: 'Gemini_Expenses',
+      isNew: false
+    };
+  }
+
   const baseSpreadsheetName = 'Gemini_Expenses';
   const cacheKey = `${userId}_${parentFolderId}`;
 
@@ -1133,6 +1194,13 @@ app.post('/api/initialize', async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: '認証が必要です' });
     }
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     // クエリパラメータで年を指定可能（テスト用）
     const queryYear = req.query.year ? parseInt(req.query.year) : null;
     const currentYear = queryYear && !isNaN(queryYear) ? queryYear : new Date().getFullYear();
@@ -1296,6 +1364,13 @@ app.post('/api/rules/:year', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const userId = req.body.userId || 'test-user';
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const { keyword, category, notes } = req.body;
 
     if (!keyword || !category) {
@@ -1349,6 +1424,13 @@ app.delete('/api/rules/:year/:id', async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const userId = req.query.userId || 'test-user';
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const ruleId = req.params.id;
     const rowNumber = parseInt(ruleId.split('_')[1]);
 
@@ -1591,6 +1673,13 @@ app.get('/api/income', async (req, res) => {
 app.post('/api/update-transaction', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const { id, date, amount, category, memo, receiptUrl, type } = req.body;
     console.log('ID:', id);
 
@@ -1666,6 +1755,13 @@ app.post('/api/update-transaction', async (req, res) => {
 app.post('/api/expenses', async (req, res) => {
   try {
     const userId = req.body.userId || 'test-user';
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const { date, amount, category, memo, receipt_url, type, payerName, withholdingTax } = req.body;
 
     if (!date || !amount || !category) {
@@ -1751,6 +1847,12 @@ app.post('/api/rules', async (req, res) => {
   try {
     const { keyword, category, notes, userId } = req.body;
 
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     // バリデーション
     if (!keyword || !category) {
       return res.status(400).json({ error: 'キーワードとカテゴリは必須です' });
@@ -1806,6 +1908,13 @@ app.post('/api/rules', async (req, res) => {
 app.post('/api/upload-receipt', async (req, res) => {
   try {
     const userId = req.query.userId || 'test-user';
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
     const month = req.query.month ? parseInt(req.query.month) : new Date().getMonth() + 1;
 
@@ -2642,6 +2751,13 @@ app.post('/api/generate-summary', async (req, res) => {
     }
 
     const userId = req.body.userId || 'test-user'; // userIdを取得
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const tokens = userTokens[userId];
 
     if (!tokens) {
@@ -2811,6 +2927,13 @@ app.post('/api/audit-forecast-update', async (req, res) => {
     }
 
     const userId = req.body.userId || 'test-user'; // userIdを取得
+
+    // DEMO ONLY: Demo mode guard - no write operations allowed
+    // TODO: remove demo mode before production
+    if (isDemoUser(userId)) {
+      return res.status(403).json({ error: 'Operation disabled in demo mode' });
+    }
+
     const tokens = userTokens[userId];
 
     if (!tokens) {

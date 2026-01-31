@@ -3,6 +3,8 @@ import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, A
 import { sheetsService } from "./sheetsService.ts";
 import { authService } from "./authService.ts";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // 税務調査対応アシスタントの出力形式
 export interface TaxAuditResponse {
   taxAuthorityConcerns: string[];
@@ -636,7 +638,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
       headers['Authorization'] = `Bearer ${idToken}`;
     }
 
-    const response = await fetch(`http://localhost:3001/api/summary-account-history?year=${year}`, {
+    const response = await fetch(`${API_URL}/api/summary-account-history?year=${year}`, {
       method: 'GET',
       headers
     });

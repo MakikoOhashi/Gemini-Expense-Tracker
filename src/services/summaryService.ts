@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export async function generateSummary(userId: string = 'test-user'): Promise<{ success: boolean; sheets: string[]; message: string }> {
   const response = await fetch(`${API_BASE_URL}/api/audit-forecast-update`, {

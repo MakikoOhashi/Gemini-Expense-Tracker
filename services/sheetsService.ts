@@ -26,8 +26,10 @@ export interface Rule {
   notes?: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export class SheetsService {
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = `${API_URL}/api`;
   private userId: string = 'test-user';
 
   setUserId(userId: string) {

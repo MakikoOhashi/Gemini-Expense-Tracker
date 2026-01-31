@@ -9,6 +9,9 @@ import AuditForecast from '../src/components/audit/AuditForecast';
 import { getTodayJSTString } from '../lib/dateUtils';
 import { TEXT, Language } from '../src/i18n/text';
 
+// API URL from environment variable
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // DEMO ONLY: Helper to check if user is in demo mode
 // TODO: remove demo mode before production
 function isDemoUser(userId: string): boolean {
@@ -118,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         // Extract Google ID from ID token via server API
-        const googleIdResponse = await fetch(`http://localhost:3001/api/user/last-summary-generated/${encodeURIComponent(idToken)}`);
+        const googleIdResponse = await fetch(`${API_URL}/api/user/last-summary-generated/${encodeURIComponent(idToken)}`);
         const googleIdData = await googleIdResponse.json();
         if (!googleIdResponse.ok) {
           throw new Error(googleIdData.details || 'Google IDの取得に失敗しました');
@@ -165,7 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           setLoadingMessage('保存された予報を読み込み中...');
 
           // 直接forecastデータを取得してキャッシュ判定
-          const forecastResponse = await fetch(`http://localhost:3001/api/user/forecast/${googleId}/${year}/${today}`);
+          const forecastResponse = await fetch(`${API_URL}/api/user/forecast/${googleId}/${year}/${today}`);
           const forecastData = await forecastResponse.json();
 
           if (forecastResponse.ok && forecastData.forecastResults && forecastData.forecastResults.length > 0) {
@@ -190,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           console.error('❌ キャッシュチェックエラー:', cacheError);
           // キャッシュエラーの場合は “最新の古いキャッシュ” を試してから新規生成へ
           console.log('🔄 キャッシュエラー: 最新の古いキャッシュにフォールバックします');
-          const latestResponse = await fetch(`http://localhost:3001/api/user/forecast-latest/${googleId}/${year}`);
+          const latestResponse = await fetch(`${API_URL}/api/user/forecast-latest/${googleId}/${year}`);
           const latestData = await latestResponse.json();
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
@@ -253,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         // ① Summaryを最新化（サーバー側で1日1回制限・lastSummaryGeneratedAt更新）
         try {
           setLoadingMessage('横断集計を更新中...');
-          const summaryResponse = await fetch('http://localhost:3001/api/audit-forecast-update', {
+          const summaryResponse = await fetch(`${API_URL}/api/audit-forecast-update`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -307,7 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           console.log(`📊 Forecast item ${index}: ${item.accountName} = ${item.totalAmount} (${typeof item.totalAmount}, isFinite: ${isFinite(item.totalAmount)})`);
         });
 
-        const saveResponse = await fetch('http://localhost:3001/api/user/forecast', {
+        const saveResponse = await fetch(`${API_URL}/api/user/forecast`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -321,7 +324,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         // 最終アクセス日をサーバーAPI経由で更新
-        const accessResponse = await fetch('http://localhost:3001/api/user/last-access', {
+        const accessResponse = await fetch(`${API_URL}/api/user/last-access`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -343,7 +346,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         console.error('❌ 監査予報生成・保存エラー:', error);
         // 失敗時: 古いキャッシュがあればそれを返す
         try {
-          const latestResponse = await fetch(`http://localhost:3001/api/user/forecast-latest/${googleId}/${year}`);
+          const latestResponse = await fetch(`${API_URL}/api/user/forecast-latest/${googleId}/${year}`);
           const latestData = await latestResponse.json();
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);

@@ -6,7 +6,7 @@ export interface AuthStatus {
 }
 
 export class AuthService {
-  private baseUrl = 'http://localhost:3001';
+  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   private idToken: string | null = null;
 
   async checkAuthStatus(userId?: string): Promise<AuthStatus> {

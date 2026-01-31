@@ -1,3 +1,5 @@
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // Call server-side Vision API for OCR (multipart file upload)
 export async function performOCR(imageBlob: Blob): Promise<string> {
   try {
@@ -6,7 +8,7 @@ export async function performOCR(imageBlob: Blob): Promise<string> {
     const formData = new FormData();
     formData.append('file', imageBlob, 'receipt.jpg');
 
-    const response = await fetch('http://localhost:3001/api/ocr', {
+    const response = await fetch(`${API_URL}/api/ocr`, {
       method: 'POST',
       body: formData,
     });

@@ -35,6 +35,9 @@ import { TEXT, Language } from './src/i18n/text';
 
 const gemini = new GeminiService();
 
+// API URL from environment variable
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // Auto-detect language for pre-authentication modal
 const getPreAuthLanguage = (): Language => {
   const lang = navigator.language || (navigator as any).userLanguage;
@@ -309,7 +312,7 @@ const [ruleInputData, setRuleInputData] = useState({
         const userId = authStatus?.userId || 'test-user';
         console.log('🔍 フォルダ競合チェック開始...');
 
-        const response = await fetch(`http://localhost:3001/api/check-folder-conflict?userId=${userId}`);
+        const response = await fetch(`${API_URL}/api/check-folder-conflict?userId=${userId}`);
         const data = await response.json();
 
         if (data.isFolderAmbiguous && data.folderConflict) {
@@ -443,7 +446,7 @@ const [ruleInputData, setRuleInputData] = useState({
     formData.append('userId', userId);
 
     console.log('📤 /api/upload-receipt にリクエスト送信中...');
-    const response = await fetch('http://localhost:3001/api/upload-receipt', {
+    const response = await fetch(`${API_URL}/api/upload-receipt`, {
       method: 'POST',
       body: formData,
     });
@@ -515,7 +518,7 @@ const [ruleInputData, setRuleInputData] = useState({
       console.log('📤 Sending expense data:', JSON.stringify(expenseData, null, 2));
       console.log('📅 Date format check:', expenseData.date, '(should be YYYY-MM-DD)');
 
-      const response = await fetch('http://localhost:3001/api/expenses', {
+      const response = await fetch(`${API_URL}/api/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -807,7 +810,7 @@ const handleRuleInputSubmit = async () => {
 
   try {
     // 既存の/api/expensesと同じパターンでAPI呼び出し
-    const response = await fetch('http://localhost:3001/api/rules', {
+    const response = await fetch(`${API_URL}/api/rules`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -932,7 +935,7 @@ const handleRuleInputSubmit = async () => {
               </p>
               <div className="pb-4">
               <button
-                onClick={() => window.location.href = 'http://localhost:3001/auth/google'}
+                onClick={() => window.location.href = `${API_URL}/auth/google`}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
               >
                 {preAuthText.googleAuthButton}

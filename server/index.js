@@ -72,13 +72,20 @@ let demoAuthClient = null;
 
 function getDemoSheetsClient() {
   if (!demoSheetsClient) {
+    let credentials;
+    try {
+      // Render Secret Files
+      credentials = JSON.parse(readFileSync('/etc/secrets/demoServiceAccount.json', 'utf8'));
+    } catch (error) {
+      // 環境変数から取得（Vercelなど）
+      credentials = JSON.parse(process.env.DEMO_SERVICE_ACCOUNT_JSON);
+    }
+    
     const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.DEMO_SERVICE_ACCOUNT_JSON),
+      credentials,
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
-
     demoSheetsClient = google.sheets({ version: 'v4', auth });
-    demoAuthClient = auth;
   }
   return demoSheetsClient;
 }
@@ -434,7 +441,7 @@ async function getOrCreateSpreadsheetForYear(year, userId) {
   // DEMO ONLY: Use fixed sheet ID in Demo Mode
   // TODO: remove demo mode before production
   if (isDemoUser(userId)) {
-    const demoSheetId = process.env.DEMO_SHEET_ID;
+    const demoSheetId = _SHEET_ID;
     if (!demoSheetId) {
       throw new Error('DEMO_SHEET_ID is not configured');
     }

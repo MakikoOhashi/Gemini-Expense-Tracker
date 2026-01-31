@@ -9,8 +9,8 @@ import vision from '@google-cloud/vision';
 import { Readable } from 'stream';
 import Busboy from 'busboy';
 import jwt from 'jsonwebtoken';
-import { userService } from '../services/userService.ts';
-import { auditService } from '../services/auditService.ts';
+import { userService } from '../services/userService.js';
+import { auditService } from '../services/auditService.js';
 
 dotenv.config();
 

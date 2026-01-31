@@ -10,7 +10,7 @@ import { getTodayJSTString } from '../lib/dateUtils';
 import { TEXT, Language } from '../src/i18n/text';
 
 // API URL from environment variable
-const API_URL = process.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // DEMO ONLY: Helper to check if user is in demo mode
 // TODO: remove demo mode before production

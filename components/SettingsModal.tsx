@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 import { XMarkIcon, TrashIcon, SparklesIcon, CloudIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { TransactionRule } from '../types';
 import { AuthStatus } from '../services/authService';
@@ -34,7 +35,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
   const fetchSpreadsheetId = async () => {
     try {
       const userId = authStatus?.userId || 'test-user';
-      const response = await fetch(`/api/spreadsheet-id?userId=${userId}`);
+      const response = await fetch(`${API_URL}/api/spreadsheet-id?userId=${userId}`);
       const data = await response.json();
       if (data.spreadsheetId) {
         setSpreadsheetId(data.spreadsheetId);
@@ -49,7 +50,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, rules: i
     try {
       const year = new Date().getFullYear();
       const userId = authStatus?.userId || 'test-user';
-      const response = await fetch(`/api/rules?userId=${userId}&year=${year}`);
+      const response = await fetch(`${API_URL}/api/rules?userId=${userId}&year=${year}`);
       const data = await response.json();
       if (data.success && data.rules) {
         setRules(data.rules);

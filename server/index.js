@@ -3682,19 +3682,7 @@ app.post('/api/tax-audit-assistance', async (req, res) => {
   }
 });
 
-// // ローカル開発時のみ listen
-// if (process.env.NODE_ENV === 'development') {
-//   app.listen(PORT, () => {
-//     console.log(`🚀 Gemini Expense Tracker API Server running on port ${PORT}`);
-//     console.log(`🔐 OAuth 2.0 ready - visit http://localhost:${PORT}/auth/google to authenticate`);
-//     console.log(`📊 Google Sheets integration ready`);
-//     console.log(`🧪 Test endpoint: GET /api/test/create-folders-only`);
-//   });
-// }
 
-// // Vercel サーバレス向けエクスポート
-// // API Route として Vercel がこの app を使用できるようにする
-// export default app;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Gemini Expense Tracker API Server running on port ${PORT}`);
   console.log(`🔐 OAuth 2.0 ready`);

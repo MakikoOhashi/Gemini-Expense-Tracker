@@ -3,7 +3,7 @@ import { AIResponse, AuditPrediction, AuditForecastItem, BookkeepingCheckItem, A
 import { sheetsService } from "./sheetsService.ts";
 import { authService } from "./authService.ts";
 
-const API_URL = process.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // 税務調査対応アシスタントの出力形式
 export interface TaxAuditResponse {

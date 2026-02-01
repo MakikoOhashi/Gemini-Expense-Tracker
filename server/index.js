@@ -24,7 +24,8 @@ const PORT = process.env.PORT || 3001;
 // CORS設定
 const allowedOrigins = [
   'https://gemini-expense-tracker-pied.vercel.app', // 本番ドメイン
-  'http://localhost:3000' // ローカル開発用
+  'http://localhost:3000', // ローカル開発用
+  'https://gemini-expense-tracker.onrender.com' // Render本番
 ];
 
 app.use(cors({

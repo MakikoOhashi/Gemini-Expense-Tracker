@@ -3689,6 +3689,7 @@ app.post('/api/tax-audit-assistance', async (req, res) => {
 
 
 // 静的ファイル配信
+console.log('DEBUG __dirname:', __dirname, 'dist path:', path.join(__dirname, '..', 'dist'));
 app.use(express.static(path.join(__dirname, '..', 'dist'), { maxAge: 0, etag: false }));
 
 // SPA フォールバック

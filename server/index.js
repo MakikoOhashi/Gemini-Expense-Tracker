@@ -3689,7 +3689,7 @@ app.post('/api/tax-audit-assistance', async (req, res) => {
 
 
 // 静的ファイル配信
-app.use(express.static(path.join(__dirname, '..', 'dist')));
+app.use(express.static(path.join(__dirname, '..', 'dist'), { maxAge: 0, etag: false }));
 
 // SPA フォールバック
 app.get('*', (req, res) => {

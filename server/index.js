@@ -1,6 +1,10 @@
 //process.env.GOOGLE_APPLICATION_CREDENTIALS = '/Users/makiko/Documents/dev/gemini-expense-tracker/gemini-expense-tracker-483604-7a0c4df6eb04.json';
 
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import cors from 'cors';
 import multer from 'multer';
 import dotenv from 'dotenv';
@@ -3682,6 +3686,14 @@ app.post('/api/tax-audit-assistance', async (req, res) => {
   }
 });
 
+
+// 静的ファイル配信
+app.use(express.static(path.join(__dirname, '..', 'dist')));
+
+// SPA フォールバック
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Gemini Expense Tracker API Server running on port ${PORT}`);

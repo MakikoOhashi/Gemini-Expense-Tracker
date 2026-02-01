@@ -3693,6 +3693,7 @@ app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 // SPA フォールバック
 app.get('*', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 

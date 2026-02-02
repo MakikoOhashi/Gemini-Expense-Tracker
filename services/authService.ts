@@ -6,7 +6,7 @@ export interface AuthStatus {
 }
 
 export class AuthService {
-  private baseUrl = process.env.VITE_API_URL || 'http://localhost:3001';
+  private baseUrl = (process.env.VITE_API_URL || 'http://localhost:3001').replace(/\/api$/, '');
   private idToken: string | null = null;
 
   async checkAuthStatus(userId?: string): Promise<AuthStatus> {

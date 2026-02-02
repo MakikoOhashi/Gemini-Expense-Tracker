@@ -1058,6 +1058,12 @@ const handleRuleInputSubmit = async () => {
             {/* First Time Guide Banner */}
             {showFirstTimeGuide && (
               <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg animate-in slide-in-from-top-4 duration-500">
+                {/* Demo mode warning */}
+                {isDemo && (
+                  <div className="mb-4 p-3 bg-amber-100 border border-amber-300 rounded-lg">
+                    <p className="text-sm font-bold text-amber-800">⚠️ {t.demoModeWarning}</p>
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -1088,7 +1094,8 @@ const handleRuleInputSubmit = async () => {
                       setShowFirstTimeGuide(false);
                       localStorage.setItem('hasSeenFirstTimeGuide', 'true');
                     }}
-                    className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition"
+                    disabled={isDemo}
+                    className={`flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl transition ${isDemo ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-100'}`}
                   >
                     <BanknotesIcon className="w-5 h-5 text-green-600" />
                     <div className="text-left">
@@ -1103,7 +1110,8 @@ const handleRuleInputSubmit = async () => {
                       setShowFirstTimeGuide(false);
                       localStorage.setItem('hasSeenFirstTimeGuide', 'true');
                     }}
-                    className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition"
+                    disabled={isDemo}
+                    className={`flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl transition ${isDemo ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-100'}`}
                   >
                     <SparklesIcon className="w-5 h-5 text-blue-600" />
                     <div className="text-left">
@@ -1118,7 +1126,8 @@ const handleRuleInputSubmit = async () => {
                       setShowFirstTimeGuide(false);
                       localStorage.setItem('hasSeenFirstTimeGuide', 'true');
                     }}
-                    className="flex items-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 transition"
+                    disabled={isDemo}
+                    className={`flex items-center gap-3 p-4 bg-purple-50 border border-purple-200 rounded-xl transition ${isDemo ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-100'}`}
                   >
                     <TagIcon className="w-5 h-5 text-purple-600" />
                     <div className="text-left">

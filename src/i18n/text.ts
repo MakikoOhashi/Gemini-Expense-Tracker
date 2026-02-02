@@ -377,6 +377,7 @@ export const TEXT = {
     // 初期ガイド
     firstTimeGuide: 'まず、やりたいことを選んでください',
     whatWouldYouLike: '何をしたいですか？',
+    demoModeWarning: '⚠️ これはデモモードです。ボタンが無効になっています。',
     registerExpense: '経費を登録',
     registerExpenseSubtitle: 'レシート撮影',
     registerIncome: '売上を登録',
@@ -817,6 +818,7 @@ export const TEXT = {
     // First Time Guide
     firstTimeGuide: 'First, choose what you want to do',
     whatWouldYouLike: 'What would you like to do?',
+    demoModeWarning: '⚠️ This is demo mode. Buttons are disabled.',
     registerExpense: 'Register Expense',
     registerExpenseSubtitle: 'Receipt Photography',
     registerIncome: 'Register Income',

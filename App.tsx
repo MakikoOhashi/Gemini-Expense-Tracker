@@ -1004,9 +1004,9 @@ const handleRuleInputSubmit = async () => {
                 <div className="flex items-center gap-2 text-sm">
                   {authStatus.authenticated ? (
                     <>
-                      <span className="flex items-center gap-1 text-green-300">
+                      <span className={`flex items-center gap-1 ${isDemo ? 'text-yellow-300' : 'text-green-300'}`}>
                         <CheckCircleIcon className="w-4 h-4" />
-                        {t.googleAuthConnected}
+                        {isDemo ? t.demoModeConnected : t.googleAuthConnected}
                       </span>
                       <button
                         onClick={handleLogout}

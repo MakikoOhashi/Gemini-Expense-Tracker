@@ -2392,11 +2392,12 @@ app.get('/auth/google/callback', async (req, res) => {
     console.log(`✅ OAuth authentication completed successfully for user: ${userId}`);
 
     // Redirect to frontend with success
-    res.redirect('http://localhost:3000?auth=success');
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}?auth=success`);
   } catch (error) {
     console.error('❌ OAuth callback error:', error);
     console.error('❌ Error details:', error.message);
-    res.redirect('http://localhost:3000?auth=error');
+    res.redirect(`${frontendUrl}?auth=error`);
   }
 });
 

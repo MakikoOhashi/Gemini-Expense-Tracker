@@ -935,7 +935,7 @@ const handleRuleInputSubmit = async () => {
               </p>
               <div className="pb-4">
               <button
-                onClick={() => window.location.href = `${API_URL}/auth/google`}
+                onClick={() => window.location.href = authService.getAuthUrl()}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
               >
                 {preAuthText.googleAuthButton}

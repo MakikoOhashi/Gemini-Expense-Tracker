@@ -91,7 +91,7 @@ const App: React.FC = () => {
   const QUICK_ACTIONS = [
     { labelKey: 'addExpense', icon: BanknotesIcon, prefix: t.expensePrefix },
     { labelKey: 'addIncome', icon: SparklesIcon, prefix: t.incomePrefix },
-    { labelKey: 'setRule', icon: TagIcon, prefix: 'ルール：' },
+    ...(!isDemo ? [{ labelKey: 'setRule', icon: TagIcon, prefix: 'ルール：' }] : []),
   ];
 
   // Folder conflict modal state

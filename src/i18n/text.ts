@@ -400,6 +400,7 @@ export const TEXT = {
     // Prefixes
     expensePrefix: '経費：',
     incomePrefix: '売上：',
+    rulePrefix: 'ルール：',
 
     // 科目
     categories: {
@@ -841,6 +842,7 @@ export const TEXT = {
     // Prefixes
     expensePrefix: 'Expense: ',
     incomePrefix: 'Income: ',
+    rulePrefix: 'Rule: ',
 
     // Categories
     categories: {

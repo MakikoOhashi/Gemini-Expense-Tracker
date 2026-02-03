@@ -787,7 +787,7 @@ const [ruleInputData, setRuleInputData] = useState({
   };
 
 const handleQuickAction = (prefix: string) => {
-  if (prefix === 'ルール：') {
+  if (prefix === t.rulePrefix) {
     setShowRuleInputCard(true);
     setActivePrefixes([{ id: crypto.randomUUID(), text: prefix }]);
   } else {
@@ -1100,7 +1100,7 @@ const handleRuleInputSubmit = async () => {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => {
-                      handleQuickAction('経費：');
+                      handleQuickAction(t.expensePrefix);
                       setShowFirstTimeGuide(false);
                       localStorage.setItem('hasSeenFirstTimeGuide', 'true');
                     }}
@@ -1116,7 +1116,7 @@ const handleRuleInputSubmit = async () => {
 
                   <button
                     onClick={() => {
-                      handleQuickAction('売上：');
+                      handleQuickAction(t.incomePrefix);
                       setShowFirstTimeGuide(false);
                       localStorage.setItem('hasSeenFirstTimeGuide', 'true');
                     }}
@@ -1132,7 +1132,7 @@ const handleRuleInputSubmit = async () => {
 
                   <button
                     onClick={() => {
-                      handleQuickAction('ルール：');
+                      handleQuickAction(t.rulePrefix);
                       setShowFirstTimeGuide(false);
                       localStorage.setItem('hasSeenFirstTimeGuide', 'true');
                     }}
@@ -1528,7 +1528,7 @@ const handleRuleInputSubmit = async () => {
                     <span>
                       {activePrefixes[0].text === t.expensePrefix && `📒 ${t.expenseInputMode}`}
                       {activePrefixes[0].text === t.incomePrefix && `💰 ${t.incomeInputMode}`}
-                      {activePrefixes[0].text === 'ルール：' && `🏷️ ${t.ruleSettingMode}`}
+                      {activePrefixes[0].text === t.rulePrefix && `🏷️ ${t.ruleSettingMode}`}
                     </span>
                   </div>
                 </div>

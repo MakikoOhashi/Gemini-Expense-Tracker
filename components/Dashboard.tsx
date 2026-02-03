@@ -51,6 +51,27 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
   const [forecastLastUpdated, setForecastLastUpdated] = useState<string | null>(null);
   const [taxAuthorityPerspective, setTaxAuthorityPerspective] = useState<string | null>(null);
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(null);
+
+  // スプレッドシートURLを取得
+  useEffect(() => {
+    const fetchSpreadsheetUrl = async () => {
+      try {
+        const currentUserId = userId || 'test-user';
+        const response = await fetch(`${API_URL}/api/spreadsheet-id?userId=${currentUserId}`);
+        const data = await response.json();
+        if (data.spreadsheetId) {
+          const rulesSheetGid = data.rulesSheetGid || 3;
+          const url = `https://docs.google.com/spreadsheets/d/${data.spreadsheetId}/edit#gid=${rulesSheetGid}`;
+          setSpreadsheetUrl(url);
+        }
+      } catch (error) {
+        console.error('Failed to fetch spreadsheet URL:', error);
+      }
+    };
+
+    fetchSpreadsheetUrl();
+  }, [userId]);
 
   // 監査予報データと記帳チェックデータを取得（Firestoreキャッシュ機能付き）
   useEffect(() => {
@@ -501,7 +522,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-700">{t.individualBookkeepingChecks}</h3>
-          <button className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition">
+          <button 
+            onClick={() => spreadsheetUrl && window.open(spreadsheetUrl, '_blank')}
+            disabled={!spreadsheetUrl}
+            className="px-3 py-1 bg-slate-900 text-white text-xs rounded-lg hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {t.fixInSpreadsheet}
           </button>
         </div>

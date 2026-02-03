@@ -219,7 +219,7 @@ export class SheetsService {
           date: i.date,
           amount: i.amount,
           category: i.category,
-          memo: i.memo,
+          memo: i.memo || '', 
           receipt_url: i.receiptUrl || '',
           type: 'income' as const,
           payerName: i.payerName || '',

@@ -952,7 +952,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
       const category = (transaction.category as string) || 'その他';
       const description = transaction.description as string;
       const id = transaction.id as string;
-      const receiptUrl = transaction.receipt_url as string;
+      const receiptUrl = transaction.receiptUrl as string;
 
       // 高額取引のチェック（個別表示）
       if (amount >= 100000) {

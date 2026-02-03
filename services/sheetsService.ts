@@ -199,7 +199,8 @@ export class SheetsService {
 
       // データを結合（receiptUrlフィールドをreceipt_urlに統一、idも保持）
       const expenses: TransactionData[] = (expensesResult.expenses || []).map((e: any) => {
-        console.log('📋 支出データ受信:', { id: e.id, date: e.date, amount: e.amount });
+        console.log('📋 支出データ受信:', { id: e.id, date: e.date, amount: e.amount,
+          receiptUrl: e.receiptUrl });
         return {
           id: e.id,
           date: e.date,

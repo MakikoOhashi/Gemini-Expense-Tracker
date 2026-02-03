@@ -296,6 +296,16 @@ const [ruleInputData, setRuleInputData] = useState({
     checkAuth();
   }, []);
 
+  // Show first time guide when authenticated (runs on authStatus change)
+  useEffect(() => {
+    if (authStatus?.authenticated) {
+      const hasSeenGuide = localStorage.getItem('hasSeenFirstTimeGuide');
+      if (!hasSeenGuide) {
+        setShowFirstTimeGuide(true);
+      }
+    }
+  }, [authStatus]);
+
   // Check for folder conflicts immediately after authentication
   useEffect(() => {
     const checkFolderConflict = async () => {

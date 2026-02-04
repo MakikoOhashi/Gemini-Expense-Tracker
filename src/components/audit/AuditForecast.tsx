@@ -337,6 +337,20 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       if (issue === '→ 支出根拠資料の整理を推奨') {
         return '→ Organization of expenditure basis documents is recommended';
       }
+
+      // 前年比の急増（例: 前年比 +6060.0% と急増しています）
+      const growthMatch = issue.match(/^前年比 ([+-]?[\d.]+)% と急増しています$/);
+      if (growthMatch) {
+        const [, rate] = growthMatch;
+        return `Year-over-year change is +${rate}% (sharp increase).`;
+      }
+
+      // Zスコア乖離（例: 過去平均との差のZスコアが 122.2 です）
+      const zScoreMatch = issue.match(/^過去平均との差のZスコアが ([+-]?[\d.]+) です$/);
+      if (zScoreMatch) {
+        const [, z] = zScoreMatch;
+        return `Z-score vs past average is ${z}.`;
+      }
     }
 
     // 日本語の場合はそのまま返す

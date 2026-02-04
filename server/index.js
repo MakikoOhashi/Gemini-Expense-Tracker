@@ -2553,14 +2553,25 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
       });
     }
 
-    console.log(`✅ API: Forecast retrieved successfully - ${forecastResults ? forecastResults.length : 0} results`);
+    // Convert Firestore Timestamp to Date for updatedAt
+    let updatedAtValue = null;
+    if (forecastData?.updatedAt) {
+      // Handle Firestore Timestamp object
+      if (typeof forecastData.updatedAt.toDate === 'function') {
+        updatedAtValue = forecastData.updatedAt.toDate();
+      } else {
+        updatedAtValue = forecastData.updatedAt;
+      }
+    }
+
+    console.log(`✅ API: Forecast retrieved successfully - ${forecastResults ? forecastResults.length : 0} results, updatedAt: ${updatedAtValue}`);
 
     res.json({
       success: true,
       googleId,
       year: parsedYear.toString(),
       date,
-      updatedAt: forecastData?.updatedAt || null,
+      updatedAt: updatedAtValue,
       forecastResults,
       taxAuthorityPerspective
     });
@@ -3114,12 +3125,23 @@ app.get('/api/user/forecast-latest/:googleId/:year', async (req, res) => {
     const forecastData = userDoc?.[forecastKey];
 
     if (forecastData && typeof forecastData === 'object' && !Array.isArray(forecastData) && Array.isArray(forecastData.results)) {
+      // Convert Firestore Timestamp to Date for updatedAt
+      let updatedAtValue = null;
+      if (forecastData.updatedAt) {
+        // Handle Firestore Timestamp object
+        if (typeof forecastData.updatedAt.toDate === 'function') {
+          updatedAtValue = forecastData.updatedAt.toDate();
+        } else {
+          updatedAtValue = forecastData.updatedAt;
+        }
+      }
+
       return res.json({
         success: true,
         googleId,
         year: parsedYear.toString(),
         date: forecastData.date || null,
-        updatedAt: forecastData.updatedAt || null,
+        updatedAt: updatedAtValue,
         forecastResults: forecastData.results,
         taxAuthorityPerspective: forecastData.taxAuthorityPerspective || null
       });

@@ -6,7 +6,7 @@ import { auditService } from '../services/auditService';
 import { sheetsService } from '../services/sheetsService';
 import { authService } from '../services/authService';
 import AuditForecast from '../src/components/audit/AuditForecast';
-import { getTodayJSTString } from '../lib/dateUtils';
+import { getTodayJSTString, getTodayJSTDateTimeString } from '../lib/dateUtils';
 import { TEXT, Language } from '../src/i18n/text';
 
 // API URL from environment variable
@@ -114,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           // Generate forecast directly from transactions (no Firestore cache)
           const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year), userId || 'demo-user');
           setAuditForecast(forecastData);
-          setForecastLastUpdated(`${today} 00:00`);
+          setForecastLastUpdated(getTodayJSTDateTimeString());
           
           // Generate tax authority perspective with AI
           try {
@@ -162,7 +162,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           // Generate forecast directly from transactions (no Firestore cache)
           const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year), googleId);
           setAuditForecast(forecastData);
-          setForecastLastUpdated(`${today} 00:00`);
+          setForecastLastUpdated(getTodayJSTDateTimeString());
           
           // Generate tax authority perspective with AI
           try {
@@ -201,7 +201,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               diffRatio: item.diffRatio === 0 && item.zScore === 0 && item.growthRate === 0 ? null : item.diffRatio
             }));
             setAuditForecast(fixedForecastResults);
-            setForecastLastUpdated(`${today} 00:00`);
+            setForecastLastUpdated(getTodayJSTDateTimeString());
             setTaxAuthorityPerspective(forecastData.taxAuthorityPerspective || null);
             console.log('✅ キャッシュから監査予報データを読み込みました（データ修正済み）');
           } else {
@@ -218,7 +218,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           const latestData = await latestResponse.json();
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
-            setForecastLastUpdated(`${latestData.date} 00:00`);
+            // Convert the date from server to JST datetime
+            const datePart = latestData.date.split('T')[0];
+            const jstDate = new Date(latestData.date);
+            const hours = String(jstDate.getHours()).padStart(2, '0');
+            const minutes = String(jstDate.getMinutes()).padStart(2, '0');
+            setForecastLastUpdated(`${datePart} ${hours}:${minutes}`);
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
           } else {
             console.log('🔄 古いキャッシュも無い/取得失敗: 新規生成にフォールバックします');
@@ -299,7 +304,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setLoadingMessage(t.generatingAuditForecast);
         const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year));
         setAuditForecast(forecastData);
-        setForecastLastUpdated(`${today} 00:00`);
+        setForecastLastUpdated(getTodayJSTDateTimeString());
 
         // ③ AIで日次総括（taxAuthorityPerspectiveのみ生成）
         setLoadingMessage(t.generatingTaxAuthorityPerspective);
@@ -371,7 +376,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           const latestData = await latestResponse.json();
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
-            setForecastLastUpdated(`${latestData.date} 00:00`);
+            // Convert the date from server to JST datetime
+            const datePart = latestData.date.split('T')[0];
+            const jstDate = new Date(latestData.date);
+            const hours = String(jstDate.getHours()).padStart(2, '0');
+            const minutes = String(jstDate.getMinutes()).padStart(2, '0');
+            setForecastLastUpdated(`${datePart} ${hours}:${minutes}`);
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
             return;
           }

@@ -351,8 +351,10 @@ export class SheetsService {
         // Convert to JST
         const jstDate = new Date(dateObj.getTime() + (dateObj.getTimezoneOffset() + 9 * 60) * 60 * 1000);
         const dateString = jstDate.toISOString().split('T')[0];
-        // Format as "YYYY-MM-DD 00:00 JST"
-        formattedLastUpdated = `${dateString} 00:00 JST`;
+        // Format as "YYYY-MM-DD HH:mm JST"
+        const hours = String(jstDate.getHours()).padStart(2, '0');
+        const minutes = String(jstDate.getMinutes()).padStart(2, '0');
+        formattedLastUpdated = `${dateString} ${hours}:${minutes} JST`;
       }
 
       return {

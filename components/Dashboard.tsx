@@ -52,6 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [forecastLastUpdated, setForecastLastUpdated] = useState<string | null>(null);
   const [taxAuthorityPerspective, setTaxAuthorityPerspective] = useState<string | null>(null);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(null);
+  const [isGeneratingPerspective, setIsGeneratingPerspective] = useState(false);
 
   // スプレッドシートURLを取得
   useEffect(() => {
@@ -413,6 +414,35 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     loadAuditData();
   }, [transactions, selectedAuditYear, language]);
+
+  // Ensure taxAuthorityPerspective matches current language (without touching Firestore)
+  useEffect(() => {
+    const hasJapanese = (text: string) => /[ぁ-んァ-ン一-龠]/.test(text);
+    if (isLoading || isGeneratingPerspective) return;
+    if (!auditForecast || auditForecast.length === 0) return;
+
+    const currentText = taxAuthorityPerspective || '';
+    const needsRefresh =
+      !currentText ||
+      (language === 'en' && hasJapanese(currentText)) ||
+      (language === 'ja' && !hasJapanese(currentText));
+
+    if (!needsRefresh) return;
+
+    const refreshPerspective = async () => {
+      try {
+        setIsGeneratingPerspective(true);
+        const generated = await auditService.generateTaxAuthorityPerspective(auditForecast, language);
+        setTaxAuthorityPerspective(generated);
+      } catch (error) {
+        console.warn('⚠️ Tax authority perspective refresh failed:', error);
+      } finally {
+        setIsGeneratingPerspective(false);
+      }
+    };
+
+    refreshPerspective();
+  }, [language, auditForecast, taxAuthorityPerspective, isLoading, isGeneratingPerspective]);
 
   const getCheckTypeLabel = (type: '不足' | '確認' | '推奨') => {
     switch (type) {

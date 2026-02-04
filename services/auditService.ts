@@ -697,27 +697,31 @@ ${JSON.stringify(transactionSummary, null, 2)}
     };
     const totalAmount = transactions.reduce(safeAdd, 0);
 
-    const categoryTotals: Record<string, { total: number; count: number }> = {};
+    const categoryTotals: Record<string, { total: number; count: number; maxSingle: number }> = {};
     Object.assign(
       categoryTotals,
       transactions.reduce((acc, transaction) => {
         const category = (transaction.category as string) || 'その他';
         if (!acc[category]) {
-          acc[category] = { total: 0, count: 0 };
+          acc[category] = { total: 0, count: 0, maxSingle: 0 };
         }
         const safeAmount = typeof transaction.amount === 'number' && isFinite(transaction.amount)
           ? transaction.amount
           : 0;
         acc[category].total += safeAmount;
         acc[category].count += 1;
+        if (safeAmount > acc[category].maxSingle) {
+          acc[category].maxSingle = safeAmount;
+        }
         return acc;
-      }, {} as Record<string, { total: number; count: number }>)
+      }, {} as Record<string, { total: number; count: number; maxSingle: number }>)
     );
 
     // 各勘定科目をAuditForecastItemに変換
     const auditForecastItems: AuditForecastItem[] = Object.entries(categoryTotals)
       .map(([category, data], index) => {
         const ratio = totalAmount > 0 ? (data.total / totalAmount) * 100 : 0;
+        const maxSingleRatio = totalAmount > 0 ? (data.maxSingle / totalAmount) * 100 : 0;
 
         // 基本リスクレベルと論点を決定（構造ベース）
         let baseRisk: 'low' | 'medium' | 'high' = 'low';
@@ -763,6 +767,8 @@ ${JSON.stringify(transactionSummary, null, 2)}
           accountName: category,
           totalAmount: data.total,
           ratio: Math.round(ratio * 10) / 10, // 小数点1桁
+          maxSingleTransactionAmount: data.maxSingle,
+          maxSingleTransactionRatio: Math.round(maxSingleRatio * 10) / 10, // 小数点1桁
           riskLevel: baseRisk,
           issues,
           zScore: null, // データなし

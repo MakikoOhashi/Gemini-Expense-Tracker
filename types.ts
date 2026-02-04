@@ -78,6 +78,8 @@ export interface AuditForecastItem {
   accountName: string; // 勘定科目名
   totalAmount: number; // 合計金額
   ratio: number; // 全体に対する比率（%）
+  maxSingleTransactionAmount?: number; // 単一取引の最大金額（任意）
+  maxSingleTransactionRatio?: number; // 単一取引の全体比率（%）（任意）
   riskLevel: 'low' | 'medium' | 'high'; // リスクレベル
   issues: string[]; // 論点リスト
 

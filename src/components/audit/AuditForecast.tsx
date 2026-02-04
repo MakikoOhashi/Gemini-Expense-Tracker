@@ -139,9 +139,11 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       }
     }
 
-    // 高額取引密度スコア
-    if (item.totalAmount > 1000000) {
-      scores.highAmountDensity = Math.min(100, (item.totalAmount / 1000000) * 20);
+    // 高額取引密度スコア（単一取引ベース）
+    const maxSingleRatio = item.maxSingleTransactionRatio ?? 0;
+    if (maxSingleRatio > 10) {
+      // 10%超でスコア開始、50%で100に到達する線形スケーリング
+      scores.highAmountDensity = Math.min(100, ((maxSingleRatio - 10) / 40) * 100);
     }
 
     // クロスカテゴリ一致スコア

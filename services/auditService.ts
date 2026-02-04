@@ -911,28 +911,38 @@ ${JSON.stringify(transactionSummary, null, 2)}
     // ===== クロスカテゴリーアノマリー検出 =====
     const crossMatches = this.detectCrossCategoryAnomalies(transactions, auditForecastItems);
     
-    // ===== クロスカテゴリーマッチをdetectedAnomaliesに注入 =====
-    console.log('🔄 Injecting cross-category matches into detected anomalies...');
+    // ===== クロスカテゴリーマッチを専用異常として追加 =====
+    console.log('🔄 Injecting cross-category matches as dedicated anomalies...');
     for (const item of auditForecastItems) {
       const crosses = crossMatches.get(item.accountName) || [];
-      
-        // 構成比異常がある場合はcrossCategoryMatchesを追加
-        if (crosses.length > 0) {
-          if (item.detectedAnomalies) {
-            item.detectedAnomalies = item.detectedAnomalies.map(anomaly => ({
-              ...anomaly,
-              // 構成比異常にのみcrossCategoryMatchesを追加
-              ...(anomaly.dimension === '構成比異常' ? {
-                crossCategoryMatches: crosses.map(c => ({
-                  relatedAccount: c.accountName,
-                  sameAmount: c.amount,
-                  dateGap: `${Math.round(c.daysDifference)}日差`,
-                  merchant: c.merchant
-                }))
-              } : {})
-            }));
-          }
+
+      if (crosses.length > 0) {
+        const crossCategoryAnomaly: AnomalyDetection = {
+          dimension: 'クロスカテゴリ一致',
+          accountName: item.accountName,
+          value: crosses.length,
+          severity: crosses.length >= 3 ? 'high' : 'medium',
+          message: `勘定科目横断で${crosses.length}件の一致取引を検出`,
+          fact: `一致取引${crosses.length}件`,
+          ruleDescription: '同一取引先・同一金額の取引が複数科目に存在',
+          crossCategoryMatches: crosses.map(c => ({
+            relatedAccount: c.accountName,
+            sameAmount: c.amount,
+            dateGap: `${Math.round(c.daysDifference)}日差`,
+            merchant: c.merchant
+          }))
+        };
+
+        if (!item.detectedAnomalies) {
+          item.detectedAnomalies = [];
         }
+        item.detectedAnomalies.push(crossCategoryAnomaly);
+      }
+    }
+
+    // クロスカテゴリ一致追加後に検知数を再計算
+    for (const item of auditForecastItems) {
+      item.anomalyCount = item.detectedAnomalies ? item.detectedAnomalies.length : 0;
     }
     
     // NOTE: taxAuthorityPerspective（日次総括）のAI生成はDashboard側で1回だけ実行する

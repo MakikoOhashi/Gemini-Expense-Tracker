@@ -149,9 +149,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
     // クロスカテゴリ一致スコア
     if (item.detectedAnomalies) {
       const crossCategoryCount = item.detectedAnomalies.filter(
-        anomaly => anomaly.dimension === '構成比異常' && 
-                  anomaly.crossCategoryMatches && 
-                  anomaly.crossCategoryMatches.length > 0
+        anomaly => anomaly.dimension === 'クロスカテゴリ一致'
       ).length;
       scores.crossCategoryMatch = Math.min(100, crossCategoryCount * 25);
     }

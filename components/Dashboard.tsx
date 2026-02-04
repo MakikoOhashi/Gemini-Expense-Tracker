@@ -48,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [auditForecast, setAuditForecast] = useState<AuditForecastItem[]>([]);
   const [bookkeepingChecks, setBookkeepingChecks] = useState<BookkeepingCheckItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('監査予報を読み込み中...');
+  const [loadingMessage, setLoadingMessage] = useState(t.loadingAuditForecast || '監査予報を読み込み中...');
   const [forecastLastUpdated, setForecastLastUpdated] = useState<string | null>(null);
   const [taxAuthorityPerspective, setTaxAuthorityPerspective] = useState<string | null>(null);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(null);
@@ -207,7 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           } else {
             // キャッシュが存在しない場合は新規生成（処理順序: ①スプシ→②関数→③AI→④Firestore）
             console.log('🆕 キャッシュミスまたは初回アクセス: 監査予報を新規生成します');
-            setLoadingMessage('監査予報を更新中...');
+            setLoadingMessage(t.updatingAuditForecast);
             await refreshForecastOncePerDay(filteredTransactions, googleId, year, today, idToken);
           }
         } catch (cacheError) {
@@ -222,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
           } else {
             console.log('🔄 古いキャッシュも無い/取得失敗: 新規生成にフォールバックします');
-            setLoadingMessage('監査予報を更新中...');
+            setLoadingMessage(t.updatingAuditForecast);
             await refreshForecastOncePerDay(filteredTransactions, googleId, year, today, idToken);
           }
         }

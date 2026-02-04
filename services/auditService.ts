@@ -791,11 +791,25 @@ ${JSON.stringify(transactionSummary, null, 2)}
           const previousYearData = accountHistory.find((h: any) => h.year === year - 1);
 
           if (currentYearData && previousYearData) {
-            // 1. growthRate 計算
-            item.growthRate = ((currentYearData.amount - previousYearData.amount) / previousYearData.amount) * 100;
+            // 1. growthRate 計算（前年が0/不正の場合は計算しない）
+            const prevAmount = Number(previousYearData.amount);
+            const currAmount = Number(currentYearData.amount);
+            if (isFinite(prevAmount) && prevAmount > 0 && isFinite(currAmount)) {
+              const rawGrowth = ((currAmount - prevAmount) / prevAmount) * 100;
+              item.growthRate = isFinite(rawGrowth) ? rawGrowth : null;
+            } else {
+              item.growthRate = null;
+            }
 
             // 2. diffRatio 計算（支出比率の差）
-            item.diffRatio = currentYearData.ratio - previousYearData.ratio;
+            const currRatio = Number(currentYearData.ratio);
+            const prevRatio = Number(previousYearData.ratio);
+            if (isFinite(currRatio) && isFinite(prevRatio)) {
+              const rawDiff = currRatio - prevRatio;
+              item.diffRatio = isFinite(rawDiff) ? rawDiff : null;
+            } else {
+              item.diffRatio = null;
+            }
 
             // 3. zScore 計算（直近3年平均との差）: currentYearは除外して平均との差を作る
             const pastAmounts = accountHistory
@@ -808,7 +822,8 @@ ${JSON.stringify(transactionSummary, null, 2)}
               const stdDev = Math.sqrt(variance);
 
               // 標準偏差が0より大きい場合のみ計算（全て同じ値の場合は計算不能）
-              item.zScore = stdDev > 0 ? (currentYearData.amount - mean) / stdDev : null;
+              const rawZ = stdDev > 0 ? (currAmount - mean) / stdDev : null;
+              item.zScore = rawZ !== null && isFinite(rawZ) ? rawZ : null;
             } else {
               item.zScore = null; // データが不十分
             }

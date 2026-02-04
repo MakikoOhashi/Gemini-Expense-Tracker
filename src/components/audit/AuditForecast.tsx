@@ -96,9 +96,13 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       : subject;
 
     const isSuppressed = !!data?.suppressed;
+    const isMissing = !!data?.missing;
     const suppressionNote = language === 'en'
       ? 'Shown as 0 in Jan–Oct due to partial-year comparison (current year only).'
       : '当年の1〜10月は通年比較の歪みが大きいため0表示です。';
+    const missingNote = language === 'en'
+      ? 'Shown as 0 because prior-year data is not available.'
+      : '前年データが無いため0表示です。';
 
     return (
       <div className="bg-white p-3 border border-gray-200 rounded shadow-lg max-w-xs">
@@ -109,6 +113,11 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
         {isSuppressed && (
           <p className="text-xs text-gray-500 mt-1">
             {suppressionNote}
+          </p>
+        )}
+        {isMissing && (
+          <p className="text-xs text-gray-500 mt-1">
+            {missingNote}
           </p>
         )}
       </div>
@@ -220,16 +229,21 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   // レーダーチャート用データ
   const getRadarChartData = (item: AuditForecastItem, suppressTemporal: boolean) => {
     const scores = calculateAnomalyScores(item);
+    const rapidMissing = item.growthRate === null;
+    const statisticalMissing = item.zScore === null;
     
     const radarData = [
-      { key: 'composition', subject: t.compositionAbnormality, A: scores.composition, fullMark: 100, suppressed: false },
-      { key: 'suddenChange', subject: t.suddenChangeAbnormality, A: scores.suddenChange, fullMark: 100, suppressed: suppressTemporal },
-      { key: 'statisticalDeviation', subject: t.statisticalDeviation, A: scores.statisticalDeviation, fullMark: 100, suppressed: suppressTemporal },
-      { key: 'ratioFluctuation', subject: t.ratioFluctuation, A: scores.ratioFluctuation, fullMark: 100, suppressed: false },
-      { key: 'highAmountDensity', subject: t.highAmountDensity, A: scores.highAmountDensity, fullMark: 100, suppressed: false },
-      { key: 'crossCategoryMatch', subject: t.crossCategoryMatch, A: scores.crossCategoryMatch, fullMark: 100, suppressed: false }
+      { key: 'composition', subject: t.compositionAbnormality, A: scores.composition, fullMark: 100, suppressed: false, missing: false },
+      { key: 'suddenChange', subject: t.suddenChangeAbnormality, A: scores.suddenChange, fullMark: 100, suppressed: suppressTemporal, missing: rapidMissing },
+      { key: 'statisticalDeviation', subject: t.statisticalDeviation, A: scores.statisticalDeviation, fullMark: 100, suppressed: suppressTemporal, missing: statisticalMissing },
+      { key: 'ratioFluctuation', subject: t.ratioFluctuation, A: scores.ratioFluctuation, fullMark: 100, suppressed: false, missing: false },
+      { key: 'highAmountDensity', subject: t.highAmountDensity, A: scores.highAmountDensity, fullMark: 100, suppressed: false, missing: false },
+      { key: 'crossCategoryMatch', subject: t.crossCategoryMatch, A: scores.crossCategoryMatch, fullMark: 100, suppressed: false, missing: false }
     ].map(d => {
       if (suppressTemporal && (d.key === 'suddenChange' || d.key === 'statisticalDeviation')) {
+        return { ...d, A: 0 };
+      }
+      if (d.missing && (d.key === 'suddenChange' || d.key === 'statisticalDeviation')) {
         return { ...d, A: 0 };
       }
       return d;

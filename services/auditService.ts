@@ -24,6 +24,85 @@ interface CrossCategoryMatch {
 
 export class AuditService {
   /**
+   * 監査対応チェックリストをAIに生成させる（issuesを元に3件）
+   */
+  async generateAuditPreparationChecklist(
+    issues: string[],
+    language: 'ja' | 'en' = 'ja'
+  ): Promise<string[]> {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。環境変数を確認してください。");
+    }
+
+    if (!issues || issues.length === 0) return [];
+
+    const ai = new GoogleGenAI({ apiKey });
+    const modelName = 'gemini-2.5-flash-lite';
+
+    const issueList = issues.map(i => `- ${i}`).join('\n');
+
+    const systemInstruction = language === 'en'
+      ? `You are a tax audit preparation assistant.
+
+Given the following detected anomalies:
+${issueList}
+
+Generate 3 concise, practical actions a business owner should take
+to prepare for a potential tax audit.
+
+Rules:
+- Do NOT restate any numbers.
+- Focus on documentation and verification steps.
+- Output ONLY a JSON array of 3 short strings.`
+      : `あなたは税務監査の準備アシスタントです。
+
+以下の検知された異常点があります：
+${issueList}
+
+税務調査に備えて事業者が取るべき実務的なアクションを3つ、簡潔に作成してください。
+
+ルール:
+- 数値の再掲はしないこと
+- 資料の整理や検証手順に集中すること
+- 出力は3件の短い文のみ（JSON配列のみ）`;
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+    );
+
+    const generatePromise = ai.models.generateContent({
+      model: modelName,
+      contents: [{ role: 'user', parts: [{ text: language === 'en'
+        ? 'Generate the audit preparation checklist.'
+        : '監査対応チェックリストを生成してください。' }] }],
+      config: {
+        systemInstruction,
+        temperature: 0.6
+      },
+    });
+
+    const response: any = await Promise.race([generatePromise, timeoutPromise]);
+    const responseText = response.text;
+    if (!responseText) throw new Error("AIから空の応答が返されました。");
+
+    // まずJSON配列としてパース
+    try {
+      const parsed = JSON.parse(responseText);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String).filter(Boolean).slice(0, 3);
+      }
+    } catch {
+      // fallback: 行単位で抽出
+    }
+
+    const lines = String(responseText)
+      .split('\n')
+      .map(line => line.replace(/^\s*[-*\d.]+\s*/, '').trim())
+      .filter(Boolean);
+    return lines.slice(0, 3);
+  }
+  /**
    * 日次総括（taxAuthorityPerspective）をAIに生成させる
    * - 勘定科目ごとの文言生成はしない（この関数の返り値のみ）
    */

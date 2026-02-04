@@ -306,7 +306,8 @@ export class UserService {
     year: string,
     date: string,
     forecastResults: AuditForecastItem[],
-    taxAuthorityPerspective: string | null = null
+    taxAuthorityPerspective: string | null = null,
+    auditPreparationChecklist: string[] | null = null
   ): Promise<void> {
     // DEMO ONLY: Skip Firestore writes for demo users
     // TODO: remove demo mode before production
@@ -406,6 +407,7 @@ export class UserService {
           results: normalizedForecastResults,
           // 日次総括（resultsと同階層）
           taxAuthorityPerspective: taxAuthorityPerspective,
+          auditPreparationChecklist: auditPreparationChecklist,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }
       };

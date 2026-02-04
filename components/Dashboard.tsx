@@ -51,6 +51,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [loadingMessage, setLoadingMessage] = useState(t.loadingAuditForecast || '監査予報を読み込み中...');
   const [forecastLastUpdated, setForecastLastUpdated] = useState<string | null>(null);
   const [taxAuthorityPerspective, setTaxAuthorityPerspective] = useState<string | null>(null);
+  const [auditPreparationChecklist, setAuditPreparationChecklist] = useState<string[] | null>(null);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(null);
   const [isGeneratingPerspective, setIsGeneratingPerspective] = useState(false);
 
@@ -82,6 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setBookkeepingChecks([]);
         setForecastLastUpdated(null);
         setTaxAuthorityPerspective(null);
+        setAuditPreparationChecklist(null);
         return;
       }
 
@@ -96,6 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setBookkeepingChecks([]);
         setForecastLastUpdated(null);
         setTaxAuthorityPerspective(null);
+        setAuditPreparationChecklist(null);
         return;
       }
 
@@ -125,6 +128,16 @@ const Dashboard: React.FC<DashboardProps> = ({
           } catch (aiError) {
             console.warn('⚠️ Demo mode: AI perspective generation failed:', aiError);
             setTaxAuthorityPerspective(null);
+          }
+
+          // Generate audit preparation checklist (AI)
+          try {
+            const issues = forecastData[0]?.issues || [];
+            const checklist = await auditService.generateAuditPreparationChecklist(issues, language);
+            setAuditPreparationChecklist(checklist);
+          } catch (aiError) {
+            console.warn('⚠️ Demo mode: AI checklist generation failed:', aiError);
+            setAuditPreparationChecklist(null);
           }
           
           // Generate bookkeeping checks
@@ -174,6 +187,16 @@ const Dashboard: React.FC<DashboardProps> = ({
             console.warn('⚠️ Demo mode: AI perspective generation failed:', aiError);
             setTaxAuthorityPerspective(null);
           }
+
+          // Generate audit preparation checklist (AI)
+          try {
+            const issues = forecastData[0]?.issues || [];
+            const checklist = await auditService.generateAuditPreparationChecklist(issues, language);
+            setAuditPreparationChecklist(checklist);
+          } catch (aiError) {
+            console.warn('⚠️ Demo mode: AI checklist generation failed:', aiError);
+            setAuditPreparationChecklist(null);
+          }
           
           // Generate bookkeeping checks
           const checksData = await auditService.generateBookkeepingChecks(filteredTransactions, language, t.categories);
@@ -212,6 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               setForecastLastUpdated(getTodayJSTDateTimeString());
             }
             setTaxAuthorityPerspective(forecastData.taxAuthorityPerspective || null);
+            setAuditPreparationChecklist(forecastData.auditPreparationChecklist || null);
             console.log('✅ キャッシュから監査予報データを読み込みました（データ修正済み）');
           } else {
             // キャッシュが存在しない場合は新規生成（処理順序: ①スプシ→②関数→③AI→④Firestore）
@@ -237,6 +261,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               setForecastLastUpdated(getTodayJSTDateTimeString());
             }
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
+            setAuditPreparationChecklist(latestData.auditPreparationChecklist || null);
           } else {
             console.log('🔄 古いキャッシュも無い/取得失敗: 新規生成にフォールバックします');
             setLoadingMessage(t.updatingAuditForecast);
@@ -323,6 +348,11 @@ const Dashboard: React.FC<DashboardProps> = ({
         const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
         setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
 
+        // ③-2 AIで監査対応チェックリストを生成
+        const issues = forecastData[0]?.issues || [];
+        const generatedChecklist = await auditService.generateAuditPreparationChecklist(issues, language);
+        setAuditPreparationChecklist(generatedChecklist);
+
         // ④ 生成した予報をサーバーAPI経由でFirestoreに保存（不要フィールドは保存しない）
         console.log('🔍 Saving to Firebase:', forecastData.length, 'items');
         console.log('🔍 First item detectedAnomalies:', forecastData[0]?.detectedAnomalies);
@@ -332,7 +362,8 @@ const Dashboard: React.FC<DashboardProps> = ({
           year,
           date: today,
           forecastResults: forecastData,
-          taxAuthorityPerspective: generatedTaxAuthorityPerspective
+          taxAuthorityPerspective: generatedTaxAuthorityPerspective,
+          auditPreparationChecklist: generatedChecklist
         };
 
         // ガード: dateに "/" が含まれていたらエラー
@@ -398,6 +429,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               setForecastLastUpdated(getTodayJSTDateTimeString());
             }
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
+            setAuditPreparationChecklist(latestData.auditPreparationChecklist || null);
             return;
           }
         } catch (fallbackCacheError) {
@@ -409,6 +441,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setAuditForecast(fallbackForecast);
         setForecastLastUpdated(null);
         setTaxAuthorityPerspective(null);
+        setAuditPreparationChecklist(null);
       }
     };
 
@@ -562,6 +595,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         t={t}
         language={language}
         taxAuthorityPerspective={taxAuthorityPerspective}
+        auditPreparationChecklist={auditPreparationChecklist}
         selectedAuditYear={selectedAuditYear}
       />
 

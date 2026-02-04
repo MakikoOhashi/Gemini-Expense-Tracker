@@ -2306,7 +2306,7 @@ app.post('/api/user/forecast', async (req, res) => {
       console.log('📊 First forecast result sample:', JSON.stringify(req.body.forecastResults[0], null, 2));
     }
 
-    const { googleId, year, date, forecastResults, taxAuthorityPerspective } = req.body;
+    const { googleId, year, date, forecastResults, taxAuthorityPerspective, auditPreparationChecklist } = req.body;
 
     if (!googleId || !year || !date || !forecastResults) {
       console.log('❌ Missing required fields:', { googleId: !!googleId, year: !!year, date: !!date, forecastResults: !!forecastResults });
@@ -2319,6 +2319,20 @@ app.post('/api/user/forecast', async (req, res) => {
     }
     if (typeof taxAuthorityPerspective === 'string' && taxAuthorityPerspective.length > 10000) {
       return res.status(400).json({ error: 'taxAuthorityPerspective が長すぎます（10000文字まで）' });
+    }
+
+    if (auditPreparationChecklist !== undefined) {
+      if (!Array.isArray(auditPreparationChecklist)) {
+        return res.status(400).json({ error: 'auditPreparationChecklist は配列である必要があります' });
+      }
+      const hasNonString = auditPreparationChecklist.some(item => typeof item !== 'string');
+      if (hasNonString) {
+        return res.status(400).json({ error: 'auditPreparationChecklist は文字列配列である必要があります' });
+      }
+      const joined = auditPreparationChecklist.join(' ');
+      if (joined.length > 2000) {
+        return res.status(400).json({ error: 'auditPreparationChecklist が長すぎます（2000文字まで）' });
+      }
     }
 
     // Validate and parse year (accept both string and number)
@@ -2476,7 +2490,10 @@ app.post('/api/user/forecast', async (req, res) => {
       parsedYear.toString(),
       date,
       normalizedForecastResults,
-      typeof taxAuthorityPerspective === 'string' ? taxAuthorityPerspective.trim() : null
+      typeof taxAuthorityPerspective === 'string' ? taxAuthorityPerspective.trim() : null,
+      Array.isArray(auditPreparationChecklist)
+        ? auditPreparationChecklist.map(item => String(item).trim()).filter(Boolean).slice(0, 3)
+        : null
     );
 
     console.log(`🔮 Saved forecast results for user ${googleId}, year ${year}, date ${date}: ${forecastResults.length} results`);
@@ -2537,10 +2554,12 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
 
     let forecastResults = null;
     let taxAuthorityPerspective = null;
+    let auditPreparationChecklist = null;
     if (forecastData && typeof forecastData === 'object' && !Array.isArray(forecastData)) {
       if (forecastData.date === date && Array.isArray(forecastData.results)) {
         forecastResults = forecastData.results;
         taxAuthorityPerspective = forecastData.taxAuthorityPerspective || null;
+        auditPreparationChecklist = forecastData.auditPreparationChecklist || null;
       }
     }
 
@@ -2573,7 +2592,8 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
       date,
       updatedAt: updatedAtValue,
       forecastResults,
-      taxAuthorityPerspective
+      taxAuthorityPerspective,
+      auditPreparationChecklist
     });
 
   } catch (error) {
@@ -3143,7 +3163,8 @@ app.get('/api/user/forecast-latest/:googleId/:year', async (req, res) => {
         date: forecastData.date || null,
         updatedAt: updatedAtValue,
         forecastResults: forecastData.results,
-        taxAuthorityPerspective: forecastData.taxAuthorityPerspective || null
+        taxAuthorityPerspective: forecastData.taxAuthorityPerspective || null,
+        auditPreparationChecklist: forecastData.auditPreparationChecklist || null
       });
     }
 

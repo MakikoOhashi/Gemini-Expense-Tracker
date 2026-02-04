@@ -10,6 +10,7 @@ interface AuditForecastProps {
   t: any;
   language?: 'ja' | 'en';
   taxAuthorityPerspective?: string | null;
+  auditPreparationChecklist?: string[] | null;
   selectedAuditYear?: number | null;
 }
 
@@ -20,6 +21,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   t,
   language = 'ja',
   taxAuthorityPerspective = null,
+  auditPreparationChecklist = null,
   selectedAuditYear = null
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -540,13 +542,20 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
               <span className="text-lg">✅</span>
               <h4 className="font-bold text-green-800">{t.immediateActionsRequired}</h4>
             </div>
+            <p className="text-xs text-green-700 mb-2">
+              {t.aiGeneratedGuidance}
+            </p>
             <div className="space-y-2 text-sm text-green-700">
-              {item.issues.map((issue, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                  <p className={language === 'en' ? 'leading-relaxed' : ''}>{translateIssue(issue)}</p>
-                </div>
-              ))}
+              {auditPreparationChecklist && auditPreparationChecklist.length > 0 ? (
+                auditPreparationChecklist.map((step, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
+                    <p className={language === 'en' ? 'leading-relaxed' : ''}>{step}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-green-700">{t.aiGuidanceUnavailable}</p>
+              )}
             </div>
           </div>
         </div>

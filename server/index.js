@@ -2560,6 +2560,7 @@ app.get('/api/user/forecast/:googleId/:year/:date', async (req, res) => {
       googleId,
       year: parsedYear.toString(),
       date,
+      updatedAt: forecastData?.updatedAt || null,
       forecastResults,
       taxAuthorityPerspective
     });

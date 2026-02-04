@@ -201,7 +201,15 @@ const Dashboard: React.FC<DashboardProps> = ({
               diffRatio: item.diffRatio === 0 && item.zScore === 0 && item.growthRate === 0 ? null : item.diffRatio
             }));
             setAuditForecast(fixedForecastResults);
-            setForecastLastUpdated(getTodayJSTDateTimeString());
+            // Use updatedAt timestamp from Firestore
+            if (forecastData.updatedAt) {
+              const jstDate = forecastData.updatedAt.toDate ? forecastData.updatedAt.toDate() : new Date(forecastData.updatedAt);
+              const hours = String(jstDate.getHours()).padStart(2, '0');
+              const minutes = String(jstDate.getMinutes()).padStart(2, '0');
+              setForecastLastUpdated(`${jstDate.toISOString().split('T')[0]} ${hours}:${minutes}`);
+            } else {
+              setForecastLastUpdated(getTodayJSTDateTimeString());
+            }
             setTaxAuthorityPerspective(forecastData.taxAuthorityPerspective || null);
             console.log('✅ キャッシュから監査予報データを読み込みました（データ修正済み）');
           } else {

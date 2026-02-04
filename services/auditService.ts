@@ -1116,10 +1116,11 @@ ${JSON.stringify(transactionSummary, null, 2)}
     const transactionGroups = new Map<string, any[]>();
     
     transactions.forEach(tx => {
-      if (!tx.memo || tx.amount < 100000) return; // 高額取引のみチェック
+      const memoText = (tx.memo || tx.description || '').trim();
+      if (!memoText || tx.amount < 100000) return; // 高額取引のみチェック
       
       // ファジィキーを作成: merchant name (最初の10文字) + amount
-      const merchant = tx.memo.substring(0, 10);
+      const merchant = memoText.substring(0, 10);
       const key = `${merchant}_${tx.amount}`;
       
       if (!transactionGroups.has(key)) {
@@ -1141,7 +1142,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
               accountName: other.category || '不明',
               amount: other.amount,
               date: other.date,
-              merchant: other.memo || '',
+              merchant: (other.memo || other.description || '').trim(),
               daysDifference: Math.abs(
                 (new Date(tx.date).getTime() - new Date(other.date).getTime()) 
                 / (1000 * 60 * 60 * 24)

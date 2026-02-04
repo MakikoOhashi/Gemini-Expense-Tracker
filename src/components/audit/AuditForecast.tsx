@@ -95,12 +95,22 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       ? ANOMALY_DESCRIPTIONS[key][language as 'ja' | 'en']
       : subject;
 
+    const isSuppressed = !!data?.suppressed;
+    const suppressionNote = language === 'en'
+      ? 'Shown as 0 in Jan–Oct due to partial-year comparison (current year only).'
+      : '当年の1〜10月は通年比較の歪みが大きいため0表示です。';
+
     return (
       <div className="bg-white p-3 border border-gray-200 rounded shadow-lg max-w-xs">
         <p className="font-semibold text-sm">{description}</p>
         <p className="text-xs text-gray-600 mt-1">
           {language === 'ja' ? 'リスクスコア' : 'Risk Score'}: {data.A}
         </p>
+        {isSuppressed && (
+          <p className="text-xs text-gray-500 mt-1">
+            {suppressionNote}
+          </p>
+        )}
       </div>
     );
   };
@@ -208,31 +218,32 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   };
 
   // レーダーチャート用データ
-  const getRadarChartData = (item: AuditForecastItem, includeTemporalAnomalies: boolean) => {
+  const getRadarChartData = (item: AuditForecastItem, suppressTemporal: boolean) => {
     const scores = calculateAnomalyScores(item);
     
     const radarData = [
-      { key: 'composition', subject: t.compositionAbnormality, A: scores.composition, fullMark: 100 },
-      { key: 'suddenChange', subject: t.suddenChangeAbnormality, A: scores.suddenChange, fullMark: 100 },
-      { key: 'statisticalDeviation', subject: t.statisticalDeviation, A: scores.statisticalDeviation, fullMark: 100 },
-      { key: 'ratioFluctuation', subject: t.ratioFluctuation, A: scores.ratioFluctuation, fullMark: 100 },
-      { key: 'highAmountDensity', subject: t.highAmountDensity, A: scores.highAmountDensity, fullMark: 100 },
-      { key: 'crossCategoryMatch', subject: t.crossCategoryMatch, A: scores.crossCategoryMatch, fullMark: 100 }
-    ];
-
-    const filteredData = includeTemporalAnomalies
-      ? radarData
-      : radarData.filter(d => d.key !== 'suddenChange' && d.key !== 'statisticalDeviation');
+      { key: 'composition', subject: t.compositionAbnormality, A: scores.composition, fullMark: 100, suppressed: false },
+      { key: 'suddenChange', subject: t.suddenChangeAbnormality, A: scores.suddenChange, fullMark: 100, suppressed: suppressTemporal },
+      { key: 'statisticalDeviation', subject: t.statisticalDeviation, A: scores.statisticalDeviation, fullMark: 100, suppressed: suppressTemporal },
+      { key: 'ratioFluctuation', subject: t.ratioFluctuation, A: scores.ratioFluctuation, fullMark: 100, suppressed: false },
+      { key: 'highAmountDensity', subject: t.highAmountDensity, A: scores.highAmountDensity, fullMark: 100, suppressed: false },
+      { key: 'crossCategoryMatch', subject: t.crossCategoryMatch, A: scores.crossCategoryMatch, fullMark: 100, suppressed: false }
+    ].map(d => {
+      if (suppressTemporal && (d.key === 'suddenChange' || d.key === 'statisticalDeviation')) {
+        return { ...d, A: 0 };
+      }
+      return d;
+    });
 
     // デバッグログを追加
     console.log('[radarData生成]', {
       language,
-      dataLength: filteredData.length,
-      subjects: filteredData.map(d => d.subject),
-      scores: filteredData.map(d => d.A)
+      dataLength: radarData.length,
+      subjects: radarData.map(d => d.subject),
+      scores: radarData.map(d => d.A)
     });
 
-    return filteredData;
+    return radarData;
   };
 
   // リスクレベルに応じた色
@@ -245,10 +256,10 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   };
 
   // 異常パターンの検出状態を取得
-  const getAnomalyDetectionStatus = (item: AuditForecastItem, includeTemporalAnomalies: boolean) => {
+  const getAnomalyDetectionStatus = (item: AuditForecastItem) => {
     const scores = calculateAnomalyScores(item);
     
-    const status = [
+    return [
       { name: t.compositionAbnormality, detected: scores.composition > 0, score: scores.composition },
       { name: t.suddenChangeAbnormality, detected: scores.suddenChange > 0, score: scores.suddenChange },
       { name: t.statisticalDeviation, detected: scores.statisticalDeviation > 0, score: scores.statisticalDeviation },
@@ -256,10 +267,6 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
       { name: t.highAmountDensity, detected: scores.highAmountDensity > 0, score: scores.highAmountDensity },
       { name: t.crossCategoryMatch, detected: scores.crossCategoryMatch > 0, score: scores.crossCategoryMatch }
     ];
-
-    return includeTemporalAnomalies
-      ? status
-      : status.filter(s => s.name !== t.suddenChangeAbnormality && s.name !== t.statisticalDeviation);
   };
 
   // issues を翻訳する関数
@@ -355,8 +362,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
     ? { ...scores, suddenChange: 0, statisticalDeviation: 0 }
     : scores;
   const maxScore = Math.max(...Object.values(scoresForDisplay));
-  const radarData = getRadarChartData(item, !suppressTemporalAnomalies);
-  const anomalyStatus = getAnomalyDetectionStatus(item, !suppressTemporalAnomalies);
+  const radarData = getRadarChartData(item, suppressTemporalAnomalies);
+  const anomalyStatus = getAnomalyDetectionStatus(item);
 
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
@@ -399,19 +406,6 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
           
           {/* Hexagon Chart */}
           <div className="mb-6">
-            {suppressTemporalAnomalies && (
-              <div className="mb-2 text-xs text-gray-500">
-                <span
-                  title={language === 'en'
-                    ? 'Rapid Change and Statistical are hidden Jan–Oct to avoid partial-year bias (current year only).'
-                    : 'Rapid Change / Statistical は当年の1〜10月は通年比較の歪みが大きいため非表示です。'}
-                >
-                  {language === 'en'
-                    ? 'Rapid Change / Statistical hidden (Jan–Oct)'
-                    : 'Rapid Change / Statistical は1〜10月は非表示'}
-                </span>
-              </div>
-            )}
             <ResponsiveContainer width="100%" height={400}>
               <RadarChart 
                 cx="50%" 
@@ -480,13 +474,13 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
                 <p className="text-gray-600 mb-1">{t.ratioOfTotal}</p>
                 <p className="font-semibold">{item.ratio.toFixed(1)}%</p>
               </div>
-              {!suppressTemporalAnomalies && item.zScore !== null && (
+              {item.zScore !== null && (
                 <div>
                   <p className="text-gray-600 mb-1">{t.zScore}</p>
                   <p className="font-semibold">{item.zScore.toFixed(2)}</p>
                 </div>
               )}
-              {!suppressTemporalAnomalies && item.growthRate !== null && (
+              {item.growthRate !== null && (
                 <div>
                   <p className="text-gray-600 mb-1">{t.growthRate}</p>
                   <p className="font-semibold">{item.growthRate.toFixed(1)}%</p>

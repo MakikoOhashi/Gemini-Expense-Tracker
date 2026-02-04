@@ -105,7 +105,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         // TODO: remove demo mode before production
         if (isDemo || isDemoUser(userId || '')) {
           console.log('📊 Demo mode: skipping authentication, generating forecast directly from transactions');
-          setLoadingMessage('監査予報を生成中...');
+          setLoadingMessage(t.generatingAuditForecast);
           
           if (!selectedAuditYear) return;
           const year = selectedAuditYear.toString();
@@ -118,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           
           // Generate tax authority perspective with AI
           try {
-            setLoadingMessage('税務署視点の総括を生成中...');
+            setLoadingMessage(t.generatingTaxAuthorityPerspective);
             const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
             setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
           } catch (aiError) {
@@ -157,7 +157,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         // TODO: remove demo mode before production
         if (isDemoUser(googleId)) {
           console.log('📊 Demo mode: skipping Firestore cache, generating forecast directly from transactions');
-          setLoadingMessage('監査予報を生成中...');
+          setLoadingMessage(t.generatingAuditForecast);
           
           // Generate forecast directly from transactions (no Firestore cache)
           const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year), googleId);
@@ -166,7 +166,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           
           // Generate tax authority perspective with AI
           try {
-            setLoadingMessage('税務署視点の総括を生成中...');
+            setLoadingMessage(t.generatingTaxAuthorityPerspective);
             const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
             setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
           } catch (aiError) {
@@ -276,7 +276,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       try {
         // ① Summaryを最新化（サーバー側で1日1回制限・lastSummaryGeneratedAt更新）
         try {
-          setLoadingMessage('横断集計を更新中...');
+          setLoadingMessage(t.updatingCrossTabulation);
           const summaryResponse = await fetch(`${API_URL}/api/audit-forecast-update`, {
             method: 'POST',
             headers: {
@@ -287,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           });
           const summaryData = await summaryResponse.json();
           if (!summaryResponse.ok) {
-            throw new Error(summaryData.details || summaryData.error || '横断集計の更新に失敗しました');
+            throw new Error(summaryData.details || summaryData.error || t.crossTabulationUpdateFailed);
           }
           console.log('✅ Summary updated for audit forecast:', summaryData);
         } catch (summaryError) {
@@ -296,13 +296,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         // ② 関数で異常判定・スコア計算（Summary優先）
-        setLoadingMessage('監査予報を生成中...');
+        setLoadingMessage(t.generatingAuditForecast);
         const forecastData = await auditService.generateAuditForecast(filteredTransactions, Number(year));
         setAuditForecast(forecastData);
         setForecastLastUpdated(`${today} 00:00`);
 
         // ③ AIで日次総括（taxAuthorityPerspectiveのみ生成）
-        setLoadingMessage('税務署視点の総括を生成中...');
+        setLoadingMessage(t.generatingTaxAuthorityPerspective);
         const generatedTaxAuthorityPerspective = await auditService.generateTaxAuthorityPerspective(forecastData, language);
         setTaxAuthorityPerspective(generatedTaxAuthorityPerspective);
 
@@ -341,7 +341,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         if (!saveResponse.ok) {
           const saveData = await saveResponse.json();
-          throw new Error(saveData.details || '予報データの保存に失敗しました');
+          throw new Error(saveData.details || t.forecastDataSaveFailed);
         }
 
         // 最終アクセス日をサーバーAPI経由で更新
@@ -359,7 +359,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         if (!accessResponse.ok) {
           const accessData = await accessResponse.json();
-          throw new Error(accessData.details || '最終アクセス日の更新に失敗しました');
+          throw new Error(accessData.details || t.lastAccessDateUpdateFailed);
         }
 
         console.log('💾 監査予報データをFirestoreに保存しました');

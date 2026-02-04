@@ -186,7 +186,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         try {
           // キャッシュ判定ロジック：forecasts[year]が存在し、dateが今日の日付と一致する場合
           console.log('🔄 キャッシュ判定: サーバーから監査予報を取得します');
-          setLoadingMessage('保存された予報を読み込み中...');
+          setLoadingMessage(t.loadingSavedForecast);
 
           // 直接forecastデータを取得してキャッシュ判定
           const forecastResponse = await fetch(`${API_URL}/api/user/forecast/${googleId}/${year}/${today}`);

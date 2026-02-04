@@ -532,6 +532,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         t={t}
         language={language}
         taxAuthorityPerspective={taxAuthorityPerspective}
+        selectedAuditYear={selectedAuditYear}
       />
 
       {/* 監査予報の最終更新日時（UIに残す） */}

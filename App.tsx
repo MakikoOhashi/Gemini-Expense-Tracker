@@ -162,12 +162,13 @@ const [ruleInputData, setRuleInputData] = useState({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load transactions function (can be called from anywhere)
-  const loadTransactions = useCallback(async () => {
+  const loadTransactions = useCallback(async (yearOverride?: number) => {
     try {
       console.log('📊 Google Sheetsから取引データを取得中...');
-      // 当年度のみのデータを取得
+      // 指定年度のみのデータを取得（未指定なら当年度）
       const currentYear = getCurrentYearJST();
-      const yearsToLoad = [currentYear]; // 当年度のみ
+      const targetYear = yearOverride || currentYear;
+      const yearsToLoad = [targetYear];
 
       let allTransactions: Transaction[] = [];
 
@@ -375,9 +376,18 @@ const [ruleInputData, setRuleInputData] = useState({
   // 取引履歴ページ、確定申告ページ、または監査予報ページ開いたらGoogle Sheetsからデータを取得
   useEffect(() => {
     if (activeTab === 'history' || activeTab === 'tax' || activeTab === 'dashboard') {
-      loadTransactions();
+      const currentYear = getCurrentYearJST();
+      let targetYear = currentYear;
+      if (activeTab === 'dashboard' && selectedAuditYear) {
+        targetYear = selectedAuditYear;
+      } else if (activeTab === 'tax' && selectedTaxYear) {
+        targetYear = selectedTaxYear;
+      } else if (activeTab === 'history' && selectedHistoryYear) {
+        targetYear = selectedHistoryYear;
+      }
+      loadTransactions(targetYear);
     }
-  }, [activeTab, loadTransactions]);
+  }, [activeTab, selectedAuditYear, selectedTaxYear, selectedHistoryYear, loadTransactions]);
 
   // 画像圧縮設定（AI解析用に最適化：より小さく・高速）
   const MAX_WIDTH = 600;         // 最大幅600px（AI解析には十分）

@@ -3118,6 +3118,7 @@ app.get('/api/user/forecast-latest/:googleId/:year', async (req, res) => {
         googleId,
         year: parsedYear.toString(),
         date: forecastData.date || null,
+        updatedAt: forecastData.updatedAt || null,
         forecastResults: forecastData.results,
         taxAuthorityPerspective: forecastData.taxAuthorityPerspective || null
       });
@@ -3128,6 +3129,7 @@ app.get('/api/user/forecast-latest/:googleId/:year', async (req, res) => {
       googleId,
       year: parsedYear.toString(),
       date: null,
+      updatedAt: null,
       forecastResults: []
     });
   } catch (error) {

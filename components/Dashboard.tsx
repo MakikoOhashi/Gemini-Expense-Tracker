@@ -218,12 +218,15 @@ const Dashboard: React.FC<DashboardProps> = ({
           const latestData = await latestResponse.json();
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
-            // Convert the date from server to JST datetime
-            const datePart = latestData.date.split('T')[0];
-            const jstDate = new Date(latestData.date);
-            const hours = String(jstDate.getHours()).padStart(2, '0');
-            const minutes = String(jstDate.getMinutes()).padStart(2, '0');
-            setForecastLastUpdated(`${datePart} ${hours}:${minutes}`);
+            // Use updatedAt timestamp from Firestore
+            if (latestData.updatedAt) {
+              const jstDate = latestData.updatedAt.toDate ? latestData.updatedAt.toDate() : new Date(latestData.updatedAt);
+              const hours = String(jstDate.getHours()).padStart(2, '0');
+              const minutes = String(jstDate.getMinutes()).padStart(2, '0');
+              setForecastLastUpdated(`${jstDate.toISOString().split('T')[0]} ${hours}:${minutes}`);
+            } else {
+              setForecastLastUpdated(getTodayJSTDateTimeString());
+            }
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
           } else {
             console.log('🔄 古いキャッシュも無い/取得失敗: 新規生成にフォールバックします');
@@ -376,12 +379,15 @@ const Dashboard: React.FC<DashboardProps> = ({
           const latestData = await latestResponse.json();
           if (latestResponse.ok && latestData?.forecastResults?.length > 0) {
             setAuditForecast(latestData.forecastResults);
-            // Convert the date from server to JST datetime
-            const datePart = latestData.date.split('T')[0];
-            const jstDate = new Date(latestData.date);
-            const hours = String(jstDate.getHours()).padStart(2, '0');
-            const minutes = String(jstDate.getMinutes()).padStart(2, '0');
-            setForecastLastUpdated(`${datePart} ${hours}:${minutes}`);
+            // Use updatedAt timestamp from Firestore
+            if (latestData.updatedAt) {
+              const jstDate = latestData.updatedAt.toDate ? latestData.updatedAt.toDate() : new Date(latestData.updatedAt);
+              const hours = String(jstDate.getHours()).padStart(2, '0');
+              const minutes = String(jstDate.getMinutes()).padStart(2, '0');
+              setForecastLastUpdated(`${jstDate.toISOString().split('T')[0]} ${hours}:${minutes}`);
+            } else {
+              setForecastLastUpdated(getTodayJSTDateTimeString());
+            }
             setTaxAuthorityPerspective(latestData.taxAuthorityPerspective || null);
             return;
           }

@@ -95,7 +95,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onRemov
       try {
         const transactionData = {
           id: editValues.id,
-          date: editValues.date || new Date().toISOString().split('T')[0],
+          date: editValues.date || new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' }),
           amount: editValues.amount || 0,
           category: editValues.category || '雑費',
           memo: editValues.description || '',

@@ -528,8 +528,14 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
     if (dates.length === 0) return '不明';
 
-    const start = dates[0].toISOString().split('T')[0];
-    const end = dates[dates.length - 1].toISOString().split('T')[0];
+    // JST形式で日付を取得
+    const toJSTDateString = (date: Date): string => {
+      const jstDate = new Date(date.getTime() + (date.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+      return jstDate.toISOString().split('T')[0];
+    };
+
+    const start = toJSTDateString(dates[0]);
+    const end = toJSTDateString(dates[dates.length - 1]);
 
     return `${start} 〜 ${end}`;
   }

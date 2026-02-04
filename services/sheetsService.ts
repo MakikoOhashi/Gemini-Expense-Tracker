@@ -343,13 +343,16 @@ export class SheetsService {
       let formattedLastUpdated = null;
       if (lastUpdated) {
         // Handle Firestore Timestamp object or string
-        let dateString = lastUpdated;
+        let dateObj = lastUpdated;
         if (typeof lastUpdated === 'object' && lastUpdated.toDate) {
           // Firestore Timestamp object
-          dateString = lastUpdated.toDate().toISOString().split('T')[0];
+          dateObj = lastUpdated.toDate();
         }
+        // Convert to JST
+        const jstDate = new Date(dateObj.getTime() + (dateObj.getTimezoneOffset() + 9 * 60) * 60 * 1000);
+        const dateString = jstDate.toISOString().split('T')[0];
         // Format as "YYYY-MM-DD 00:00 JST"
-        formattedLastUpdated = `${dateString} 00:00`;
+        formattedLastUpdated = `${dateString} 00:00 JST`;
       }
 
       return {

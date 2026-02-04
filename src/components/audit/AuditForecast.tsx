@@ -310,7 +310,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
     return (
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-700 mb-4">
-          📊 {t.todayAuditForecast.replace('{date}', new Date().toISOString().split('T')[0])}
+          📊 {t.todayAuditForecast.replace('{date}', new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' }))}
         </h3>
         <div className="flex items-center justify-center py-8">
           <div className="flex items-center gap-3 text-slate-600">
@@ -326,7 +326,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
     return (
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-700 mb-4">
-          📊 {t.todayAuditForecast.replace('{date}', new Date().toISOString().split('T')[0])}
+          📊 {t.todayAuditForecast.replace('{date}', new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' }))}
         </h3>
         <p className="text-sm text-gray-500 text-center py-4">{t.noAuditData}</p>
       </div>
@@ -342,7 +342,7 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
       <h3 className="text-lg font-bold text-gray-700 mb-4">
-        ☂️ {t.todayAuditForecast.replace('{date}', new Date().toISOString().split('T')[0])}
+        ☂️ {t.todayAuditForecast.replace('{date}', new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' }))}
       </h3>
 
       {/* 常時表示部分 */}

@@ -54,7 +54,8 @@ to prepare for a potential tax audit.
 Rules:
 - Do NOT restate any numbers.
 - Focus on documentation and verification steps.
-- Output ONLY a JSON array of 3 short strings.`
+- Output ONLY a JSON array of 3 short strings.
+- English only. Do not include code fences or extra text.`
       : `あなたは税務監査の準備アシスタントです。
 
 以下の検知された異常点があります：
@@ -65,7 +66,8 @@ ${issueList}
 ルール:
 - 数値の再掲はしないこと
 - 資料の整理や検証手順に集中すること
-- 出力は3件の短い文のみ（JSON配列のみ）`;
+- 出力は3件の短い文のみ（JSON配列のみ）
+- 日本語のみ。コードブロックや余計な文章は禁止`;
 
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("AI応答タイムアウト（30秒経過）。もう一度送信してみてください。")), 30000)
@@ -86,9 +88,16 @@ ${issueList}
     const responseText = response.text;
     if (!responseText) throw new Error("AIから空の応答が返されました。");
 
+    const cleaned = String(responseText)
+      .replace(/```[\s\S]*?```/g, (block) => {
+        const inner = block.replace(/```[a-zA-Z]*\n?|\n?```/g, '');
+        return inner;
+      })
+      .trim();
+
     // まずJSON配列としてパース
     try {
-      const parsed = JSON.parse(responseText);
+      const parsed = JSON.parse(cleaned);
       if (Array.isArray(parsed)) {
         return parsed.map(String).filter(Boolean).slice(0, 3);
       }
@@ -96,9 +105,9 @@ ${issueList}
       // fallback: 行単位で抽出
     }
 
-    const lines = String(responseText)
+    const lines = cleaned
       .split('\n')
-      .map(line => line.replace(/^\s*[-*\d.]+\s*/, '').trim())
+      .map(line => line.replace(/^\s*[-*\d.]+\s*/, '').replace(/^[\[\],"\s]+|[\[\],"\s]+$/g, '').trim())
       .filter(Boolean);
     return lines.slice(0, 3);
   }
@@ -141,6 +150,7 @@ Constraints:
 - Do NOT re-classify or add new topics. Use only detectedAnomalies facts.
 - No extra calculations. Be neutral and non-accusatory.
 - If crossCategoryMatches exist, mention them first as the strongest risk signal.
+- English only.
 
 Data:
 ${JSON.stringify(structuredData, null, 2)}
@@ -156,6 +166,7 @@ Output: plain text only (no JSON/markdown). Length: ~200-450 chars.`
 - 断定は避け、中立的に「説明が求められやすい」観点で述べてください
 - detectedAnomalies以外の論点を新規追加しないでください
 - crossCategoryMatchesがあれば最優先で言及してください
+- 日本語のみ
 
 データ:
 ${JSON.stringify(structuredData, null, 2)}

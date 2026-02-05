@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ExclamationTriangleIcon, EyeIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon, LightBulbIcon } from '@heroicons/react/24/outline';
 import { Transaction, AuditPrediction, AuditForecastItem, BookkeepingCheckItem } from '../types';
 import { auditService } from '../services/auditService';
@@ -56,6 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isGeneratingPerspective, setIsGeneratingPerspective] = useState(false);
   const [isPerspectiveRateLimited, setIsPerspectiveRateLimited] = useState(false);
   const [isChecklistRateLimited, setIsChecklistRateLimited] = useState(false);
+  const lastPerspectiveRefreshRef = useRef<{ key: string; at: number } | null>(null);
 
   // スプレッドシートURLを取得
   useEffect(() => {
@@ -507,7 +508,14 @@ const Dashboard: React.FC<DashboardProps> = ({
     };
 
     if (!isPerspectiveRateLimited) {
-      refreshPerspective();
+      const refreshKey = `${language}:${auditForecast[0]?.id || 'none'}`;
+      const now = Date.now();
+      const last = lastPerspectiveRefreshRef.current;
+      // Avoid repeated retries for the same content/language within 10 minutes
+      if (!last || last.key !== refreshKey || now - last.at > 10 * 60 * 1000) {
+        lastPerspectiveRefreshRef.current = { key: refreshKey, at: now };
+        refreshPerspective();
+      }
     }
   }, [language, auditForecast, taxAuthorityPerspective, isLoading, isGeneratingPerspective, isPerspectiveRateLimited]);
 

@@ -14,7 +14,7 @@
 **AI-Powered Tax Audit Risk Forecasting Platform**
 
 **Impact:** Zero anxiety, 80% reduction in inquiries, improved efficiency across the entire tax system  
-**How it works:** AI analyzes data → Auto-generates submission forms → Forecasts audit risks for proactive response
+**How it works:** AI analyzes data → Generates reference-ready forms based on calculations (not final filings) → Forecasts audit risks for proactive response
 
 ---
 
@@ -195,7 +195,7 @@ Predicts likely question points in advance and suggests response strategies
 
 ## 🤖 AI Auto-Classification
 
-- Gemini-powered OCR for amounts, dates, and merchant names
+- OCR is performed via Vision API; Gemini handles structuring and extraction
 - User-defined rule-based input assistance
 
 ## 📊 Annual Auto-Management
@@ -642,7 +642,7 @@ This application is a tool to support explanation preparation in tax filing and 
 ## API Limits
 
 - Google Sheets API: 100 requests per 100 seconds
-- Gemini API: 60 requests per minute
+- Gemini API: rate limits depend on plan/model configuration
 - Drive API: 20 requests per minute (upload)
 
 ---
@@ -665,7 +665,7 @@ This application is a tool to support explanation preparation in tax filing and 
 **AI駆動型税務監査リスク予測プラットフォーム**
 
 **Impact:** 不安ゼロ、問い合わせ80%削減、社会全体の処理効率も向上  
-**How it works:** 赤字データをAIが解析 → 提出表自動生成 → 監査予報で事前対応
+**How it works:** 赤字データをAIが解析 → 計算式に基づく参照用の表を作成（提出用帳票ではない） → 監査予報で事前対応
 
 ---
 
@@ -841,7 +841,7 @@ Gemini 3の推論能力があって初めて：
 
 ## 🤖 AI自動分類
 
-- GeminiによるOCR・金額・日付・店舗名抽出
+- OCRはVision APIで実行し、Geminiは整形・抽出を担当
 - ユーザー定義ルールによる入力補助
 
 ## 📊 年別自動管理
@@ -1288,5 +1288,5 @@ MIT License
 ## API制限
 
 - Google Sheets API: 100秒間に100リクエスト
-- Gemini API: 1分間に60リクエスト
+- Gemini API: プラン/モデル設定に依存
 - Drive API: 1分間に20リクエスト（アップロード）

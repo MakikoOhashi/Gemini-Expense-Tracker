@@ -1,39 +1,50 @@
 # Google Sheets & Drive 連携セットアップガイド（OAuth 2.0）
 
-## 🚀 簡単セットアップ！
+## 概要
+このアプリは OAuth 2.0 を使って、ユーザー自身の Google Drive / Sheets にデータを保存します。
 
-**OAuth 2.0認証で安全・簡単にGoogle SheetsとGoogle Driveに連携できます！**
+- データはユーザーの Drive に保存
+- サービスアカウントは不要
+- 初回アクセス時に必要なフォルダ・スプレッドシートを自動作成
 
-## 1. Google Cloud Console設定（必須）
+---
+
+## 1. Google Cloud Console 設定（必須）
 
 ### 1-1. プロジェクト作成
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
-2. 新しいプロジェクトを作成または既存プロジェクトを選択
+1. Google Cloud Console で新規プロジェクトを作成
+2. 既存プロジェクトを使う場合は選択
 
-### 1-2. OAuth 2.0クライアントID作成
-1. **APIs & Services > Credentials** を開く
-2. **+ CREATE CREDENTIALS > OAuth client ID** をクリック
-3. **Application type** を **Web application** に選択
-4. **Name** を入力（例: `Expense Tracker OAuth`）
-5. **Authorized redirect URIs** に以下を追加：
-   ```
-   http://localhost:3001/auth/google/callback
-   ```
-6. **CREATE** をクリック
+### 1-2. OAuth 2.0 クライアントID作成
+1. APIs & Services > Credentials を開く
+2. + CREATE CREDENTIALS > OAuth client ID
+3. Application type を Web application に設定
+4. Name を入力（例: `Expense Tracker OAuth`）
+5. Authorized redirect URIs に以下を追加
+
+```
+http://localhost:3001/auth/google/callback
+```
+
+6. CREATE をクリック
 
 ### 1-3. クライアントIDとシークレット取得
-作成されたOAuthクライアントをクリックして、以下の値をコピー：
-- **Client ID**
-- **Client secret**
+作成された OAuth クライアントから以下を控える:
 
-### 1-4. API有効化
-**APIs & Services > Library** で以下のAPIを有効化：
-- ✅ Google Sheets API
-- ✅ Google Drive API
+- Client ID
+- Client secret
+
+### 1-4. API 有効化
+APIs & Services > Library で有効化:
+
+- Google Sheets API
+- Google Drive API
+
+---
 
 ## 2. 環境変数設定
 
-`.env`ファイルを以下のように編集：
+`.env` に以下を設定:
 
 ```env
 # Google OAuth 2.0 Configuration
@@ -42,143 +53,117 @@ GOOGLE_CLIENT_SECRET=your-client-secret-here
 GOOGLE_REDIRECT_URI=http://localhost:3001/auth/google/callback
 ```
 
+---
+
 ## 3. サーバー起動
 
 ```bash
 npm run server
 ```
 
-## 4. 認証設定
+---
 
-ブラウザで `http://localhost:3001/auth/google` にアクセスしてOAuth認証を実行：
+## 4. 認証（OAuth）
+
+ブラウザで以下にアクセスして認証:
+
+```
+http://localhost:3001/auth/google
+```
 
 1. Googleアカウントでログイン
-2. 権限を承認（SheetsとDriveへのアクセス）
+2. Sheets / Drive の権限を許可
 3. 自動的にリダイレクトされ認証完了
 
-## 5. 自動初期化実行
+---
 
-認証完了後、新しいターミナルで初期化を実行：
+## 5. 初期化について
 
-```bash
-node test-initialization.js
+初回アクセス時に自動で以下を作成/確認します:
+
+- Gemini Expense Tracker フォルダ（Drive 直下）
+- Gemini_Expenses スプレッドシート
+- 年別タブ（YYYY_Expenses / YYYY_Income）
+- Rules シート
+- Receipts フォルダと月別サブフォルダ
+
+必要に応じて API で明示的に初期化も可能:
+
+```
+POST /api/initialize
 ```
 
-実行すると自動的に：
-- ✅ **Gemini Expense Tracker** ルートフォルダ作成（Google Drive）
-- ✅ 年別スプレッドシート作成（例: `2026_Expenses`）
-- ✅ **Receipts** フォルダと月別サブフォルダ作成
-- ✅ 4つのシート自動作成（Expenses, Income, Summary, Rules）
-- ✅ サンプルルール2件自動登録
+---
 
-## 6. 完了！
+## 6. 自動作成される構造
 
-これで準備完了！アプリで取引データを保存すると、自動的に：
-- 📊 Google Sheetsにデータ保存
-- 📁 Google Driveにレシート画像アップロード
-- 📈 Summaryシートで自動集計
-
-## 📊 自動作成される構造
-
-### Google Driveフォルダ構造
+### Google Drive
 ```
-📁 Gemini Expense Tracker/
-├── 📊 2026_Expenses (スプレッドシート)
-│   ├── 📋 Expenses（支出データ）
-│   ├── 📈 Income（売上データ）
-│   ├── 📊 Summary（集計・分析）
-│   └── ⚙️ Rules（自動分類ルール）
-└── 📂 2026_Receipts/
-    ├── 📁 2026-01/
-    ├── 📁 2026-02/
-    └── 📁 ...（1-12月分）
+Gemini Expense Tracker/
+├─ Gemini_Expenses (Google Sheets)
+└─ Receipts/
+   ├─ YYYY-01/
+   ├─ YYYY-02/
+   └─ ...
 ```
 
-### 各シートの構造
+### Google Sheets: Gemini_Expenses
+- Rules
+- YYYY_Expenses
+- YYYY_Income
+- Summary_Base
+- Summary_Year_Total
+- Summary_Account_History
 
-#### Expenses & Income シート
+※ Summary 系のタブは監査予報タブで対象年度を開いたタイミングで作成/更新されます。
+
+---
+
+## 7. 各シートの構造
+
+### YYYY_Expenses
 | 日付 | 金額 | カテゴリ | メモ | レシートURL |
-|------|------|----------|------|-------------|
-| 2024-01-15 | 1200 | 消耗品費 | ランチ | https://drive.google.com/... |
 
-#### Summary シート（自動集計）
-- **月別支出集計**（1-12月）
-- **月別売上集計**（1-12月）
-- **カテゴリ別支出集計**（動的）
-- **カテゴリ別売上集計**（動的）
-- **損益比較表**（月別）
+例:
+| 2026-01-15 | 1200 | 消耗品費 | ランチ | https://drive.google.com/... |
 
-#### Rules シート（自動分類）
+### YYYY_Income
+| 日付 | 金額 | 支払者名 | 源泉徴収税額 | メモ | レシートURL |
+
+例:
+| 2026-01-15 | 50000 | 株式会社ABC | 5000 | 1月分請求 | https://drive.google.com/... |
+
+### Rules
 | Keyword | Category | Confidence | Notes |
-|---------|----------|------------|-------|
-| Amazon | 消耗品費 | 75 | オンラインショッピング |
-| Slack | 通信費 | 90 | サブスクリプション |
 
-## 🔧 トラブルシューティング
+---
 
-### 認証エラー
-```
-OAuth認証に失敗しました
-```
-**確認事項:**
-1. GOOGLE_CLIENT_ID が正しいか
-2. GOOGLE_CLIENT_SECRET が正しいか
-3. GOOGLE_REDIRECT_URI が一致するか
-4. Google Cloud ConsoleのOAuth設定が正しいか
+## 8. 監査予報の集計（Summary）
 
-### 初期化エラー
-```
-❌ 初期化に失敗しました
-```
-**確認事項:**
-1. OAuth認証が完了しているか
-2. Google Sheets API が有効か
-3. Google Drive API が有効か
-4. アプリにSheets/Driveへのアクセス権限を与えたか
+監査予報は Summary タブ群を使って集計します。
+以下のタイミングで作成/更新されます:
 
-### 保存エラー
-```
-データの保存に失敗しました
-```
-**確認事項:**
-1. 年別スプレッドシートが存在するか
-2. ユーザートークンが有効か（再認証が必要かも）
+- 監査予報タブで対象年度を開いたとき
 
-## 🎯 使用方法
+---
 
-### 基本的なデータ保存
-```javascript
-// 支出データ保存
-await sheetsService.saveExpense({
-  date: '2024-01-15',
-  amount: 1200,
-  category: '消耗品費',
-  memo: 'オフィス用品',
-  receipt_url: 'https://drive.google.com/...'
-});
+## 9. トラブルシューティング
 
-// 全取引データ取得
-const transactions = await sheetsService.getTransactions(2024);
+### OAuth 認証エラー
+- クライアントID/シークレットが正しいか
+- Redirect URI が一致しているか
 
-// ルール管理
-const rules = await sheetsService.getRules(2024);
-await sheetsService.addRule({
-  keyword: 'AWS',
-  category: '外注費',
-  confidence: 85,
-  notes: 'クラウドサービス'
-});
-```
+### データが保存されない
+- 対象年のタブ（YYYY_Expenses / YYYY_Income）が存在するか
+- OAuth のトークンが失効していないか
 
-### 年別管理
-システムは自動的に年ごとにスプレッドシートを作成・管理します：
-- `2024_Expenses` → 2024年度のデータ
-- `2025_Expenses` → 2025年度のデータ
-- 年度をまたぐと自動で新しいシート作成
+### Folder conflict
+- Drive に「Gemini Expense Tracker」フォルダが複数ある場合は競合扱いになります
 
-## 🔐 セキュリティ
+---
 
-- OAuth 2.0認証を使用（サービスアカウント不要）
-- ユーザーのGoogleアカウント権限のみ使用
-- データはユーザーのGoogle Drive/Sheetsに保存
-- アクセストークンはメモリのみに保存（再起動で消滅）
+## 10. セキュリティ
+
+- OAuth 2.0 のみ使用
+- サービスアカウント不要
+- データはユーザーの Drive / Sheets に保存

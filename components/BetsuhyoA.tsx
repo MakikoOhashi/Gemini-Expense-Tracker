@@ -48,6 +48,24 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
   const getImageSrc = (baseName: string) => {
     return language === 'en' ? `/${baseName}e.png` : `/${baseName}.png`;
   };
+  const renderTooltip = (jaLines: string[], enLines: string[]) => {
+    const lines = language === 'en' ? enLines : jaLines;
+    return (
+      <>
+        {lines.map((line, idx) => (
+          <React.Fragment key={idx}>
+            {line}
+            {idx < lines.length - 1 && <br />}
+          </React.Fragment>
+        ))}
+      </>
+    );
+  };
+  const categoryTotalTooltip = (categoryJa: string) =>
+    renderTooltip(
+      [`${categoryJa}：`, 'カテゴリの合計金額です'],
+      [`${t.categories[categoryJa] || categoryJa}:`, 'Total amount for this category.']
+    );
 
   return (
     <div className="form-area space-y-8 p-4">
@@ -80,7 +98,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            売上：<br/>経費を引く前の<br/>売上合計を記入します
+            {renderTooltip(
+              ['売上：', '経費を引く前の', '売上合計を記入します'],
+              ['Sales:', 'Enter total sales', 'before expenses.']
+            )}
           </div>
         </div>
         {/* 収入 - 家事消費*/}
@@ -93,7 +114,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            家事消費：<br/>該当しない場合は 0 円のままにしてください。<br/>（飲食店・物販など、商品を私用で使う場合のみ記入）
+            {renderTooltip(
+              ['家事消費：', '該当しない場合は 0 円のままにしてください。', '（飲食店・物販など、商品を私用で使う場合のみ記入）'],
+              ['Household consumption:', 'Leave as 0 if not applicable.', '(Only if goods are used for personal use, e.g. restaurants/retail)']
+            )}
           </div>
         </div>
         {/* 収入 - その他の収入*/}
@@ -106,7 +130,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            その他の収入：<br/>該当しない場合は 0 円のままにしてください。
+            {renderTooltip(
+              ['その他の収入：', '該当しない場合は 0 円のままにしてください。'],
+              ['Other income:', 'Leave as 0 if not applicable.']
+            )}
           </div>
         </div>
          {/* 収入 - 収入小計*/}
@@ -119,7 +146,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            収入計：<br/>収入金額合計です。
+            {renderTooltip(
+              ['収入計：', '収入金額合計です。'],
+              ['Total income:', 'Sum of income amounts.']
+            )}
           </div>
         </div>
         {/* 経費 - 給料*/}
@@ -132,7 +162,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            給料：該当しない場合は<br/>0 円のままにしてください。<br/>（従業員に給料を支払った場合のみ記入）
+            {renderTooltip(
+              ['給料：該当しない場合は', '0 円のままにしてください。', '（従業員に給料を支払った場合のみ記入）'],
+              ['Salary/Wages:', 'Leave as 0 if not applicable.', '(Only if wages were paid to employees)']
+            )}
           </div>
         </div>
         {/* 経費 - 外注工賃*/}
@@ -145,7 +178,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            外注工賃：フリーランス・業者への業務委託費用。<br/>※内容によっては源泉徴収が必要になる場合があります。
+            {renderTooltip(
+              ['外注工賃：フリーランス・業者への業務委託費用。', '※内容によっては源泉徴収が必要になる場合があります。'],
+              ['Outsourcing:', 'Payments to freelancers/contractors.', 'Withholding may be required depending on the service.']
+            )}
           </div>
         </div>
         {/* 経費 - 租税公課*/}
@@ -158,7 +194,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            租税公課：該当しない場合は 0 円のままにしてください。<br/>（※印紙税・固定資産税の一部（家事按分したとき）など：<br/>※ 所得税・住民税・社会保険料はここに入れません）
+            {renderTooltip(
+              ['租税公課：該当しない場合は 0 円のままにしてください。', '（※印紙税・固定資産税の一部（家事按分したとき）など：', '※ 所得税・住民税・社会保険料はここに入れません）'],
+              ['Taxes and dues:', 'Leave as 0 if not applicable.', '(Includes stamp tax or part of fixed asset tax when allocated.)', '(Do not include income tax, resident tax, or social insurance.)']
+            )}
           </div>
         </div>
         {/* 経費 - 荷造運賃*/}
@@ -171,7 +210,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            荷造運賃：<br/>送料など
+            {renderTooltip(
+              ['荷造運賃：', '送料など'],
+              ['Packaging/Shipping:', 'Shipping fees, etc.']
+            )}
           </div>
         </div>
         {/* 経費 - 水道光熱費*/}
@@ -184,7 +226,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            水道光熱費：<br/>電気代など
+            {renderTooltip(
+              ['水道光熱費：', '電気代など'],
+              ['Utilities:', 'Electricity, water, etc.']
+            )}
           </div>
         </div>
         {/* 経費 - 広告宣伝費欄 */}
@@ -197,7 +242,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            広告宣伝費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('広告宣伝費')}
           </div>
         </div>
         {/* 経費 - 損害保険料欄 */}
@@ -210,7 +255,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            損害保険料：<br/>カテゴリの合計金額です<br/>（生命保険・医療保険はここに入れません）
+            {renderTooltip(
+              ['損害保険料：', 'カテゴリの合計金額です', '（生命保険・医療保険はここに入れません）'],
+              ['Insurance:', 'Total amount for this category.', '(Exclude life/medical insurance.)']
+            )}
           </div>
         </div>
         {/* 経費 - 修繕費欄 */}
@@ -223,7 +271,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            修繕費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('修繕費')}
           </div>
         </div>
         {/* 経費 - 福利厚生費欄 */}
@@ -236,7 +284,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            福利厚生費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('福利厚生費')}
           </div>
         </div>
         {/* 経費 - 雑費欄 */}
@@ -249,7 +297,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            雑費：<br/>雑費カテゴリの合計金額です
+            {renderTooltip(
+              ['雑費：', '雑費カテゴリの合計金額です'],
+              ['Miscellaneous:', 'Total amount for this category.']
+            )}
           </div>
         </div>
         {/* 経費 - 減価償却費*/}
@@ -262,7 +313,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            減価償却費：<br/>パソコン・機械・設備など高額資産の<br/>今年分の経費額を記入します。<br/>購入額そのままではありません。
+            {renderTooltip(
+              ['減価償却費：', 'パソコン・機械・設備など高額資産の', '今年分の経費額を記入します。', '購入額そのままではありません。'],
+              ['Depreciation:', 'Enter this year\'s expense for high-value assets.', 'Not the full purchase price.']
+            )}
           </div>
         </div>
         {/* 経費 - 貸し倒れ金*/}
@@ -275,7 +329,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            貸倒金：該当しない場合は<br/>0 円のままにしてください。<br/>（※通常、白色申告では使用しません）
+            {renderTooltip(
+              ['貸倒金：該当しない場合は', '0 円のままにしてください。', '（※通常、白色申告では使用しません）'],
+              ['Bad debt:', 'Leave as 0 if not applicable.', '(Usually not used for white return.)']
+            )}
           </div>
         </div>
         {/* 経費 - 地代家賃*/}
@@ -288,7 +345,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            地代家賃：<br/>※カフェ等の単発利用は会議費または雑費に分類してください<br/>※月額契約のコワーキング・事務所のみ対象
+            {renderTooltip(
+              ['地代家賃：', '※カフェ等の単発利用は会議費または雑費に分類してください', '※月額契約のコワーキング・事務所のみ対象'],
+              ['Rent:', 'Single cafe use should be classified as meeting or miscellaneous.', 'Only monthly coworking/office contracts apply.']
+            )}
           </div>
         </div>
         {/* 経費 - 利子割引料*/}
@@ -301,7 +361,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            利子割引料：該当しない場合は<br/>0 円のままにしてください。<br/>（※通常、白色申告では使用しません：<br/>手形・ファクタリングなど高度な取引をしている場合のみ使用）
+            {renderTooltip(
+              ['利子割引料：該当しない場合は', '0 円のままにしてください。', '（※通常、白色申告では使用しません：', '手形・ファクタリングなど高度な取引をしている場合のみ使用）'],
+              ['Interest/discount fees:', 'Leave as 0 if not applicable.', '(Usually not used for white return;', 'only for advanced transactions like notes/factoring.)']
+            )}
           </div>
         </div>
         {/* 経費 - 租税公課*/}
@@ -314,7 +377,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            租税公課：該当しない場合は 0 円のままにしてください。<br/>（※印紙税・固定資産税の一部（家事按分したとき）など：<br/>※ 所得税・住民税・社会保険料はここに入れません）
+            {renderTooltip(
+              ['租税公課：該当しない場合は 0 円のままにしてください。', '（※印紙税・固定資産税の一部（家事按分したとき）など：', '※ 所得税・住民税・社会保険料はここに入れません）'],
+              ['Taxes and dues:', 'Leave as 0 if not applicable.', '(Includes stamp tax or part of fixed asset tax when allocated.)', '(Do not include income tax, resident tax, or social insurance.)']
+            )}
           </div>
         </div>
         {/* 経費 - 荷造運賃*/}
@@ -327,7 +393,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            荷造運賃：<br/>送料など
+            {renderTooltip(
+              ['荷造運賃：', '送料など'],
+              ['Packaging/Shipping:', 'Shipping fees, etc.']
+            )}
           </div>
         </div>
         {/* 経費 - 水道光熱費*/}
@@ -340,7 +409,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            水道光熱費：<br/>電気代など
+            {renderTooltip(
+              ['水道光熱費：', '電気代など'],
+              ['Utilities:', 'Electricity, water, etc.']
+            )}
           </div>
         </div>
         {/* 経費 - 旅費交通費欄 */}
@@ -353,7 +425,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            旅費交通費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('旅費交通費')}
           </div>
         </div>
         {/* 経費 - 通信費欄 */}
@@ -366,7 +438,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            通信費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('通信費')}
           </div>
         </div>
         {/* 経費 - 広告宣伝費欄 */}
@@ -379,7 +451,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            広告宣伝費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('広告宣伝費')}
           </div>
         </div>
         {/* 経費 - 接待交際費欄 */}
@@ -392,7 +464,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            接待交際費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('接待交際費')}
           </div>
         </div>
         {/* 経費 - 損害保険料欄 */}
@@ -405,7 +477,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            損害保険料：<br/>カテゴリの合計金額です<br/>（生命保険・医療保険はここに入れません）
+            {renderTooltip(
+              ['損害保険料：', 'カテゴリの合計金額です', '（生命保険・医療保険はここに入れません）'],
+              ['Insurance:', 'Total amount for this category.', '(Exclude life/medical insurance.)']
+            )}
           </div>
         </div>
         {/* 経費 - 修繕費欄 */}
@@ -418,7 +493,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            修繕費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('修繕費')}
           </div>
         </div>
         {/* 経費 - 消耗品費欄 */}
@@ -431,7 +506,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            消耗品費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('消耗品費')}
           </div>
         </div>
         {/* 経費 - 福利厚生費欄 */}
@@ -444,7 +519,7 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            福利厚生費：<br/>カテゴリの合計金額です
+            {categoryTotalTooltip('福利厚生費')}
           </div>
         </div>
         {/* 経費 - 雑費欄 */}
@@ -457,7 +532,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            雑費：<br/>雑費カテゴリの合計金額です
+            {renderTooltip(
+              ['雑費：', '雑費カテゴリの合計金額です'],
+              ['Miscellaneous:', 'Total amount for this category.']
+            )}
           </div>
         </div>
         {/* 経費 - その他の経費小計欄 */}
@@ -483,7 +561,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            その他の経費小計：<br/>その他の経費の小計金額です
+            {renderTooltip(
+              ['その他の経費小計：', 'その他の経費の小計金額です'],
+              ['Other expenses subtotal:', 'Subtotal of other expenses.']
+            )}
           </div>
         </div>
         {/* 経費 - 経費合計欄 */}
@@ -496,7 +577,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-          経費：<br/>経費カテゴリの合計金額です
+            {renderTooltip(
+              ['経費：', '経費カテゴリの合計金額です'],
+              ['Total expenses:', 'Total amount of expense categories.']
+            )}
           </div>
         </div>
         {/* 専従者控除前の所得金額欄 */}
@@ -509,9 +593,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            専従者控除前所得金額：<br/>配偶者や親を事業に従事させている場合、<br/>
-            その給与を経費として控除できます。<br/>
-            この金額は、その控除『前』です
+            {renderTooltip(
+              ['専従者控除前所得金額：', '配偶者や親を事業に従事させている場合、', 'その給与を経費として控除できます。', 'この金額は、その控除『前』です'],
+              ['Income before dependent deduction:', 'If spouse/parent works in the business,', 'their wages can be deducted as expenses.', 'This amount is before the deduction.']
+            )}
           </div>
         </div>
         {/* 専従者控除 */}
@@ -524,10 +609,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            専従者控除：<br/>配偶者や親を事業に従事させている場合、<br/>
-            その給与を経費として控除できます。<br/>
-            専従者控除を使う場合記入してください<br/>
-            記入した場合、<br/>下記の専従者控除後の所得金額欄 は各自再計算ください
+            {renderTooltip(
+              ['専従者控除：', '配偶者や親を事業に従事させている場合、', 'その給与を経費として控除できます。', '専従者控除を使う場合記入してください', '記入した場合、', '下記の専従者控除後の所得金額欄 は各自再計算ください'],
+              ['Dependent deduction:', 'If spouse/parent works in the business,', 'their wages can be deducted as expenses.', 'Fill in if you use this deduction.', 'If filled,', 'recalculate the after-deduction income below.']
+            )}
           </div>
         </div>
         {/* 専従者控除後の所得金額欄 */}
@@ -540,9 +625,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            専従者控除後所得金額：<br/>配偶者や親を事業に従事させている場合、<br/>
-            その給与を経費として控除できます。<br/>
-            この金額は、その控除『後』です
+            {renderTooltip(
+              ['専従者控除後所得金額：', '配偶者や親を事業に従事させている場合、', 'その給与を経費として控除できます。', 'この金額は、その控除『後』です'],
+              ['Income after dependent deduction:', 'If spouse/parent works in the business,', 'their wages can be deducted as expenses.', 'This amount is after the deduction.']
+            )}
           </div>
         </div>
         
@@ -585,7 +671,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
                       <span className="truncate block">{payerName}</span>
                       {/* Tooltip */}
                       <div className={TOOLTIP_CLASSES}>
-                        支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
+                        {renderTooltip(
+                          ['支払人：会社名の後に', '住所や法人番号などを', '記載してください'],
+                          ['Payer:', 'After the company name,', 'add address/corporate number, etc.']
+                        )}
                       </div>
                     </div>
                     <span className="w-24 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額?.toLocaleString() || '0'}</span>
@@ -654,7 +743,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            区分：<br/>本アプリは<br/>「日々の取引を簡易な方法で<br/>記帳している場合」<br/>に該当します。<br/>第一表の区分欄には 4 <br/>を記入してください。
+            {renderTooltip(
+              ['区分：', '本アプリは', '「日々の取引を簡易な方法で', '記帳している場合」', 'に該当します。', '第一表の区分欄には 4', 'を記入してください。'],
+              ['Category:', 'This app corresponds to', '"simplified bookkeeping of daily transactions".', 'Enter 4 in the', 'category field on Table 1.']
+            )}
           </div>
         </div>
         {/* 所得金額 - 第一表の所得金額欄 */}
@@ -668,7 +760,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
 
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            所得金額：<br/>売上 − 経費合計 = 所得金額（第一表「ア」）
+            {renderTooltip(
+              ['所得金額：', '売上 − 経費合計 = 所得金額（第一表「ア」）'],
+              ['Income amount:', 'Sales − total expenses = income amount (Table 1 "A").']
+            )}
           </div>
 
         </div>
@@ -682,7 +777,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
           />
           {/* Tooltip */}
           <div className={TOOLTIP_CLASSES}>
-            売上：<br/>経費を引く前の売上合計を記入します
+            {renderTooltip(
+              ['売上：', '経費を引く前の売上合計を記入します'],
+              ['Sales:', 'Enter total sales before expenses.']
+            )}
           </div>
         </div>
 
@@ -712,7 +810,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
                       <span className="truncate block">{payerName}</span>
                       {/* Tooltip */}
                       <div className={TOOLTIP_CLASSES}>
-                        支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
+                        {renderTooltip(
+                          ['支払人：会社名の後に', '住所や法人番号などを', '記載してください'],
+                          ['Payer:', 'After the company name,', 'add address/corporate number, etc.']
+                        )}
                       </div>
                     </div>
                 <span className="w-16 text-right">{(payerData as { 種目: string; 収入金額: number; 源泉徴収税額: number }).収入金額?.toLocaleString() || '0'}</span>
@@ -747,7 +848,10 @@ export const BetsuhyoA: React.FC<BetsuhyoAProps> = ({ data, t, language }) => {
                     <span className="truncate block">{payerName}</span>
                     {/* Tooltip */}
                     <div className={TOOLTIP_CLASSES}>
-                      支払人：会社名の後に<br/>住所や法人番号などを<br/>記載してください
+                      {renderTooltip(
+                        ['支払人：会社名の後に', '住所や法人番号などを', '記載してください'],
+                        ['Payer:', 'After the company name,', 'add address/corporate number, etc.']
+                      )}
                     </div>
                   </div>
                   <span className="w-4 text-center"></span>

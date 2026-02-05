@@ -68,7 +68,7 @@ ${issueList}
 - 出力は3件の短い文のみ（JSON配列のみ）`;
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+      setTimeout(() => reject(new Error("AI応答タイムアウト（30秒経過）。もう一度送信してみてください。")), 30000)
     );
 
     const generatePromise = ai.models.generateContent({
@@ -163,7 +163,7 @@ ${JSON.stringify(structuredData, null, 2)}
 出力: プレーンテキストのみ（JSON/マークダウン禁止）。200〜450文字程度。`;
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+      setTimeout(() => reject(new Error("AI応答タイムアウト（30秒経過）。もう一度送信してみてください。")), 30000)
     );
 
     const generatePromise = ai.models.generateContent({
@@ -273,7 +273,7 @@ ${enrichedStructuredData && enrichedStructuredData.some(item =>
 
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+        setTimeout(() => reject(new Error("AI応答タイムアウト（30秒経過）。もう一度送信してみてください。")), 30000)
       );
 
       const generatePromise = ai.models.generateContent({
@@ -378,7 +378,7 @@ ${JSON.stringify(transactionSummary, null, 2)}
 
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("AI応答タイムアウト（15秒経過）。もう一度送信してみてください。")), 15000)
+        setTimeout(() => reject(new Error("AI応答タイムアウト（30秒経過）。もう一度送信してみてください。")), 30000)
       );
 
       const generatePromise = ai.models.generateContent({

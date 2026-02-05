@@ -140,6 +140,8 @@ const App: React.FC = () => {
   const [activePrefixes, setActivePrefixes] = useState<ActivePrefix[]>([]);
   const [auditQuery, setAuditQuery] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isSavingPending, setIsSavingPending] = useState(false);
+  const lastSaveRef = useRef<{ key: string; at: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConvertingImage, setIsConvertingImage] = useState(false);
   const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
@@ -488,8 +490,31 @@ const [ruleInputData, setRuleInputData] = useState({
 
   const commitTransaction = async () => {
     if (!pendingExtraction) return;
+    if (isSavingPending) return;
 
     try {
+      const dedupeKey = JSON.stringify({
+        type: pendingExtraction.data.type || 'expense',
+        date: pendingExtraction.data.date || '',
+        amount: pendingExtraction.data.amount || '',
+        category: pendingExtraction.data.category || '',
+        description: pendingExtraction.data.description || '',
+        payerName: pendingExtraction.data.payerName || '',
+        withholdingTax: pendingExtraction.data.withholdingTax || 0
+      });
+      const now = Date.now();
+      if (lastSaveRef.current && lastSaveRef.current.key === dedupeKey && now - lastSaveRef.current.at < 3000) {
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: '⚠️ 直前と同じ内容のため保存をスキップしました',
+          timestamp: Date.now()
+        }]);
+        return;
+      }
+      lastSaveRef.current = { key: dedupeKey, at: now };
+      setIsSavingPending(true);
+
       const { data, imageUrl } = pendingExtraction;
       const userId = authStatus?.userId || 'test-user';
       console.log('💾 保存開始: userId=', userId);
@@ -590,24 +615,49 @@ const [ruleInputData, setRuleInputData] = useState({
         content: `❌ 保存に失敗しました: ${error.message}`,
         timestamp: Date.now()
       }]);
+    } finally {
+      setIsSavingPending(false);
     }
   };
 
-  const commitRule = () => {
+  const commitRule = async () => {
     if (!pendingExtraction) return;
-    const { keyword, category } = pendingExtraction.data;
-    if (keyword && category) {
-      setRules(prev => {
-        const filtered = prev.filter(r => r.keyword !== keyword);
-        return [...filtered, { id: crypto.randomUUID(), keyword, category }];
+    if (isSavingPending) return;
+    try {
+      const { keyword, category } = pendingExtraction.data;
+      const dedupeKey = JSON.stringify({
+        type: 'rule',
+        keyword: keyword || '',
+        category: category || ''
       });
-      setMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: t.ruleAdded.replace('{keyword}', keyword).replace('{category}', t.categories[category] || category),
-        timestamp: Date.now()
-      }]);
-      setPendingExtraction(null);
+      const now = Date.now();
+      if (lastSaveRef.current && lastSaveRef.current.key === dedupeKey && now - lastSaveRef.current.at < 3000) {
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: '⚠️ 直前と同じ内容のため保存をスキップしました',
+          timestamp: Date.now()
+        }]);
+        return;
+      }
+      lastSaveRef.current = { key: dedupeKey, at: now };
+      setIsSavingPending(true);
+
+      if (keyword && category) {
+        setRules(prev => {
+          const filtered = prev.filter(r => r.keyword !== keyword);
+          return [...filtered, { id: crypto.randomUUID(), keyword, category }];
+        });
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: t.ruleAdded.replace('{keyword}', keyword).replace('{category}', t.categories[category] || category),
+          timestamp: Date.now()
+        }]);
+        setPendingExtraction(null);
+      }
+    } finally {
+      setIsSavingPending(false);
     }
   };
 
@@ -1385,6 +1435,7 @@ const handleRuleInputSubmit = async () => {
                   <div className="flex gap-3">
                     <button
                       onClick={pendingExtraction.type === 'transaction' ? commitTransaction : commitRule}
+                      disabled={isSavingPending}
                       className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-slate-900 active:scale-95 transition flex items-center justify-center gap-2"
                     >
                       <CheckCircleIcon className="w-6 h-6" />

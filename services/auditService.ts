@@ -38,7 +38,7 @@ export class AuditService {
     if (!issues || issues.length === 0) return [];
 
     const ai = new GoogleGenAI({ apiKey });
-    const modelName = 'gemini-2.5-flash-lite';
+    const modelName = 'gemini-3-pro-preview';
 
     const issueList = issues.map(i => `- ${i}`).join('\n');
 
@@ -116,7 +116,7 @@ ${issueList}
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const modelName = 'gemini-2.5-flash-lite';
+    const modelName = 'gemini-3-pro-preview';
 
     const structuredData = forecastItems.map(item => ({
       accountName: item.accountName,
@@ -199,7 +199,7 @@ ${JSON.stringify(structuredData, null, 2)}
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const modelName = 'gemini-2.5-flash-lite';
+    const modelName = 'gemini-3-pro-preview';
 
     // 検知済み異常を「事実」として整形（意味づけ前の情報のみ）
     const structuredData = forecastItems.map(item => ({
@@ -323,7 +323,7 @@ ${enrichedStructuredData && enrichedStructuredData.some(item =>
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const modelName = 'gemini-2.5-flash-lite';
+    const modelName = 'gemini-3-pro-preview';
 
     // 取引データを構造化
     const transactionSummary = this.summarizeTransactions(transactions);

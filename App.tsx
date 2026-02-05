@@ -1564,7 +1564,14 @@ const handleRuleInputSubmit = async () => {
               <div className="flex items-end gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isDemo || isProcessing || activePrefixes.length === 0 || ![t.expensePrefix, t.incomePrefix].includes(activePrefixes[0]?.text) || activePrefixes[0]?.text === t.rulePrefix}
+                  disabled={() => {
+                    const activeText = (activePrefixes[0]?.text || '').trim();
+                    const expenseText = (t.expensePrefix || '').trim();
+                    const incomeText = (t.incomePrefix || '').trim();
+                    const ruleText = (t.rulePrefix || '').trim();
+                    const isExpenseOrIncome = activeText === expenseText || activeText === incomeText;
+                    return isDemo || isProcessing || activePrefixes.length === 0 || !isExpenseOrIncome || activeText === ruleText;
+                  }()}
                   className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
                 >
                   <CameraIcon className="w-6 h-6" />

@@ -91,7 +91,7 @@ const App: React.FC = () => {
   const QUICK_ACTIONS = [
     { labelKey: 'addExpense', icon: BanknotesIcon, prefix: t.expensePrefix },
     { labelKey: 'addIncome', icon: SparklesIcon, prefix: t.incomePrefix },
-    ...(!isDemo ? [{ labelKey: 'setRule', icon: TagIcon, prefix: 'ルール：' }] : []),
+    ...(!isDemo ? [{ labelKey: 'setRule', icon: TagIcon, prefix: t.rulePrefix }] : []),
   ];
 
   // Folder conflict modal state
@@ -129,10 +129,12 @@ const App: React.FC = () => {
         return { ...prefix, text: t.expensePrefix };
       } else if (prefix.text === '売上：' || prefix.text === t.incomePrefix) {
         return { ...prefix, text: t.incomePrefix };
+      } else if (prefix.text === 'ルール：' || prefix.text === t.rulePrefix) {
+        return { ...prefix, text: t.rulePrefix };
       }
       return prefix;
     }));
-  }, [language, t.expensePrefix, t.incomePrefix]);
+  }, [language, t.expensePrefix, t.incomePrefix, t.rulePrefix]);
 
   const [inputText, setInputText] = useState('');
   const [activePrefixes, setActivePrefixes] = useState<ActivePrefix[]>([]);
@@ -1562,7 +1564,7 @@ const handleRuleInputSubmit = async () => {
               <div className="flex items-end gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isDemo || isProcessing || activePrefixes.length === 0 || !['経費：', '売上：'].includes(activePrefixes[0]?.text) || activePrefixes[0]?.text === 'ルール：'}
+                  disabled={isDemo || isProcessing || activePrefixes.length === 0 || ![t.expensePrefix, t.incomePrefix].includes(activePrefixes[0]?.text) || activePrefixes[0]?.text === t.rulePrefix}
                   className="p-3.5 bg-slate-100 text-gray-600 rounded-2xl hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
                 >
                   <CameraIcon className="w-6 h-6" />

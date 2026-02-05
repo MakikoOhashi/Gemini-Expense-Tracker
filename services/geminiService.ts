@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { SYSTEM_PROMPT, SYSTEM_PROMPT_WITH_IMAGE, SYSTEM_PROMPT_WITHOUT_IMAGE } from "../constants";
+import { SYSTEM_PROMPT, SYSTEM_PROMPT_WITH_IMAGE, SYSTEM_PROMPT_WITHOUT_IMAGE, SYSTEM_PROMPT_EN, SYSTEM_PROMPT_WITH_IMAGE_EN, SYSTEM_PROMPT_WITHOUT_IMAGE_EN } from "../constants";
 import { AIResponse, ChatMessage, TransactionRule } from "../types.ts";
 import { sheetsService } from "./sheetsService.ts";
 
@@ -9,7 +9,8 @@ export class GeminiService {
     text: string,
     image?: string,
     history: ChatMessage[] = [],
-    rules: TransactionRule[] = []
+    rules: TransactionRule[] = [],
+    language: 'ja' | 'en' = 'ja'
   ): Promise<AIResponse> {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
@@ -60,8 +61,12 @@ export class GeminiService {
       : "なし";
 
     // 画像の有無によってプロンプトを選択
-    const basePrompt = image ? SYSTEM_PROMPT_WITH_IMAGE : SYSTEM_PROMPT_WITHOUT_IMAGE;
-    const systemInstruction = basePrompt.replace('{{RULES}}', ruleString) + "\n必ず純粋なJSONオブジェクト一つのみを返してください。";
+    const basePrompt = image
+      ? (language === 'en' ? SYSTEM_PROMPT_WITH_IMAGE_EN : SYSTEM_PROMPT_WITH_IMAGE)
+      : (language === 'en' ? SYSTEM_PROMPT_WITHOUT_IMAGE_EN : SYSTEM_PROMPT_WITHOUT_IMAGE);
+    const systemInstruction = basePrompt.replace('{{RULES}}', ruleString) + (language === 'en'
+      ? "\nReturn a single pure JSON object only."
+      : "\n必ず純粋なJSONオブジェクト一つのみを返してください。");
     
     console.log(`📝 使用するプロンプト: ${image ? '画像あり（日付抽出あり）' : '画像なし（日付なし）'}`);
 

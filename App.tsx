@@ -667,7 +667,8 @@ const [ruleInputData, setRuleInputData] = useState({
         textToProcess,
         undefined, // 画像は渡さない（OCRテキストのみ）
         messages.slice(-4),
-        rules
+        rules,
+        language
       );
 
       // デバッグ: Geminiレスポンスをコンソールに出力

@@ -11,6 +11,7 @@ import dotenv from 'dotenv';
 import { google } from 'googleapis';
 import vision from '@google-cloud/vision';
 import { Readable } from 'stream';
+import { readFileSync, existsSync } from 'fs';
 import Busboy from 'busboy';
 import jwt from 'jsonwebtoken';
 import { userService } from '../services/userService.js';
@@ -148,7 +149,44 @@ function getAuthenticatedGoogleId(req) {
 }
 
 // Vision API client (uses Application Default Credentials)
-const visionClient = new vision.ImageAnnotatorClient();
+function createVisionClient() {
+  try {
+    // 1) Render Secret Files (if configured)
+    const secretCandidates = [
+      '/etc/secrets/serviceAccountKey.json',
+      '/etc/secrets/demo-service-account.json',
+      '/etc/secrets/googleServiceAccount.json'
+    ];
+    for (const secretPath of secretCandidates) {
+      if (existsSync(secretPath)) {
+        const credentials = JSON.parse(readFileSync(secretPath, 'utf8'));
+        console.log(`🔐 Vision API: using ${secretPath}`);
+        return new vision.ImageAnnotatorClient({ credentials });
+      }
+    }
+
+    // 2) Explicit JSON in env
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+      console.log('🔐 Vision API: using GOOGLE_APPLICATION_CREDENTIALS_JSON');
+      return new vision.ImageAnnotatorClient({ credentials });
+    }
+
+    // 3) Path in env (default ADC)
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      console.log('🔐 Vision API: using GOOGLE_APPLICATION_CREDENTIALS path');
+      return new vision.ImageAnnotatorClient();
+    }
+
+    console.warn('⚠️ Vision API: no credentials found (ADC will likely fail)');
+    return new vision.ImageAnnotatorClient();
+  } catch (error) {
+    console.error('❌ Vision API client init failed:', error?.message || error);
+    return new vision.ImageAnnotatorClient();
+  }
+}
+
+const visionClient = createVisionClient();
 
 // Multer configuration for file uploads
 const upload = multer({ storage: multer.memoryStorage() });

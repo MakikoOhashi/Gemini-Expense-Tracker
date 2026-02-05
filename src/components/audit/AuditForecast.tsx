@@ -11,6 +11,8 @@ interface AuditForecastProps {
   language?: 'ja' | 'en';
   taxAuthorityPerspective?: string | null;
   auditPreparationChecklist?: string[] | null;
+  isPerspectiveRateLimited?: boolean;
+  isChecklistRateLimited?: boolean;
   selectedAuditYear?: number | null;
 }
 
@@ -22,6 +24,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
   language = 'ja',
   taxAuthorityPerspective = null,
   auditPreparationChecklist = null,
+  isPerspectiveRateLimited = false,
+  isChecklistRateLimited = false,
   selectedAuditYear = null
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -418,6 +422,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
                 taxAuthorityPerspective.split('\n').map((paragraph, index) => (
                   <p key={index} className="leading-relaxed">{paragraph}</p>
                 ))
+              ) : isPerspectiveRateLimited ? (
+                <p>{t.aiRateLimitReached}</p>
               ) : (
                 <p>{t.aiSuspicionViewNotAvailable}</p>
               )}
@@ -553,6 +559,8 @@ const AuditForecast: React.FC<AuditForecastProps> = ({
                     <p className={language === 'en' ? 'leading-relaxed' : ''}>{step}</p>
                   </div>
                 ))
+              ) : isChecklistRateLimited ? (
+                <p className="text-sm text-green-700">{t.aiRateLimitReached}</p>
               ) : (
                 <p className="text-sm text-green-700">{t.aiGuidanceUnavailable}</p>
               )}

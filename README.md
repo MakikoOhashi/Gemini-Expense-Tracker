@@ -1290,3 +1290,12 @@ MIT License
 - Google Sheets API: 100秒間に100リクエスト
 - Gemini API: プラン/モデル設定に依存
 - Drive API: 1分間に20リクエスト（アップロード）
+
+---
+# Archived.
+
+This project was an experimental bookkeeping application based on Google Sheets and Google Drive.
+
+The project is no longer actively maintained and has been superseded by Pocket Shiroiro, a Notion-based bookkeeping input companion.
+
+The repository is preserved for historical and educational purposes.
